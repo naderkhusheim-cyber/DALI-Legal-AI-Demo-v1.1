@@ -4,6 +4,10 @@ Handles document embeddings and semantic search using Chroma
 """
 
 import os
+# Force CPU usage to avoid meta tensor/device mapping issues
+os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
+os.environ.setdefault("PYTORCH_FORCE_CPU", "1")
+
 import logging
 import hashlib
 from typing import List, Dict, Optional, Tuple, Any
@@ -14,6 +18,14 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
+
+try:
+    import torch  # type: ignore
+    # Ensure torch defaults to CPU
+    if hasattr(torch, "set_default_device"):
+        torch.set_default_device("cpu")
+except Exception:
+    torch = None  # torch may not expose set_default_device on all versions
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +40,7 @@ class VectorStore:
         self,
         persist_directory: str = "./data/embeddings",
         collection_name: str = "legal_documents",
-        embedding_model: str = "all-MiniLM-L6-v2"
+        embedding_model: str = "paraphrase-multilingual-MiniLM-L12-v2"  # Multilingual model
     ):
         self.persist_directory = Path(persist_directory)
         self.collection_name = collection_name
@@ -46,19 +58,43 @@ class VectorStore:
             )
         )
         
-        # Initialize embedding model
-        self.embedding_model = SentenceTransformer(embedding_model)
+        # Initialize embedding model (force CPU to avoid device mapping issues)
+        self.embedding_model = self._init_sentence_transformer(self.embedding_model_name)
         
         # Get or create collection
         self.collection = self._get_or_create_collection()
         
         # Initialize text splitter
+        # Use larger chunk size and overlap for better Arabic context
         self.text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
+            chunk_size=2000,
+            chunk_overlap=400,
             length_function=len,
             separators=["\n\n", "\n", ". ", " ", ""]
         )
+    
+    def _init_sentence_transformer(self, model_name: str) -> SentenceTransformer:
+        """Robust initialization for SentenceTransformer on CPU."""
+        last_err = None
+        candidates = []
+        # Try given name and hub-prefixed variant
+        candidates.append(model_name)
+        if "/" not in model_name:
+            candidates.append(f"sentence-transformers/{model_name}")
+        
+        for candidate in candidates:
+            try:
+                logger.info(f"Loading SentenceTransformer model: {candidate} on CPU")
+                model = SentenceTransformer(candidate, device='cpu')
+                # Warmup encode to materialize tensors off meta device
+                _ = model.encode("warmup", convert_to_tensor=False)
+                return model
+            except Exception as e:
+                last_err = e
+                logger.warning(f"Load failed for '{candidate}': {e}")
+        
+        logger.error(f"Failed to load SentenceTransformer model '{model_name}': {last_err}")
+        raise last_err
     
     def _get_or_create_collection(self):
         """Get existing collection or create new one"""
@@ -371,6 +407,25 @@ class VectorStore:
             logger.error(f"Error resetting collection: {e}")
             return False
 
+    def list_all_documents(self) -> list:
+        """Return all documents and their metadata (with content preview) in the collection."""
+        try:
+            results = self.collection.get(include=["documents", "metadatas"])
+            docs = []
+            for i in range(len(results["documents"])):
+                docs.append({
+                    "id": results["ids"][i] if "ids" in results else None,
+                    "title": results["metadatas"][i].get("title", "-"),
+                    "type": results["metadatas"][i].get("document_type", "-"),
+                    "source": results["metadatas"][i].get("source", "-"),
+                    "content_preview": results["documents"][i][:200],
+                    "metadata": results["metadatas"][i],
+                })
+            return docs
+        except Exception as e:
+            logger.error(f"Error listing all documents: {e}")
+            return []
+
 
 # Utility functions
 def create_legal_document_metadata(
@@ -400,31 +455,11 @@ def create_legal_document_metadata(
 
 
 if __name__ == "__main__":
-    # Example usage
+    print("LOADING VECTOR STORE FROM:", __file__)
     vector_store = VectorStore()
-    
-    # Test adding a document
-    sample_doc = """
-    This is a sample legal contract between Party A and Party B.
-    The contract outlines the terms and conditions for the provision of legal services.
-    """
-    
-    metadata = create_legal_document_metadata(
-        title="Sample Legal Contract",
-        document_type="contract",
-        source="test_document",
-        jurisdiction="Saudi Arabia",
-        practice_area="commercial_law"
-    )
-    
-    doc_ids = vector_store.add_document(sample_doc, metadata)
-    print(f"Added document with IDs: {doc_ids}")
-    
-    # Test search
-    results = vector_store.search("legal services contract")
-    print(f"Search results: {len(results)}")
-    
-    # Get collection stats
-    stats = vector_store.get_collection_stats()
-    print(f"Collection stats: {stats}")
+    print("VectorStore methods:", dir(vector_store))
+    all_docs = vector_store.list_all_documents()
+    print(f"Found {len(all_docs)} document chunks in the collection.")
+    for doc in all_docs:
+        print(f"Title: {doc['title']}, Type: {doc['type']}, Source: {doc['source']}, Preview: {doc['content_preview'][:100]}")
 

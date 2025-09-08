@@ -1,0 +1,352 @@
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+All organizations that own or operate critical systems must implement all necessary
+measures to ensure continuous compliance with the CSCC as per item 3 of article 10 of
+NCA’s mandate and as per the Royal Decree number 57231, dated 10/11/1439H, also as per
+the Royal Decree number 7732, dated 12/2/1440H.
+Document Classification: Open 11
+
+
+--- PAGE 11 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+Introduction
+The National Cybersecurity Authority (referred to in this document as "NCA")
+developed the Essential Cybersecurity Controls (ECC - 1 : 2018) to set the minimum
+cybersecurity requirements for organizations. As an extension and a complement to ECC,
+the Critical Systems Cybersecurity Controls (CSCC - 1 : 2019) was developed to fit the
+cybersecurity needs for national critical systems.
+The CSCC was developed after conducting a comprehensive study of multiple national
+and international cybersecurity frameworks and standards, studying related national
+decisions, law and regulatory requirements, reviewing and leveraging cybersecurity best
+practices, analyzing previous cybersecurity incidents and attacks on government and other
+critical organizations, and conducting public consultations.
+During the development of these controls, NCA considered the alignment between
+CSCC and ECC (which is a prerequisite for compliance with CSCC). The organizations
+must continuously comply with ECC in order to be fully compliant with the CSCC. for
+that, the CSCC consists of the following:
+• 4 Main Domains
+• 21 Subdomains
+• 32 Main Controls
+• 73 Subcontrols
+12 Document Classification: Open
+
+
+--- PAGE 12 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+Objectives
+As an extension to ECC, the CSCC aims to enable organizations and build their protection
+and cyber resilience capabilities against cyber attacks, and sustain information technology
+assets for critical systems. The CSCC was developed based on international standards and best
+practices in order to meet the current security needs and raise organizations' preparedness to
+face the growing cybersecurity risks against their critical systems that may result in negative
+impacts and significant losses on the national level.
+Document Classification: Open 13
+
+
+--- PAGE 13 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+Definition and Identification Criteria of Critical Systems
+Critical Systems Definition
+Any system or network whose failure, unauthorized change to its operation, unauthorized
+access to it, or to the data stored or processed by it; may result in negative impact on the
+organization’s businesses and services’ availability, or cause negative economic, financial,
+security or social impacts on the national level.
+Critical Systems Identification Criteria
+The following are the criteria that may be used by organizations to identify critical systems
+they own:
+1. Negative impact on national security.
+2. Negative impact on the Kingdom’s reputation and public image.
+3. Significant financial losses (i.e., more than 0.01% of GDP).
+4. Negative impact on the services provided to a large number of users (i.e., more
+than 5% of the population)
+5. Loss of lives.
+6. Unauthorized disclosure of data that is classified as Top Secret or Secret.
+7. Negative impact on the operations of one (or more) vital sector(s).
+14 Document Classification: Open
+
+
+--- PAGE 14 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+Components of Critical Systems
+Below is the list of critical systems' components (1 through 8 are the technical components):
+1. Network, for example:
+1.1. Connecting devices, such as:
+• Router.
+• Switches.
+• Gateways.
+1.2 Firewall.
+1.3 Intrusion Detection Systems (IDS) and Intrusion Prevention Systems (IPS).
+1.4 Advanced Persistent Threat (APT) protection devices.
+2. Databases.
+3. Storage Assets.
+4. Middleware.
+5. Servers and Operating Systems.
+6. Applications.
+7. Encryption Devices.
+8. Critical systems’ peripherals, (e.g., printers and scanners).
+9. Individuals working in critical systems’ supporting roles (e.g., users, technical staff
+with significant and sensitive privileges, operators and service providers).
+10. Documents related to the components above.
+Document Classification: Open 15
+
+
+--- PAGE 15 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+Scope of Work and Applicability
+CSCC Scope of Work
+These controls are applicable to systems deemed critical (as per the criteria forementioned
+in this document) by the organizations who own or operate these systems, whether they
+are government organizations in the kingdom or abroad (e.g., ministries, authorities,
+establishments, embassies and others), subsidiaries of government or private organizations,
+which are all referred to herein as “Organization”.
+CSCC Statement of Applicability
+Every organization must comply with all applicable controls after assessing the extent of
+impact and conducting necessary checks before implementation. Some controls' applicability
+differs from one organization to another, for example:
+• Controls in Subdomain 4-2 (Cloud Computing and Hosting Cybersecurity) are
+applicable and must be implemented by organizations currently using or planning to use
+cloud computing and hosting services.
+16 Document Classification: Open
+
+
+--- PAGE 16 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+Implementation and Compliance
+In order to comply with item 3 of article 10 of NCA’s mandate, and as per the Royal
+Decree number 57231, dated 10/11/1439H, and the Royal Decree number 7732, dated
+12/2/1440H, all organizations within the scope of the CSCC must:
+1. Identify the organization's critical systems using (Critical Systems Identification
+Criteria).
+2. Implement all necessary measures to comply with these controls on the identified
+critical systems within the compliance period defined by NCA, provided that
+cybersecurity risks are assessed and managed to minimize potential risks during
+the defined compliance period.
+3. Ensure the continuous compliance after the defined compliance period.
+NCA evaluates the organizations' compliance with the CSCC through multiple means
+such as self-assessments by the organizations themselves, and/or on-site audits, in
+accordance with the mechanisms deemed appropriate by the NCA.
+Update and Review
+NCA will periodically review and update the CSCC as per the related industry cybersecurity
+updates. NCA will communicate and publish the updated version of CSCC for implementation
+and compliance.
+Document Classification: Open 17
+
+
+--- PAGE 17 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+CSCC Domains and Structure
+Main Domains and Subdomains
+Figure (1) below shows the main domains and subdomains of CSCC. Appendix (A) shows
+relationship between the CSCC and ECC.
+Cybersecurity Risk
+1-1 Cybersecurity Strategy 1-2
+1- Cybersecurity Management
+Governance Cybersecurity in Information Technology Periodical Cybersecurity
+1-3 1-4
+Project Management Review and Audit
+1-5 Cybersecurity in Human Resources
+Identity and Access
+2-1 Asset Management 2-2
+Management
+Information System and Information Networks Security
+2-3 2-4
+Processing Facilities Protection Management
+Data and Information
+2-5 Mobile Devices Security 2-6
+Protection
+2- Cybersecurity Backup and Recovery
+2-7 Cryptography 2-8
+Defense Management
+2-9 Vulnerabilities Management 2-10 Penetration Testing
+Cybersecurity Event Logs and
+2-11 2-12 Web Application Security
+Monitoring Management
+2-13 Application Security
+3- Cybersecurity
+3-1 Cybersecurity Resilience Aspects of Business Continuity Management (BCM)
+Resilience
+4- Third-Party and
+Cloud Computing and
+Cloud Computing 4-1 Third-Party Cybersecurity 4-2
+Hosting Cybersecurity
+Cybersecurity
+Figure (1): CSCC Main Domains and Subdomains
+18 Document Classification: Open
+
+
+--- PAGE 18 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+Structure
+Figures (2) and (3) below show the scheme and structure of CSCC codes.
+Critical Systems Cybersecurity Controls
+Figure 2. Controls Coding Scheme
+Figure 3. CSCC Structure
+Please note that the green colored numbers (such as: 1-8-1), are reference numbers to
+related ECC subdomain or control.
+Table (1) below shows the structure of the controls.
+Table 1. CSCC Structure
+1
+Name of Main Domain
+Reference Number of the Main Domain
+Reference No. of the Subdomain Name of the Subdomain
+Objective
+Controls
+Control Reference Number Control Clauses
+Document Classification: Open 19
+
+
+--- PAGE 19 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+Critical Systems Cybersecurity Controls (CSCC)
+Details of the Critical Systems Cybersecurity Controls (CSCC)
+1 Cybersecurity Governance
+1-1 Cybersecurity Strategy
+To ensure that cybersecurity plans, goals, initiatives and projects are contributing to compliance
+Objective
+with related laws and regulations.
+Controls
+1-1-1 In addition to the controls in ECC subdomain 1-1, the organization’s cybersecurity strategy
+must prioritize the support of protecting its critical systems.
+1-2 Cybersecurity Risk Management
+To ensure managing cybersecurity risks in a methodological approach in order to protect
+Objective the organization’s information technology assets as per the organizational policies and
+procedures and related laws and regulations.
+Controls
+1-2-1
+In addition to the controls in ECC subdomain 1-5, cybersecurity risk management
+methodology must include at least the following:
+1-2-1-1 Conducting a cybersecurity risk assessment on critical systems at least once annually.
+1-2-1-2 Creating a cybersecurity risk register for critical systems, and reviewing it at least
+once every month.
+1-3 Cybersecurity in Information Technology Project Management
+To ensure that cybersecurity requirements are included in project management methodology
+Objective and procedures in order to protect the confidentiality, integrity and availability of information
+technology assets as per organization policies, and procedures, and related laws and regulations.
+Controls
+1-3-1
+In addition to the subcontrols in ECC control 1-6-2, cybersecurity requirements of project
+management and asset (information technology) change management of the organization’s
+critical systems must include at least the following:
+1-3-1-1 Conducting a stress test to ensure the capacity of the various components.
+1-3-1-2 Ensuring the implementation of business continuity requirements.
+20 Document Classification: Open
+
+
+--- PAGE 20 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+1-3-2
+In addition to the subcontrols in ECC control 1-6-3, cybersecurity requirements related to
+software and application development projects of the organization’s critical systems must
+include at least the following:
+1-3-2-1 Conducting a security source code review before the critical system release.
+1-3-2-2 Securing the access, storage, documentation and releases of source code.
+1-3-2-3 Securing the authenticated Application Programming Interface (API).
+1-3-2-4 Secure and trusted migration of applications from testing environments to
+production environments, along with deletion of any data, IDs or passwords
+related to the testing environment before the migration.
+1-4 Periodical Cybersecurity Review and Audit
+To ensure that cybersecurity controls are implemented and in compliance with organizational
+Objective policies and procedures, as well as related national and international laws, regulations and
+agreements.
+Controls
+1-4-1 With reference to ECC control 1-8-1, the organization’s cybersecurity function must review
+the implementation of CSCC at least once annually.
+1-4-2 With reference to ECC control 1-8-2, the implementation of CSCC must be reviewed by
+independent parties within the organization, outside the cybersecurity function at least once
+every three years.
+1-5 Cybersecurity in Human Resources
+To ensure that cybersecurity risks and requirements related to personnel (employees and
+contractors) are managed efficiently prior to employment, during employment and after
+Objective
+termination/separation as per organizational policies and procedures, and related laws
+and regulations.
+Controls
+1-5-1
+In addition to the subcontrols in ECC control 1-9-3, personnel cybersecurity requirements
+prior to employment must include at least the following:
+1-5-1-1 Screening or vetting candidates for working on critical systems.
+1-5-1-2 The technical support and development positions for critical systems, must be
+filled with experienced Saudi professionals.
+Document Classification: Open 21
+
+
+--- PAGE 21 ---
+
+Sharing Indicator: White Critical Systems Cybersecurity Controls
+2 Cybersecurity Defense
+2-1 Asset Management
+To ensure that the organization has an accurate and detailed inventory of information
+technology assets in order to support the organization’s cybersecurity and operational
+Objective
+requirements to maintain the confidentiality, integrity and availability of information
+technical assets.
+Controls
+2-1-1
+In addition to the controls in ECC subdomain 2-1, cybersecurity requirements for
+managing information technology assets must include at least the following:
+2-1-1-1 Maintaining an annually-updated inventory of critical systems’ assets.
+2-1-1-2 Identifying assets owners and involving them in the asset management lifecycle
+for critical systems.
+2-2 Identity and Access Management
+To ensure the secure and restricted logical access to information technology assets in order to
+Objective prevent unauthorized access and allow only authorized access for users which are necessary
+to accomplish assigned tasks.
+Controls
+2-2-1
+In addition to the subcontrols in ECC control 2-2-3, cybersecurity requirements for identity
+and access management of critical systems must include at least the following:
+2-2-1-1 Prohibiting remote access from outside the Kingdom of Saudi Arabia.
+2-2-1-2 Restricting remote access from inside the Kingdom of Saudi Arabia and verifying
+each access attempt by the organization’s security operations center, and
+continuously monitoring activities related to remote access.
+2-2-1-3 Using multi-factor authentication for all users.
+2-2-1-4 Using multi-factor authentication for privileged users, and on systems utilized
+for managing critical systems stated in control 2-3-1-4.
+2-2-1-5 Developing and implementing a high-standard and secure password policy.
+2-2-1-6 Utilizing secure methods and algorithms for storing and processing passwords,
+such as: Hashing functions.
+2-2-1-7 Securely managing service accounts for applications and systems, and disabling
+interactive login from these accounts.
+2-2-1-8 Prohibiting direct access and interaction with databases for all users except
+for database administrators. Users' access and interaction with databases
+must be through applications only, with consideration given to applying security
+solutions that limit or prohibit visibility of classified data to database
+administrators.
+22 Document Classification: Open
+
+
+--- PAGE 22 ---
+
+Critical Systems Cybersecurity Controls Sharing Indicator: White
+2-2-2
+With reference to ECC subcontrol 2-2-3-5, user identities and access rights to critical
+systems must be reviewed at least once every three months.
+2-3 Information System and Information Processing Facilities Protection
+To ensure the protection of information systems and information processing facilities,
+Objective
+(including workstations and infrastructures) against cyber risks.
+Controls
+2-3-1
+In addition to the subcontrols in ECC control 2-3-3, cybersecurity requirements for
+protecting critical systems and information processing facilities must include at least
+the following:
+2-3-1-1 Whitelisting of application and software operation files that are allowed to
+execute on servers hosting critical systems.
+2-3-1-2 Protecting servers hosting critical systems using end-point protection solutions
+that are approved by the organization.
+2-3-1-3 Applying security patches and updates at least once every month for external
+and internet-connected critical systems and at least once every three months
+for internal critical systems, in line with the organization’s approved change
+managmenet mechanisms.
+2-3-1-4 Allocating specific workstations in an isolated network (Management Network),
+that is isolated from other networks or ser
+(Content truncated due to size limit. Use page ranges or line ranges to read remaining content)

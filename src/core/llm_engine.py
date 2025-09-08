@@ -41,11 +41,33 @@ class LLMEngine:
         # Verify model availability
         self._ensure_model_available()
     
+    def _extract_model_names(self, list_response: Dict) -> List[str]:
+        """Extract model names from ollama list() response safely."""
+        try:
+            models = list_response
+            # Some client versions return {'models': [...]} while others may return a list directly
+            if isinstance(models, dict):
+                models = models.get('models', [])
+            if not isinstance(models, list):
+                return []
+            names: List[str] = []
+            for item in models:
+                if isinstance(item, dict):
+                    name = item.get('name') or item.get('model')
+                    if isinstance(name, str):
+                        names.append(name)
+                elif isinstance(item, str):
+                    names.append(item)
+            return names
+        except Exception as exc:
+            logger.error(f"Failed to parse ollama model list: {exc}")
+            return []
+    
     def _ensure_model_available(self) -> None:
         """Ensure the specified model is available locally"""
         try:
-            models = self.client.list()
-            available_models = [model['name'] for model in models['models']]
+            models_response = self.client.list()
+            available_models = self._extract_model_names(models_response)
             
             if self.model_name not in available_models:
                 logger.info(f"Model {self.model_name} not found. Pulling from Ollama...")
@@ -57,19 +79,37 @@ class LLMEngine:
             raise
     
     def _get_legal_system_prompt(self) -> str:
-        """Get the legal-specific system prompt"""
-        return """You are DALI, an AI legal assistant created by Siyada Tech. You are designed to help legal professionals with research, document analysis, and legal reasoning.
-
-Key Guidelines:
-1. Always maintain attorney-client privilege and confidentiality
-2. Provide accurate legal information but clarify you cannot give legal advice
-3. Cite relevant laws, cases, and regulations when possible
-4. Be precise and professional in your language
-5. When uncertain, recommend consulting with a qualified attorney
-6. Focus on Saudi Arabian law when applicable, but can assist with international law
-7. Always disclose limitations and suggest verification of information
-
-Remember: You are a tool to assist legal professionals, not replace their expertise and judgment."""
+        """Get the legal-specific system prompt (very explicit about answer language)"""
+        return (
+            "System Prompt: DALI (Test-Ready)\n\n"
+            "Identity / الهوية\n"
+            "You are DALI, an AI legal assistant created by Siyada Tech. You assist legal professionals with:\n"
+            "أنت دالي، مساعد قانوني ذكي تم تطويره بواسطة شركة سيادة تك. تساعد المتخصصين القانونيين في:\n\n"
+            "Research / البحث\n"
+            "Document analysis / تحليل المستندات\n"
+            "Legal reasoning / الاستدلال القانوني\n\n"
+            "Core Rules / القواعد الأساسية\n"
+            "Confidentiality / السرية\n"
+            "Always treat user inputs as confidential.\n"
+            "تعامل دائمًا مع مدخلات المستخدم بسرية تامة.\n\n"
+            "Separation of Sources / فصل المصادر\n"
+            "Always split your output into:\n"
+            "قم دائمًا بتقسيم إجابتك إلى:\n"
+            "From Files → Information found in connected sources (Google Drive, recordings, etc.).\n"
+            "من الملفات → المعلومات الموجودة في المصادر المتصلة (Google Drive، التسجيلات، إلخ).\n"
+            "Cite the file: / اذكر الملف:\n"
+            "From Web → Information from real-time searches.\n"
+            "من الويب → المعلومات من عمليات البحث في الوقت الفعلي.\n"
+            "Cite with web format: 【web†SourceName†L8-L15】\n"
+            "اذكر المصدر بهذا الشكل: 【web†اسم_المصدر†L8-L15】\n\n"
+            "Language / اللغة:\n"
+            "Always answer in the language of the user's question, regardless of the context or document language.\n"
+            "If the question is in English, your answer must be in English, even if the context is in Arabic.\n"
+            "If the question is in Arabic, your answer must be in Arabic, even if the context is in English.\n"
+            "أجب دائمًا بلغة سؤال المستخدم بغض النظر عن لغة السياق أو المستندات.\n"
+            "إذا كان السؤال بالإنجليزية، يجب أن تكون الإجابة بالإنجليزية حتى لو كان السياق أو المستندات بالعربية.\n"
+            "إذا كان السؤال بالعربية، يجب أن تكون الإجابة بالعربية حتى لو كان السياق أو المستندات بالإنجليزية.\n"
+        )
     
     def generate_response(
         self, 
@@ -248,11 +288,14 @@ Remember: You are a tool to assist legal professionals, not replace their expert
     def get_model_info(self) -> Dict:
         """Get information about the current model"""
         try:
-            models = self.client.list()
-            current_model = next(
-                (model for model in models['models'] if model['name'] == self.model_name),
-                None
-            )
+            models_response = self.client.list()
+            models = models_response.get('models', models_response) if isinstance(models_response, dict) else models_response
+            current_model = None
+            if isinstance(models, list):
+                for m in models:
+                    if isinstance(m, dict) and (m.get('name') == self.model_name or m.get('model') == self.model_name):
+                        current_model = m
+                        break
             return current_model or {"error": "Model not found"}
         except Exception as e:
             return {"error": str(e)}
@@ -276,8 +319,10 @@ def get_available_models(host: str = "localhost", port: int = 11434) -> List[str
     """Get list of available Ollama models"""
     try:
         client = ollama.Client(host=f"http://{host}:{port}")
-        models = client.list()
-        return [model['name'] for model in models['models']]
+        models_response = client.list()
+        # Reuse the robust extractor via a temporary engine instance
+        temp_engine = LLMEngine(host=host, port=port)
+        return temp_engine._extract_model_names(models_response)
     except Exception as e:
         logger.error(f"Error getting available models: {e}")
         return []
