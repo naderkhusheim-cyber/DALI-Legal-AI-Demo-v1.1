@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Settings - DALI Legal AI{% endblock %}
+{% block content %}
+<div class="main-header">
+    <h1>⚙️ Settings</h1>
+    <p>Configure DALI Legal AI system settings.</p>
+</div>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">System Configuration</div>
+<form method="post" action="/settings" style="margin-bottom:2rem;">
+    <div style="margin-bottom:1rem;">
+        <label for="model_provider"><b>Model Provider:</b></label><br>
+        <select id="model_provider" name="model_provider" style="width:100%;padding:0.5rem;" onchange="updateModelOptions()">
+            <option value="ollama" {% if current_provider == 'ollama' %}selected{% endif %}>Ollama (Local)</option>
+            <option value="openai" {% if current_provider == 'openai' %}selected{% endif %}>OpenAI (ChatGPT)</option>
+        </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+        <label for="current_model"><b>Current Model:</b></label><br>
+        <select id="current_model" name="current_model" style="width:100%;padding:0.5rem;">
+            <optgroup label="Ollama Models" id="ollama_models" {% if current_provider != 'ollama' %}style="display:none;"{% endif %}>
+                <option value="llama3:8b" {% if current_model == 'llama3:8b' %}selected{% endif %}>llama3:8b</option>
+                <option value="mistral" {% if current_model == 'mistral' %}selected{% endif %}>mistral</option>
+                <option value="codellama" {% if current_model == 'codellama' %}selected{% endif %}>codellama</option>
+            </optgroup>
+            <optgroup label="OpenAI Models" id="openai_models" {% if current_provider != 'openai' %}style="display:none;"{% endif %}>
+                <option value="gpt-4o" {% if current_model == 'gpt-4o' %}selected{% endif %}>gpt-4o</option>
+                <option value="gpt-3.5-turbo" {% if current_model == 'gpt-3.5-turbo' %}selected{% endif %}>gpt-3.5-turbo</option>
+            </optgroup>
+        </select>
+    </div>
+    <div style="margin-bottom:1rem;">
+        <label for="temperature"><b>Response Temperature:</b></label><br>
+        <input type="range" id="temperature" name="temperature" min="0" max="1" step="0.01" value="0.3" oninput="this.nextElementSibling.value = this.value">
+        <output>0.3</output>
+    </div>
+    <div style="margin-bottom:1rem;">
+        <label for="max_tokens"><b>Max Response Tokens:</b></label><br>
+        <input type="number" id="max_tokens" name="max_tokens" min="100" max="4000" value="2048" style="width:100%;padding:0.5rem;">
+    </div>
+    <button type="submit" class="metric-card" style="width:100%;">Update LLM Settings</button>
+</form>
+<script>
+function updateModelOptions() {
+    var provider = document.getElementById('model_provider').value;
+    document.getElementById('ollama_models').style.display = provider === 'ollama' ? '' : 'none';
+    document.getElementById('openai_models').style.display = provider === 'openai' ? '' : 'none';
+    // Optionally, auto-select a model when switching provider
+    var modelSelect = document.getElementById('current_model');
+    if (provider === 'ollama') {
+        modelSelect.value = 'llama3:8b';
+    } else {
+        modelSelect.value = 'gpt-4o';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    updateModelOptions();
+});
+</script>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Vector Store Settings</div>
+<form method="post" action="/settings" style="margin-bottom:2rem;">
+    <div style="margin-bottom:1rem;">
+        <label for="chunk_size"><b>Document Chunk Size:</b></label><br>
+        <input type="number" id="chunk_size" name="chunk_size" min="500" max="2000" value="1000" style="width:100%;padding:0.5rem;">
+    </div>
+    <div style="margin-bottom:1rem;">
+        <label for="chunk_overlap"><b>Chunk Overlap:</b></label><br>
+        <input type="number" id="chunk_overlap" name="chunk_overlap" min="50" max="500" value="200" style="width:100%;padding:0.5rem;">
+    </div>
+    <button type="submit" class="metric-card" style="width:100%;">Update Vector Store Settings</button>
+</form>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Data Management</div>
+<form method="post" action="/settings" style="margin-bottom:2rem;">
+    <button type="submit" name="clear_history" value="1" class="metric-card" style="width:100%;background:#e3eaf2;">🧹 Clear Conversation History</button>
+    <button type="submit" name="reset_kb" value="1" class="metric-card" style="width:100%;background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;">🗑️ Reset Knowledge Base</button>
+</form>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Export/Import</div>
+<form method="post" action="/settings">
+    <button type="submit" name="export_history" value="1" class="metric-card" style="width:100%;">⬇️ Export Conversation History</button>
+</form>
+{% endblock %}

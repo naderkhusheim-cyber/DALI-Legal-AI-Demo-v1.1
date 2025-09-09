@@ -31,4 +31,9 @@ flake8>=6.1.0
 
 # Note: Ollama is installed separately via:
 # curl -fsSL https://ollama.com/install.sh | sh
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+Jinja2>=3.1.2
+python-multipart>=0.0.7
+passlib[bcrypt]>=1.7.4
 

@@ -140,6 +140,13 @@ class Config:
                 'document_upload': True,
                 'knowledge_base': True,
                 'conversation_history': True
+            },
+            'mysql': {
+                'host': 'localhost',
+                'port': 3306,
+                'user': 'dali_user',
+                'password': 'dali_password',
+                'database': 'dali_legal_ai'
             }
         }
     
@@ -393,6 +400,18 @@ features:
     except Exception as e:
         logger.error(f"Error creating sample configuration: {e}")
         return False
+
+
+def get_mysql_config():
+    config = load_config()
+    mysql_cfg = config.get('mysql', {})
+    return {
+        'host': mysql_cfg.get('host', 'localhost'),
+        'port': mysql_cfg.get('port', 3306),
+        'user': mysql_cfg.get('user', 'dali_user'),
+        'password': mysql_cfg.get('password', 'dali_password'),
+        'database': mysql_cfg.get('database', 'dali_legal_ai')
+    }
 
 
 if __name__ == "__main__":

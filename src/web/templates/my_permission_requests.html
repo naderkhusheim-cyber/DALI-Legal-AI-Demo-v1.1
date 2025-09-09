@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}My Permission Requests - DALI Legal AI{% endblock %}
+{% block content %}
+<h2>My Permission Requests</h2>
+<h3>Outgoing Requests</h3>
+<table class="metric-table" style="width:100%;margin-bottom:2rem;">
+    <thead>
+        <tr>
+            <th>Document</th>
+            <th>Uploader</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for req in outgoing %}
+        <tr>
+            <td>{{ req.title }}</td>
+            <td>{{ req.uploader or 'Unknown' }}</td>
+            <td>{{ req.status }}</td>
+            <td>
+                {% if req.status == 'approved' %}
+                <form method="post" action="/permission-request/copy" style="display:inline;">
+                    <input type="hidden" name="req_id" value="{{ req.id }}">
+                    <button type="submit">Add to My Knowledge Base</button>
+                </form>
+                {% else %}
+                <span style="color:#888;">-</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<h3>Incoming Requests</h3>
+<table class="metric-table" style="width:100%;margin-bottom:2rem;">
+    <thead>
+        <tr>
+            <th>Document</th>
+            <th>Requester</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for req in incoming %}
+        <tr>
+            <td>{{ req.title }}</td>
+            <td>{{ req.requester or 'Unknown' }}</td>
+            <td>{{ req.status }}</td>
+            <td>
+                {% if req.status == 'pending' %}
+                <form method="post" action="/permission-request/approve" style="display:inline;">
+                    <input type="hidden" name="req_id" value="{{ req.id }}">
+                    <button type="submit">Approve</button>
+                </form>
+                <form method="post" action="/permission-request/deny" style="display:inline;">
+                    <input type="hidden" name="req_id" value="{{ req.id }}">
+                    <button type="submit">Deny</button>
+                </form>
+                {% else %}
+                <span style="color:#888;">-</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

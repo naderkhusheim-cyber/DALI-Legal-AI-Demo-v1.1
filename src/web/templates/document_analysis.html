@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Document Analysis - DALI Legal AI{% endblock %}
+{% block content %}
+<div class="main-header">
+    <h1>📄 Document Analysis</h1>
+    <p>Upload and analyze legal documents with AI-powered insights.</p>
+</div>
+<form method="post" action="/document-analysis" enctype="multipart/form-data" style="margin-bottom:2rem;">
+    <div style="margin-bottom:1rem;">
+        <label for="document"><b>Upload legal document:</b></label><br>
+        <input type="file" id="document" name="document" required style="padding:0.5rem;">
+    </div>
+    <div style="display:flex;gap:2rem;margin-bottom:1rem;">
+        <div style="flex:1;">
+            <label for="analysis_type"><b>Analysis Type:</b></label><br>
+            <select id="analysis_type" name="analysis_type" style="width:100%;padding:0.5rem;">
+                <option value="general">General</option>
+                <option value="contract">Contract</option>
+                <option value="litigation">Litigation</option>
+                <option value="compliance">Compliance</option>
+            </select>
+        </div>
+        <div style="flex:1;display:flex;align-items:end;">
+            <label><input type="checkbox" name="add_to_kb" value="1"> Add to Knowledge Base</label>
+        </div>
+    </div>
+    <button type="submit" class="metric-card" style="width:100%;">📄 Analyze Document</button>
+</form>
+{% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+{% if analysis_result %}
+    <details open style="margin-bottom:1rem;">
+        <summary style="font-weight:bold;">Analysis Results</summary>
+        <div class="metric-card">{{ analysis_result|safe }}</div>
+    </details>
+{% endif %}
+{% if kb_success %}
+    <div class="success-message">Document added to knowledge base!</div>
+{% endif %}
+{% endblock %}

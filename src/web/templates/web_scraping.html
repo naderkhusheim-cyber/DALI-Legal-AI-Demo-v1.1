@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Web Scraping - DALI Legal AI{% endblock %}
+{% block content %}
+<h1>Web Scraping</h1>
+{% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+<form method="post" action="/web-scraping/scrape">
+    <label>URL to scrape:<br><input type="url" name="url" required style="width:300px;"></label>
+    <button type="submit">Scrape</button>
+</form>
+{% if scraped %}
+    <h2>Scraped Content</h2>
+    <pre style="background:#f7f7f7;padding:10px;max-height:300px;overflow:auto;">{{ scraped }}</pre>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Web Research - DALI Legal AI{% endblock %}
+{% block content %}
+<div class="main-header">
+    <h1>🌐 Web Research</h1>
+    <p>Conduct web research on legal topics using AI-powered scraping.</p>
+</div>
+<form method="post" action="/web-research" style="margin-bottom:2rem;">
+    <div style="margin-bottom:1rem;">
+        <label for="research_urls"><b>Enter URLs to research (one per line):</b></label><br>
+        <textarea id="research_urls" name="research_urls" rows="4" style="width:100%;padding:0.5rem;" placeholder="https://laws.boe.gov.sa\nhttps://www.moj.gov.sa">{{ research_urls or '' }}</textarea>
+    </div>
+    <div style="display:flex;gap:2rem;margin-bottom:1rem;">
+        <div style="flex:1;">
+            <label for="max_pages"><b>Max pages per site:</b></label><br>
+            <input type="number" id="max_pages" name="max_pages" min="1" max="50" value="{{ max_pages or 5 }}" style="width:100%;padding:0.5rem;">
+        </div>
+        <div style="flex:1;display:flex;align-items:end;">
+            <label><input type="checkbox" name="add_to_kb" value="1" {% if add_to_kb %}checked{% endif %}> Add results to knowledge base</label>
+        </div>
+    </div>
+    <button type="submit" class="metric-card" style="width:100%;">🌐 Start Web Research</button>
+</form>
+{% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+{% if all_results %}
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Results</div>
+    <div style="margin-bottom:1rem;">
+        {% for result in all_results %}
+            <details style="margin-bottom:0.5rem;">
+                <summary><b>{{ result.title }}</b> - <a href="{{ result.url }}" target="_blank">Source</a></summary>
+                <div style="padding:0.5rem 1rem;">{{ result.content[:500] }}...</div>
+            </details>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}

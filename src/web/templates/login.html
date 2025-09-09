@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Login - DALI Legal AI{% endblock %}
+{% block content %}
+<h1>Login</h1>
+{% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+<form method="post" action="/login">
+    <label>Username:<br><input type="text" name="username" required></label><br><br>
+    <label>Password:<br><input type="password" name="password" required></label><br><br>
+    <button type="submit">Login</button>
+</form>
+<p>Don't have an account? <a href="/signup">Sign up</a></p>
+{% endblock %}

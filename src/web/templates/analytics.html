@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Analytics - DALI Legal AI{% endblock %}
+{% block content %}
+<h1>Analytics Dashboard</h1>
+{% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
+<h2>Document Collection Stats</h2>
+<ul>
+    {% for k, v in stats.items() %}
+        <li><b>{{ k }}</b>: {{ v }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

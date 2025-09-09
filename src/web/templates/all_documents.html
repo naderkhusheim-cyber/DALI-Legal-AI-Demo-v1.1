@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}All Documents - DALI Legal AI{% endblock %}
+{% block content %}
+<h1>All Documents in System</h1>
+<table class="metric-table" style="width:100%;margin-bottom:2rem;">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Source</th>
+            <th>Uploaded</th>
+            <th>Uploader</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for doc in documents %}
+        <tr>
+            <td>{{ doc.title }}</td>
+            <td>{{ doc.document_type }}</td>
+            <td>{{ doc.source }}</td>
+            <td>{{ doc.created_at }}</td>
+            <td>{{ doc.uploader or 'Unknown' }}</td>
+            <td>
+                {% if doc.uploader and doc.uploader != user.username %}
+                <form method="post" action="/request-permission" style="display:inline;">
+                    <input type="hidden" name="doc_id" value="{{ doc.id }}">
+                    <button type="submit">Request Permission</button>
+                </form>
+                {% else %}
+                <span style="color:#888;">-</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

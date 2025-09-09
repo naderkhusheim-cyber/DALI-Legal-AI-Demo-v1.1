@@ -1,0 +1,35 @@
+<div class="sidebar-logo">
+    <h2>⚖️ DALI</h2>
+    <p>Development of Ambitious Leading Ideas</p>
+    <small>سيادة للأفكار الطموحة</small>
+</div>
+
+<!-- Navigation -->
+<div style="margin-bottom:2rem;">
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Navigation</div>
+    <form method="get" action="">
+        <select name="page" id="sidebar-nav-select" onchange="window.location.href=this.value" style="width:100%;padding:0.5rem;border-radius:6px;background:#f8f9fa;font-weight:bold;">
+            <option value="/dashboard" {% if active_page=='dashboard' %}selected style="background:#e3eaf2;"{% endif %}>🏠 Dashboard</option>
+            <option value="/legal-research" {% if active_page=='legal-research' %}selected style="background:#e3eaf2;"{% endif %}>🔎 Legal Research</option>
+            <option value="/document-analysis" {% if active_page=='document-analysis' %}selected style="background:#e3eaf2;"{% endif %}>📄 Document Analysis</option>
+            <option value="/knowledge-base" {% if active_page=='knowledge-base' %}selected style="background:#e3eaf2;"{% endif %}>📚 Knowledge Base</option>
+            <option value="/web-research" {% if active_page=='web-research' %}selected style="background:#e3eaf2;"{% endif %}>🌐 Web Research</option>
+            <option value="/settings" {% if active_page=='settings' %}selected style="background:#e3eaf2;"{% endif %}>⚙️ Settings</option>
+        </select>
+    </form>
+</div>
+
+<!-- System Status -->
+<div style="margin-bottom:2rem;">
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">System Status</div>
+    <div class="success-message">✅ System Initialized</div>
+    <div class="success-message">✅ Vector Store Ready</div>
+    <div class="success-message">✅ Web Scraper Ready</div>
+</div>
+
+<!-- Quick Stats -->
+<div>
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Quick Stats</div>
+    <div class="metric-card">📄 Documents: {{ stats.total_documents or 0 }}</div>
+    <div class="metric-card">💬 Conversations: {{ stats.conversations or 0 }}</div>
+</div>

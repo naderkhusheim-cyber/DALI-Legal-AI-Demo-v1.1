@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Legal Research - DALI Legal AI{% endblock %}
+{% block content %}
+<div class="main-header">
+    <h1>🔎 Legal Research</h1>
+    <p>Ask legal questions and get AI-powered research with citations and analysis.</p>
+</div>
+<form method="post" action="/legal-research" style="margin-bottom:2rem;">
+    <div style="margin-bottom:1rem;">
+        <label for="query"><b>Enter your legal research question:</b></label><br>
+        <textarea id="query" name="query" rows="4" style="width:100%;padding:0.5rem;" placeholder="e.g., What are the requirements for forming a limited liability company in Saudi Arabia?">{{ query or '' }}</textarea>
+    </div>
+    <div style="display:flex;gap:2rem;margin-bottom:1rem;">
+        <div style="flex:1;">
+            <label for="jurisdiction"><b>Jurisdiction:</b></label><br>
+            <select id="jurisdiction" name="jurisdiction" style="width:100%;padding:0.5rem;">
+                <option value="Saudi Arabia" {% if jurisdiction=='Saudi Arabia' %}selected{% endif %}>Saudi Arabia</option>
+                <option value="GCC Countries" {% if jurisdiction=='GCC Countries' %}selected{% endif %}>GCC Countries</option>
+                <option value="International" {% if jurisdiction=='International' %}selected{% endif %}>International</option>
+                <option value="Other" {% if jurisdiction=='Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div style="flex:1;display:flex;align-items:end;">
+            <label><input type="checkbox" name="include_web_search" value="1" {% if include_web_search %}checked{% endif %}> Include web research</label>
+        </div>
+    </div>
+    <button type="submit" class="metric-card" style="width:100%;">🔎 Conduct Research</button>
+</form>
+{% if error %}<div class="error-message">{{ error }}</div>{% endif %}
+{% if research_result %}
+    <div class="success-message">Research completed successfully!</div>
+    <details open style="margin-bottom:1rem;">
+        <summary style="font-weight:bold;">AI Legal Analysis</summary>
+        <div class="metric-card">{{ research_result|safe }}</div>
+    </details>
+{% endif %}
+{% if kb_results %}
+    <details open style="margin-bottom:1rem;">
+        <summary style="font-weight:bold;">Related Documents from Knowledge Base</summary>
+        <ul>
+            {% for result in kb_results %}
+                <li><b>{{ result.metadata.title }}</b> (Score: {{ '%.2f' % result.score }})<br>{{ result.content[:200] }}...</li>
+            {% endfor %}
+        </ul>
+    </details>
+{% endif %}
+{% if web_results %}
+    <details open style="margin-bottom:1rem;">
+        <summary style="font-weight:bold;">Web Research Results</summary>
+        <ul>
+            {% for result in web_results %}
+                <li><b>{{ result.title }}</b> - <a href="{{ result.url }}" target="_blank">Source</a><br>{{ result.content[:200] }}...</li>
+            {% endfor %}
+        </ul>
+    </details>
+{% endif %}
+{% endblock %}

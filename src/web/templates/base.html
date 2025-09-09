@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}DALI Legal AI{% endblock %}</title>
+    <link rel="stylesheet" href="/static/chatbox.css">
+    <link rel="stylesheet" href="/static/streamlit_style.css">
+    <style>
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 320px;
+            background: #f4f6fa;
+            padding: 2rem 1rem 1rem 1rem;
+            border-right: 1px solid #e0e0e0;
+        }
+        .main-content {
+            flex: 1;
+            padding: 2rem 2rem 2rem 2rem;
+            background: #fff;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            {% if user %}
+            <div class="success-message" style="margin-bottom:1rem;text-align:center;">Hello, {{ user.username }}</div>
+            {% endif %}
+            {% include "sidebar.html" %}
+            {% if user %}
+            <form method="get" action="/logout" style="margin-top:2rem;text-align:center;">
+                <button type="submit" class="metric-card" style="background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;width:90%;margin:auto;">🚪 Logout</button>
+            </form>
+            {% endif %}
+        </aside>
+        <main class="main-content">
+            {% block content %}
+                <div class="chat-container">
+                    {% for msg in chat_history %}
+                        <div class="message {% if msg.role == 'user' %}user-message{% else %}assistant-message{% endif %}">
+                            <div class="message-avatar">
+                                {% if msg.role == 'user' %}
+                                    <span>🧑</span>
+                                {% else %}
+                                    <span>🤖</span>
+                                {% endif %}
+                            </div>
+                            <div class="message-bubble">{{ msg.content }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endblock %}
+        </main>
+    </div>
+    <!-- Floating Chat Box UI -->
+    <div id="chatbox-toggle-wrapper" style="position:fixed;bottom:32px;right:32px;z-index:9999;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+        <button id="chatbox-toggle" title="Open Chat">💬</button>
+    </div>
+    <div id="chatbox-container">
+        <div id="chatbox-header">
+            <span>Chat</span>
+            <button id="chatbox-close">&times;</button>
+        </div>
+        <div id="chatbox-messages"></div>
+        <div id="chatbox-input">
+            <input id="chatbox-input-field" type="text" placeholder="Type a message...">
+            <button id="chatbox-send">Send</button>
+        </div>
+    </div>
+    <script>
+        window.CURRENT_USER = {% if user %}{{ user.username|tojson }}{% else %}null{% endif %};
+        window.CURRENT_USER_ID = {% if user %}{{ user.id|int }}{% else %}null{% endif %};
+    </script>
+    <script src="/static/chatbox.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

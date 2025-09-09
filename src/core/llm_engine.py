@@ -8,8 +8,10 @@ import json
 import logging
 from typing import List, Dict, Optional, Generator
 import ollama
+import openai
 from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain.callbacks.base import BaseCallbackHandler
+from utils.config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -30,16 +32,18 @@ class LLMEngine:
     Core LLM Engine for DALI Legal AI System
     Manages Ollama models and provides legal-specific prompting
     """
-    
-    def __init__(self, model_name: str = "llama3", host: str = "localhost", port: int = 11434):
-        self.model_name = model_name
-        self.host = host
-        self.port = port
-        self.client = ollama.Client(host=f"http://{host}:{port}")
+    def __init__(self, model_name: str = None, host: str = None, port: int = None):
+        self.config = load_config()
+        self.model_name = model_name or self.config.get('ollama', {}).get('model', 'llama3:8b')
+        self.host = host or self.config.get('ollama', {}).get('host', 'localhost')
+        self.port = port or self.config.get('ollama', {}).get('port', 11434)
+        self.openai_api_key = self.config.get('openai', {}).get('api_key', None)
+        self.openai_model = self.config.get('openai', {}).get('model', 'gpt-4o')
+        self.client = ollama.Client(host=f"http://{self.host}:{self.port}")
         self.legal_system_prompt = self._get_legal_system_prompt()
-        
-        # Verify model availability
-        self._ensure_model_available()
+        # Verify model availability (only for Ollama models)
+        if self.model_name.startswith('llama') or self.model_name == 'mistral':
+            self._ensure_model_available()
     
     def _extract_model_names(self, list_response: Dict) -> List[str]:
         """Extract model names from ollama list() response safely."""
@@ -134,10 +138,12 @@ class LLMEngine:
             # Build the prompt
             messages = self._build_messages(query, context, conversation_history)
             
-            if stream:
-                return self._generate_streaming_response(messages)
+            if self.model_name.startswith('gpt'):
+                return self._generate_openai_response(query, context)
+            elif self.model_name.startswith('llama') or self.model_name == 'mistral':
+                return self._generate_ollama_response(query, context)
             else:
-                return self._generate_complete_response(messages)
+                raise ValueError(f"Unsupported model: {self.model_name}. Please select a valid Ollama or OpenAI model.")
                 
         except Exception as e:
             logger.error(f"Error generating response: {e}")
@@ -204,6 +210,40 @@ class LLMEngine:
             logger.error(f"Error in streaming response generation: {e}")
             yield f"Error: {str(e)}"
     
+    def _generate_openai_response(self, query, context=None):
+        # Use OpenAI v1+ API
+        client = openai.OpenAI(api_key=self.openai_api_key)
+        messages = []
+        if context:
+            messages.append({"role": "system", "content": context})
+        messages.append({"role": "user", "content": query})
+        response = client.chat.completions.create(
+            model=self.openai_model,
+            messages=messages,
+            temperature=0.3,
+            max_tokens=2048
+        )
+        return response.choices[0].message.content.strip()
+
+    def _generate_ollama_response(self, query, context=None):
+        """Generate a response using an Ollama model."""
+        try:
+            messages = self._build_messages(query, context)
+            response = self.client.chat(
+                model=self.model_name,
+                messages=messages,
+                stream=False, # Ensure non-streaming for this method
+                options={
+                    "temperature": 0.3,
+                    "top_p": 0.9,
+                    "max_tokens": 2048
+                }
+            )
+            return response['message']['content']
+        except Exception as e:
+            logger.error(f"Error in Ollama response generation: {e}")
+            raise
+
     def analyze_document(self, document_text: str, analysis_type: str = "general") -> str:
         """
         Analyze a legal document
@@ -312,6 +352,21 @@ class LLMEngine:
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return False
+
+    @staticmethod
+    def from_user_settings(user_settings, config=None):
+        """Create an LLMEngine instance based on user settings (provider/model)."""
+        config = config or load_config()
+        provider = user_settings.get('llm_provider', 'ollama') if user_settings else 'ollama'
+        model = user_settings.get('llm_model', 'llama3:8b') if user_settings else 'llama3:8b'
+        if provider == 'openai':
+            # OpenAI does not need host/port
+            return LLMEngine(model_name=model)
+        else:
+            # Ollama
+            host = config.get('ollama', {}).get('host', 'localhost')
+            port = config.get('ollama', {}).get('port', 11434)
+            return LLMEngine(model_name=model, host=host, port=port)
 
 
 # Utility functions

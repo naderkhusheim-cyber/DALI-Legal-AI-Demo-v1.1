@@ -18,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
+import mysql.connector
 
 try:
     import torch  # type: ignore
@@ -34,6 +35,7 @@ class VectorStore:
     """
     Vector Store for DALI Legal AI System
     Manages document embeddings and semantic search using Chroma
+    
     """
     
     def __init__(
@@ -452,6 +454,172 @@ def create_legal_document_metadata(
     
     # Remove None values
     return {k: v for k, v in metadata.items() if v is not None}
+
+
+class MySQLVectorStore:
+    """
+    Per-user knowledge base using MySQL for document, chunk, and embedding storage.
+    """
+    def __init__(self, mysql_config):
+        import mysql.connector
+        self.conn = mysql.connector.connect(**mysql_config)
+        self._ensure_tables()
+
+    def _ensure_tables(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                email VARCHAR(255) UNIQUE NOT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role VARCHAR(32) DEFAULT 'user',
+                is_active BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                title VARCHAR(255),
+                document_type VARCHAR(64),
+                source VARCHAR(255),
+                content LONGTEXT,
+                embedding LONGBLOB,
+                metadata TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS shared_documents (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                document_id INT NOT NULL,
+                shared_with_user_id INT NOT NULL,
+                shared_by_user_id INT NOT NULL,
+                shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+                FOREIGN KEY (shared_with_user_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (shared_by_user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_chats (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                sender_id INT NOT NULL,
+                receiver_id INT NOT NULL,
+                message TEXT NOT NULL,
+                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB;
+        ''')
+        # Optional: shared_analysis table for future
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS shared_analysis (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                analysis_id INT NOT NULL,
+                shared_with_user_id INT NOT NULL,
+                shared_by_user_id INT NOT NULL,
+                shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB;
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS activity_log (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                event_type VARCHAR(64),
+                event_data TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB;
+        ''')
+        self.conn.commit()
+        cursor.close()
+
+    def share_document(self, document_id, shared_with_user_id, shared_by_user_id):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO shared_documents (document_id, shared_with_user_id, shared_by_user_id)
+            VALUES (%s, %s, %s)
+        ''', (document_id, shared_with_user_id, shared_by_user_id))
+        self.conn.commit()
+        cursor.close()
+
+    def get_shared_documents(self, user_id):
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT d.* FROM documents d
+            JOIN shared_documents s ON d.id = s.document_id
+            WHERE s.shared_with_user_id = %s
+        ''', (user_id,))
+        docs = cursor.fetchall()
+        cursor.close()
+        return docs
+
+    def add_user(self, username, email, password_hash):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)
+        ''', (username, email, password_hash))
+        self.conn.commit()
+        user_id = cursor.lastrowid
+        cursor.close()
+        return user_id
+
+    def get_user_by_username(self, username):
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('SELECT * FROM users WHERE username=%s', (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        return user
+
+    def add_document(self, user_id, title, document_type, source, content, embedding, metadata):
+        import json
+        cursor = self.conn.cursor()
+        metadata_str = json.dumps(metadata) if not isinstance(metadata, str) else metadata
+        cursor.execute('''
+            INSERT INTO documents (user_id, title, document_type, source, content, embedding, metadata)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        ''', (user_id, title, document_type, source, content, embedding.tobytes(), metadata_str))
+        self.conn.commit()
+        doc_id = cursor.lastrowid
+        cursor.close()
+        return doc_id
+
+    def list_documents(self, user_id):
+        import json
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('SELECT id, title, document_type, source, LEFT(content, 200) as content_preview, metadata, created_at FROM documents WHERE user_id=%s', (user_id,))
+        docs = cursor.fetchall()
+        for doc in docs:
+            try:
+                doc['metadata'] = json.loads(doc['metadata']) if doc['metadata'] else {}
+            except Exception:
+                doc['metadata'] = {}
+        cursor.close()
+        return docs
+
+    def search_documents(self, user_id, query_embedding, top_k=10):
+        import numpy as np
+        import json
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('SELECT id, title, document_type, source, content, embedding, metadata FROM documents WHERE user_id=%s', (user_id,))
+        docs = cursor.fetchall()
+        for doc in docs:
+            try:
+                doc['metadata'] = json.loads(doc['metadata']) if doc['metadata'] else {}
+            except Exception:
+                doc['metadata'] = {}
+        cursor.close()
+        scored = []
+        for doc in docs:
+            emb = np.frombuffer(doc['embedding'], dtype=np.float32)
+            sim = np.dot(query_embedding, emb) / (np.linalg.norm(query_embedding) * np.linalg.norm(emb) + 1e-8)
+            scored.append((sim, doc))
+        scored.sort(reverse=True, key=lambda x: x[0])
+        return [doc for sim, doc in scored[:top_k]]
 
 
 if __name__ == "__main__":

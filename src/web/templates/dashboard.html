@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - DALI Legal AI{% endblock %}
+{% block content %}
+<div class="main-header">
+    <h1>⚖️ DALI Legal AI System</h1>
+    <p>Your intelligent legal research and document analysis assistant</p>
+</div>
+<div style="display:flex;gap:2rem;margin-bottom:2rem;">
+    <div class="metric-card" style="flex:1;background:#e3eaf2;">
+        <h3>🔎 Legal Research</h3>
+        <p>Conduct comprehensive legal research with AI-powered insights and citations.</p>
+    </div>
+    <div class="metric-card" style="flex:1;background:#f8f9fa;">
+        <h3>📄 Document Analysis</h3>
+        <p>Analyze contracts, agreements, and legal documents with advanced AI.</p>
+    </div>
+    <div class="metric-card" style="flex:1;background:#f8f9fa;">
+        <h3>📚 Knowledge Management</h3>
+        <p>Build and search your firm's legal knowledge base with semantic search.</p>
+    </div>
+</div>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Recent Activity</div>
+{% if recent_conversations %}
+    <div style="margin-bottom:1rem;">
+        {% for conv in recent_conversations %}
+            <details style="margin-bottom:0.5rem;">
+                <summary><b>Query:</b> {{ conv.query[:100] }}... <b>Time:</b> {{ conv.timestamp }}</summary>
+                <div style="padding:0.5rem 1rem;">{{ conv.response[:300] }}...</div>
+            </details>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="info-message">No recent activity. Start by asking a legal question or uploading a document.</div>
+{% endif %}
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Quick Actions</div>
+<div style="display:flex;gap:2rem;">
+    <form method="get" action="/legal-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#e3eaf2;">🔎 Start Legal Research</button></form>
+    <form method="get" action="/document-analysis" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">📄 Analyze Document</button></form>
+    <form method="get" action="/web-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">🌐 Web Research</button></form>
+</div>
+{% endblock %}
