@@ -9,7 +9,7 @@ import time
 from typing import List, Dict, Optional, Union
 from urllib.parse import urljoin, urlparse
 import requests
-from firecrawl import FirecrawlApp
+from firecrawl import Firecrawl
 from dataclasses import dataclass
 import json
 
@@ -35,16 +35,19 @@ class FirecrawlScraper:
     
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv('FIRECRAWL_API_KEY')
-        
+        print(f"FirecrawlScraper initializing with API key: {self.api_key}")  # DEBUG
         if not self.api_key:
             logger.warning("No Firecrawl API key provided. Some features may be limited.")
+            print("No Firecrawl API key provided. Some features may be limited.")  # DEBUG
             self.app = None
         else:
             try:
-                self.app = FirecrawlApp(api_key=self.api_key)
+                self.app = Firecrawl(api_key=self.api_key)
                 logger.info("Firecrawl initialized successfully")
+                print("Firecrawl initialized successfully")  # DEBUG
             except Exception as e:
                 logger.error(f"Failed to initialize Firecrawl: {e}")
+                print(f"Failed to initialize Firecrawl: {e}")  # DEBUG
                 self.app = None
     
     def scrape_url(
@@ -76,45 +79,31 @@ class FirecrawlScraper:
             scrape_options = {
                 'formats': ['markdown', 'html'],
                 'timeout': timeout,
-                'waitFor': wait_for or 3000,
-                'includeTags': include_tags or ['article', 'main', 'content', 'div', 'p', 'h1', 'h2', 'h3'],
-                'excludeTags': exclude_tags or ['nav', 'footer', 'header', 'aside', 'script', 'style', 'ads']
+                # Firecrawl Python SDK may not support all options, so only pass what is supported
             }
             
-            # Perform scraping
-            result = self.app.scrape_url(url, params=scrape_options)
+            # Call the Firecrawl Python SDK's scrape method
+            result = self.app.scrape(url, **scrape_options)
             
-            if result.get('success'):
-                return ScrapedDocument(
-                    url=url,
-                    title=result.get('data', {}).get('title', 'Unknown Title'),
-                    content=result.get('data', {}).get('markdown', ''),
-                    metadata={
-                        'description': result.get('data', {}).get('description', ''),
-                        'keywords': result.get('data', {}).get('keywords', []),
-                        'author': result.get('data', {}).get('author', ''),
-                        'language': result.get('data', {}).get('language', ''),
-                        'scraped_at': time.time(),
-                        'source_url': url,
-                        'scraper': 'firecrawl'
-                    },
-                    success=True
-                )
-            else:
-                error_msg = result.get('error', 'Unknown scraping error')
-                logger.error(f"Firecrawl scraping failed for {url}: {error_msg}")
-                return ScrapedDocument(
-                    url=url,
-                    title='',
-                    content='',
-                    metadata={},
-                    success=False,
-                    error=error_msg
-                )
+            # Parse result (Document object)
+            return ScrapedDocument(
+                url=url,
+                title=getattr(result, 'title', 'Unknown Title'),
+                content=getattr(result, 'markdown', getattr(result, 'content', '')),
+                metadata=_make_json_safe(vars(result)),
+                success=True
+            )
                 
         except Exception as e:
             logger.error(f"Error scraping {url} with Firecrawl: {e}")
-            return self._fallback_scrape(url)
+            return ScrapedDocument(
+                url=url,
+                title='',
+                content='',
+                metadata={},
+                success=False,
+                error=str(e)
+            )
     
     def scrape_multiple_urls(
         self,
@@ -394,6 +383,19 @@ def is_legal_website(url: str) -> bool:
     domain = parsed_url.netloc.lower()
     
     return any(legal_domain in domain for legal_domain in legal_domains)
+
+
+def _make_json_safe(obj):
+    if isinstance(obj, dict):
+        return {k: _make_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_make_json_safe(v) for v in obj]
+    elif hasattr(obj, '__dict__'):
+        return _make_json_safe(vars(obj))
+    elif isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    else:
+        return str(obj)
 
 
 if __name__ == "__main__":

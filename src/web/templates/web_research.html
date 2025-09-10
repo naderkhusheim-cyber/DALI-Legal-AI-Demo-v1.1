@@ -28,7 +28,7 @@
         {% for result in all_results %}
             <details style="margin-bottom:0.5rem;">
                 <summary><b>{{ result.title }}</b> - <a href="{{ result.url }}" target="_blank">Source</a></summary>
-                <div style="padding:0.5rem 1rem;">{{ result.content[:500] }}...</div>
+                <div style="padding:0.5rem 1rem;">{{ result.content_plain[:500] }}...</div>
             </details>
         {% endfor %}
     </div>

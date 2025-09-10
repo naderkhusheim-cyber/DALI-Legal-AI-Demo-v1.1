@@ -31,9 +31,9 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from core.llm_engine import LLMEngine
 from core.vector_store import VectorStore, MySQLVectorStore, create_legal_document_metadata
-from scrapers.firecrawl_scraper import FirecrawlScraper
 from utils.document_processor import DocumentProcessor
 from utils.config import load_config, get_mysql_config
+from scrapers.firecrawl_scraper import FirecrawlScraper
 
 app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="src/web/templates")
@@ -44,7 +44,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 user_store = MySQLVectorStore(get_mysql_config())
 doc_processor = DocumentProcessor()
 vector_store = VectorStore()
-scraper = FirecrawlScraper()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -496,9 +495,10 @@ class DALIApp:
     """Main DALI Legal AI Application with ChatGPT-like interface"""
     
     def __init__(self):
-        self.config = load_config()
+        self.config = load_config("config/config.yaml")
+        print(f"Loaded config: {self.config}")  # DEBUG
+        print(f"Firecrawl API key from config: {self.config.get('firecrawl', {}).get('api_key')}")  # DEBUG
         self.initialize_components()
-        self.initialize_session_state()
     
     def initialize_components(self):
         """Initialize AI components"""
@@ -519,8 +519,9 @@ class DALIApp:
             )
             
             # Initialize Web Scraper
+            firecrawl_api_key = self.config.get('firecrawl', {}).get('api_key')
             self.scraper = FirecrawlScraper(
-                api_key=self.config.get('firecrawl', {}).get('api_key')
+                api_key=firecrawl_api_key
             )
             
             # Initialize Document Processor
@@ -532,33 +533,9 @@ class DALIApp:
             
         except Exception as e:
             logger.error(f"Error initializing components: {e}")
+            print(f"Error initializing components: {e}")  # DEBUG
             # st.session_state.components_initialized = False # Removed st.session_state
             # st.session_state.initialization_error = str(e) # Removed st.session_state
-    
-    def initialize_session_state(self):
-        """Initialize Streamlit session state"""
-        if 'conversation_history' not in st.session_state:
-            st.session_state.conversation_history = []
-        
-        if 'uploaded_documents' not in st.session_state:
-            st.session_state.uploaded_documents = []
-        
-        if 'search_history' not in st.session_state:
-            st.session_state.search_history = []
-        
-        # Ensure navigation has a default before any widget is created
-        if 'navigation' not in st.session_state:
-            st.session_state.navigation = "🏠 Dashboard"
-        
-        # ChatGPT-like state
-        if 'current_chat_id' not in st.session_state:
-            st.session_state.current_chat_id = None
-        
-        if 'chat_sessions' not in st.session_state:
-            st.session_state.chat_sessions = {}
-        
-        if 'current_messages' not in st.session_state:
-            st.session_state.current_messages = []
     
     def mysql_authenticate_user(self, username, password):
         """Authenticate user against MySQL users table"""
@@ -2028,20 +2005,35 @@ def knowledge_base_post(request: Request, user: dict = Depends(get_current_user)
         }
     )
 
+# Find the DALIApp instance or create one if not present
+if not hasattr(app, 'dali_app'):
+    from src.web.app import DALIApp
+    app.dali_app = DALIApp()
+
 @app.post("/web-research", response_class=HTMLResponse)
 def web_research_post(request: Request, user: dict = Depends(get_current_user), research_urls: str = Form(...), max_pages: int = Form(...), add_to_kb: str = Form(None)):
     stats = {"total_documents": 0, "conversations": 0}
     error = None
     all_results = []
+    debug_results = []
     try:
         urls = [url.strip() for url in research_urls.split('\n') if url.strip()]
         for url in urls:
-            result = scraper.scrape_url(url)
+            # Use the DALIApp's FirecrawlScraper instance
+            result = app.dali_app.scraper.scrape_url(url)
+            # Clean content for plain text (remove markdown/images/links)
+            content_plain = re.sub(r'!\[.*?\]\(.*?\)', '', result.content)  # Remove images
+            content_plain = re.sub(r'\[.*?\]\(.*?\)', '', content_plain)    # Remove links
+            content_plain = re.sub(r'<[^>]+>', '', content_plain)              # Remove HTML tags
+            content_plain = re.sub(r'[#*_>`\-]', '', content_plain)           # Remove markdown symbols
+            content_plain = re.sub(r'\s+', ' ', content_plain).strip()        # Collapse whitespace
+            # For debugging: show the raw content and metadata (no longer sent to template)
             if result.success:
                 all_results.append({
                     "title": result.title or f"Results from {url}",
                     "url": url,
-                    "content": result.content or "No content extracted."
+                    "content": result.content or "No content extracted.",
+                    "content_plain": content_plain or "No plain text extracted."
                 })
                 if add_to_kb:
                     metadata = create_legal_document_metadata(
@@ -2064,7 +2056,8 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
                 all_results.append({
                     "title": f"Failed to scrape {url}",
                     "url": url,
-                    "content": result.error or "Unknown error."
+                    "content": result.error or "Unknown error.",
+                    "content_plain": result.error or "Unknown error."
                 })
     except Exception as e:
         error = str(e)

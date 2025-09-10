@@ -39,10 +39,13 @@ class Config:
             else:
                 logger.info(f"Configuration file {config_path} not found, using defaults")
                 self.config_data = self.get_default_config()
-            
+            # DEBUG: Print config after file load
+            print("DEBUG: Loaded config from", self.config_file)
+            print("DEBUG: firecrawl section after file load:", self.config_data.get('firecrawl'))
             # Override with environment variables
             self._load_env_overrides()
-            
+            # DEBUG: Print config after env override
+            print("DEBUG: firecrawl section after env override:", self.config_data.get('firecrawl'))
         except Exception as e:
             logger.error(f"Error loading configuration: {e}")
             self.config_data = self.get_default_config()
