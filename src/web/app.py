@@ -7,7 +7,7 @@ import os
 import sys
 import logging
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import json
 import sqlite3
@@ -41,13 +41,49 @@ app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
 app.add_middleware(SessionMiddleware, secret_key="super-secret-key")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-user_store = MySQLVectorStore(get_mysql_config())
+try:
+    user_store = MySQLVectorStore(get_mysql_config())
+    MYSQL_AVAILABLE = True
+except Exception as e:
+    print(f"MySQL not available: {e}")
+    user_store = None
+    MYSQL_AVAILABLE = False
 doc_processor = DocumentProcessor()
 vector_store = VectorStore()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def safe_mysql_query(query, params=None, fetch_one=False, fetch_all=False):
+    """Safely execute MySQL queries with proper connection handling"""
+    if not MYSQL_AVAILABLE or not user_store:
+        return None if fetch_one or fetch_all else 0
+    
+    conn = None
+    cursor = None
+    try:
+        conn = user_store._get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, params)
+        
+        if fetch_one:
+            return cursor.fetchone()
+        elif fetch_all:
+            return cursor.fetchall()
+        else:
+            conn.commit()
+            return cursor.rowcount
+    except Exception as e:
+        print(f"MySQL query error: {e}")
+        if conn:
+            conn.rollback()
+        return None if fetch_one or fetch_all else 0
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 # Page configuration
 # st.set_page_config(
@@ -426,6 +462,418 @@ LANGUAGES = {
         'new_chat': 'New Chat',
         'search': 'Search',
         'cancel': 'Cancel',
+        'navigation': 'Navigation',
+        'dashboard': 'Dashboard',
+        'legal_research': 'Legal Research',
+        'document_analysis': 'Document Analysis',
+        'knowledge_base': 'Knowledge Base',
+        'web_research': 'Web Research',
+        'settings': 'Settings',
+        'welcome_title': '⚖️ Welcome to DALI Legal AI',
+        'welcome_subtitle': 'Your intelligent legal assistant is ready to help with:',
+        'welcome_bullet1': 'Legal research and analysis',
+        'welcome_bullet2': 'Document review and insights',
+        'welcome_bullet3': 'Contract analysis',
+        'welcome_bullet4': 'Compliance guidance',
+        'welcome_hint': 'Start by asking a question or uploading a document using the buttons below.',
+        'recent_activity': 'Recent Activity',
+        'no_recent_activity': 'No recent activity. Start by asking a legal question or uploading a document.',
+        'quick_actions': 'Quick Actions',
+        'start_legal_research': 'Start Legal Research',
+        'analyze_document': 'Analyze Document',
+        'web_research_action': 'Web Research',
+        'system_status': 'System Status',
+        'system_initialized': 'System Initialized',
+        'vector_store_ready': 'Vector Store Ready',
+        'web_scraper_ready': 'Web Scraper Ready',
+        'quick_stats': 'Quick Stats',
+        'documents': 'Documents',
+        'conversations': 'Conversations',
+        # Login/Signup translations
+        'login': 'Login',
+        'signup': 'Sign Up',
+        'create_account': 'Create Account',
+        'join_dali': 'Join DALI Legal AI to access advanced legal research tools.',
+        'username': 'Username',
+        'password': 'Password',
+        'email': 'Email',
+        'first_name': 'First Name',
+        'last_name': 'Last Name',
+        'company_name': 'Company Name',
+        'job_title': 'Job Title',
+        'employee_id': 'Employee ID',
+        'phone_number': 'Phone Number',
+        'department': 'Department',
+        'role': 'Role',
+        'user_role': 'User',
+        'admin_role': 'Admin',
+        'manager_role': 'Manager',
+        'lawyer_role': 'Lawyer',
+        'paralegal_role': 'Paralegal',
+        'dont_have_account': "Don't have an account?",
+        'already_have_account': 'Already have an account?',
+        'login_here': 'Login here',
+        'signup_here': 'Sign up here',
+        'hello': 'Hello',
+        # Modern Dashboard translations
+        'time_saved': 'Time Saved',
+        'accuracy': 'Accuracy',
+        'type': 'Type',
+        'description': 'Description',
+        'date': 'Date',
+        'status': 'Status',
+        'completed': 'Completed',
+        'quick_actions_subtitle': 'Common tasks and shortcuts',
+        'recent_activity_subtitle': 'Your latest legal research and document analysis',
+        'system_status_subtitle': 'Current system health and performance',
+        'performance': 'Performance',
+        'performance_subtitle': 'Response times and efficiency',
+        'response_time': 'Response Time',
+        'uptime': 'Uptime',
+        'tips': 'Tips & Help',
+        'tips_subtitle': 'Get the most out of DALI',
+        'tip_1_title': 'Pro Tip:',
+        'tip_1_content': 'Use specific legal terms for better search results',
+        'tip_2_title': 'New Feature:',
+        'tip_2_content': 'Try our enhanced document analysis for contracts',
+        'view_help': 'View Help Center',
+        # Admin Dashboard translations
+        'admin_dashboard': 'Admin Dashboard',
+        'admin_panel': 'Administration Panel',
+        'user_management': 'User Management',
+        'document_management': 'Document Management',
+        'analytics': 'Analytics',
+        'system_settings': 'System Settings',
+        'system_logs': 'System Logs',
+        'admin_dashboard_subtitle': 'System overview and management tools',
+        'refresh_data': 'Refresh Data',
+        'export_report': 'Export Report',
+        'total_users': 'Total Users',
+        'total_conversations': 'Total Conversations',
+        'system_uptime': 'System Uptime',
+        'user_activity': 'User Activity',
+        'user_activity_subtitle': 'Recent user actions and system usage',
+        'user': 'User',
+        'action': 'Action',
+        'timestamp': 'Timestamp',
+        'system_performance': 'System Performance',
+        'system_performance_subtitle': 'Real-time system metrics and performance',
+        'cpu_usage': 'CPU Usage',
+        'memory_usage': 'Memory Usage',
+        'disk_usage': 'Disk Usage',
+        'network_usage': 'Network Usage',
+        'system_status_subtitle': 'All system components status',
+        'web_server': 'Web Server',
+        'database': 'Database',
+        'vector_store': 'Vector Store',
+        'ai_engine': 'AI Engine',
+        'web_scraper': 'Web Scraper',
+        'file_storage': 'File Storage',
+        'quick_actions_subtitle': 'Common administrative tasks',
+        'manage_users': 'Manage Users',
+        'view_logs': 'View System Logs',
+        'backup_system': 'Backup System',
+        'alerts': 'Alerts & Notifications',
+        'alerts_subtitle': 'System alerts and important notifications',
+        'alert_1_title': 'Storage Warning:',
+        'alert_1_content': 'Disk usage approaching 80%',
+        'alert_2_title': 'Update Available:',
+        'alert_2_content': 'New system update ready for installation',
+        'alert_3_title': 'Backup Complete:',
+        'alert_3_content': 'Daily backup completed successfully',
+        # ChatGPT-style UI translations
+        'new_chat': 'New Chat',
+        'legal_tools': 'Legal Tools',
+        'account': 'Account',
+        'role_admin': 'Administrator',
+        'role_user': 'User',
+        'role_manager': 'Manager',
+        'role_lawyer': 'Lawyer',
+        'role_paralegal': 'Paralegal',
+        'welcome_title': 'Welcome to DALI Legal AI',
+        'welcome_description': 'Your intelligent legal assistant is ready to help with research, document analysis, and legal insights.',
+        'type_message': 'Type your legal question here...',
+        'overview': 'Overview',
+        'management': 'Management',
+        'system': 'System',
+        'system_overview': 'System Overview',
+        'system_overview_subtitle': 'Key metrics and system health',
+        'new_users_week': 'New Users This Week',
+        # Additional ChatGPT UI translations
+        'new_research': 'New Research',
+        'new_analysis': 'New Analysis',
+        'new_search': 'New Search',
+        'new_settings': 'New Settings',
+        'legal_research_subtitle': 'Ask questions about Saudi Arabian law and get intelligent answers',
+        'legal_research_description': 'Ask questions about Saudi Arabian law, regulations, and legal precedents. Get intelligent answers based on our comprehensive legal database.',
+        'business_law': 'Business Law',
+        'labor_law': 'Labor Law',
+        'tax_law': 'Tax Law',
+        'ip_law': 'Intellectual Property',
+        'ask_legal_question': 'Ask your legal question here...',
+        'document_analysis_subtitle': 'Upload and analyze legal documents with AI-powered insights',
+        'document_analysis_description': 'Upload legal documents, contracts, or agreements and get AI-powered analysis, summaries, and insights.',
+        'upload_document': 'Upload Document',
+        'analyze_contract': 'Analyze Contract',
+        'summarize_document': 'Summarize Document',
+        'extract_clauses': 'Extract Clauses',
+        'upload_subtitle': 'Select a legal document to analyze',
+        'select_file': 'Select File',
+        'analysis_type': 'Analysis Type',
+        'summary': 'Summary',
+        'contract_analysis': 'Contract Analysis',
+        'compliance_check': 'Compliance Check',
+        'document_title': 'Document Title',
+        'enter_title': 'Enter document title...',
+        'upload_and_analyze': 'Upload & Analyze',
+        'ask_about_document': 'Ask questions about your document...',
+        'knowledge_base_subtitle': 'Search and manage your legal documents and knowledge',
+        'knowledge_base_description': 'Search through your uploaded documents, legal precedents, and knowledge base. Find relevant information quickly and efficiently.',
+        'search_documents': 'Search Documents',
+        'view_all_documents': 'View All Documents',
+        'manage_categories': 'Manage Categories',
+        'search_knowledge_base': 'Search Knowledge Base',
+        'search_subtitle': 'Find relevant documents and information',
+        'search_query': 'Search Query',
+        'enter_search_terms': 'Enter search terms...',
+        'number_of_results': 'Number of Results',
+        'minimum_score': 'Minimum Score',
+        'search': 'Search',
+        'document_management': 'Document Management',
+        'manage_your_documents': 'Manage your uploaded documents',
+        'ask_about_knowledge': 'Ask questions about your knowledge base...',
+        'web_research_subtitle': 'Scrape and analyze web content for legal research',
+        'web_research_description': 'Scrape websites, extract legal information, and add content to your knowledge base for comprehensive legal research.',
+        'scrape_website': 'Scrape Website',
+        'research_legal_sites': 'Research Legal Sites',
+        'extract_content': 'Extract Content',
+        'add_to_knowledge_base': 'Add to Knowledge Base',
+        'enter_url_to_research': 'Enter a URL to research and scrape content',
+        'website_url': 'Website URL',
+        'research_type': 'Research Type',
+        'scrape_content': 'Scrape Content',
+        'analyze_content': 'Analyze Content',
+        'extract_key_points': 'Extract Key Points',
+        'summarize_content': 'Summarize Content',
+        'start_research': 'Start Research',
+        'ask_about_web_research': 'Ask questions about web research or enter URLs...',
+        'settings_subtitle': 'Manage your account preferences and system settings',
+        'user_profile': 'User Profile',
+        'manage_your_profile': 'Manage your personal information and preferences',
+        'edit_profile': 'Edit Profile',
+        'system_preferences': 'System Preferences',
+        'customize_your_experience': 'Customize your experience with DALI Legal AI',
+        'language_description': 'Choose your preferred language',
+        'theme': 'Theme',
+        'theme_description': 'Choose your preferred theme',
+        'notifications': 'Notifications',
+        'notifications_description': 'Manage notification preferences',
+        'enabled': 'Enabled',
+        'security_settings': 'Security Settings',
+        'manage_your_security': 'Manage your account security and privacy',
+        'change_password': 'Change Password',
+        'two_factor_auth': 'Two-Factor Authentication',
+        'session_management': 'Session Management',
+        'privacy_settings': 'Privacy Settings',
+        'data_management': 'Data Management',
+        'manage_your_data': 'Manage your documents and data',
+        'export_data': 'Export Data',
+        'delete_account': 'Delete Account',
+        'data_privacy': 'Data Privacy',
+        # Settings functionality translations
+        'system_configuration': 'System Configuration',
+        'configure_llm_settings': 'Configure LLM and system settings',
+        'model_provider': 'Model Provider',
+        'current_model': 'Current Model',
+        'response_temperature': 'Response Temperature',
+        'max_response_tokens': 'Max Response Tokens',
+        'update_llm_settings': 'Update LLM Settings',
+        'vector_store_settings': 'Vector Store Settings',
+        'configure_document_processing': 'Configure document processing settings',
+        'document_chunk_size': 'Document Chunk Size',
+        'chunk_overlap': 'Chunk Overlap',
+        'update_vector_store_settings': 'Update Vector Store Settings',
+        'clear_conversation_history': 'Clear Conversation History',
+        'reset_knowledge_base': 'Reset Knowledge Base',
+        'export_conversation_history': 'Export Conversation History',
+        # New settings tab translations
+        'manage_your_preferences': 'Manage your account preferences and system settings',
+        'llm_settings': 'LLM Settings',
+        'customize_your_experience': 'Customize your experience and interface preferences',
+        'toggle_theme': 'Toggle Theme',
+        'toggle_language': 'Toggle Language',
+        'notification_settings': 'Notification Settings',
+        # Login page translations
+        'welcome_back': 'Welcome Back',
+        'login_subtitle': 'Sign in to your DALI Legal AI account',
+        'language': 'Language',
+        'select_your_preferred_language': 'Select your preferred language',
+        'enter_your_credentials': 'Enter your username and password to access your account',
+        'enter_username': 'Enter your username',
+        'enter_password': 'Enter your password',
+        'new_user': 'New User?',
+        'create_account_subtitle': 'Create a new account to get started',
+        'what_you_get': 'What You Get',
+        'powerful_legal_ai_features': 'Access powerful legal AI features',
+        'research_description': 'AI-powered legal research and analysis',
+        'analysis_description': 'Upload and analyze legal documents',
+        'web_description': 'Scrape and analyze web content',
+        'kb_description': 'Build your personal legal knowledge base',
+        'please_fill_all_fields': 'Please fill in all fields',
+        'logging_in': 'Logging in...',
+        # Modern login page translations
+        'welcome_to_dali': 'Welcome to DALI Legal AI',
+        'legal_updates': 'Legal Updates',
+        'modification_date': 'Modification Date:',
+        'effective_in_18_days': 'Effective in 18 days: 21 hours: 03 minutes',
+        'amendment_link': 'Amendment Link:',
+        'royal_decree_m44': 'Royal Decree No. (M/44) for 1446',
+        'amendment_description': 'Adding two definitions to the article, with the following text: Assignment: a service providing a worker to work for a non-employer through a licensed establishment for this purpose.',
+        'copy_update': 'Copy Update',
+        'countdown_feature': 'Upcoming Updates Countdown Feature',
+        'countdown_description': 'You can see upcoming system updates before they take effect, with a countdown to the effective date, to be prepared in advance and stay informed.',
+        'view_all_updates': 'View All Updates',
+        'legal_ai': 'Legal AI',
+        'request_free_trial': 'Request Free Trial',
+        'enter_username': 'Enter your username',
+        'remember_me': 'Remember me',
+        'remember_description': 'When approved, enjoy longer and more comfortable login on the same browser.',
+        'forgot_password': 'Forgot password?',
+        'copied': 'Copied!',
+        # Knowledge Base Management translations
+        'knowledge_base_management': 'Knowledge Base Management',
+        'manage_your_documents': 'View and manage your uploaded documents',
+        'file_name': 'File Name',
+        'file_type': 'Type',
+        'upload_date': 'Upload Date',
+        'file_size': 'Size',
+        'refresh': 'Refresh',
+        'export_kb': 'Export Knowledge Base',
+        # Admin User Management translations
+        'user_management': 'User Management',
+        'manage_all_users': 'Manage all users, roles, and permissions',
+        'user_statistics': 'User Statistics',
+        'overview_of_user_data': 'Overview of user data and activity',
+        'total_users': 'Total Users',
+        'active_users': 'Active Users',
+        'admin_users': 'Admin Users',
+        'all_users': 'All Users',
+        'manage_user_accounts': 'Manage user accounts, roles, and permissions',
+        'export_users': 'Export Users',
+        'bulk_actions': 'Bulk Actions',
+        'username': 'Username',
+        'email': 'Email',
+        'role': 'Role',
+        'status': 'Status',
+        'last_active': 'Last Active',
+        'created_at': 'Created',
+        # Profile Management translations
+        'manage_your_profile': 'Manage your personal information and preferences',
+        'username_cannot_change': 'Username cannot be changed',
+        'email_cannot_change': 'Email cannot be changed',
+        'save_changes': 'Save Changes',
+        'reset': 'Reset',
+        'saving': 'Saving...',
+        'profile_updated_successfully': 'Profile updated successfully!',
+        'error_updating_profile': 'Error updating profile',
+        'confirm_reset_profile': 'Are you sure you want to reset all changes?',
+        # Password Change translations
+        'current_password': 'Current Password',
+        'new_password': 'New Password',
+        'confirm_password': 'Confirm New Password',
+        'password_min_length': 'Password must be at least 6 characters long',
+        'cancel': 'Cancel',
+        'passwords_do_not_match': 'New passwords do not match',
+        'password_too_short': 'Password must be at least 6 characters long',
+        'changing_password': 'Changing Password...',
+        'password_changed_successfully': 'Password changed successfully!',
+        'error_changing_password': 'Error changing password',
+        # Document Analysis translations
+        'download_pdf': 'Download PDF',
+        'share_analysis': 'Share Analysis',
+        'add_to_kb': 'Add to Knowledge Base',
+        'no_analysis_to_download': 'No analysis available to download',
+        'enter_username_to_share': 'Enter username to share analysis with:',
+        'no_analysis_to_share': 'No analysis available to share',
+        'analysis_shared_successfully': 'Analysis shared successfully!',
+        'error_sharing_analysis': 'Error sharing analysis',
+        'no_analysis_to_add': 'No analysis available to add to knowledge base',
+        'analysis_added_to_kb': 'Analysis added to knowledge base successfully!',
+        'error_adding_to_kb': 'Error adding to knowledge base',
+        # Voice-to-Text translations
+        'voice_input': 'Voice Input',
+        'listening': 'Listening...',
+        'voice_recognition_error': 'Voice recognition error. Please try again.',
+        'voice_not_supported': 'Voice recognition is not supported in this browser.',
+        'error_starting_voice': 'Error starting voice recognition. Please try again.',
+        # Document sharing translations
+        'share_document': 'Share Document',
+        'select_user': 'Select User to Share With',
+        'loading_users': 'Loading users...',
+        'error_loading_users': 'Error loading users',
+        'please_select_user': 'Please select a user to share with',
+        'no_document_selected': 'No document selected',
+        'document_shared_successfully': 'Document shared successfully!',
+        'error_sharing_document': 'Error sharing document',
+        'share': 'Share',
+        # Document view translations
+        'document_viewer': 'Document Viewer',
+        'document_type': 'Type',
+        'source': 'Source',
+        'created': 'Created',
+        'download': 'Download',
+        'edit': 'Edit',
+        'edit_functionality_coming_soon': 'Edit functionality coming soon!',
+        # AI Analysis translations
+        'ai_analysis': 'AI Analysis',
+        'analysis_for_query': 'Analysis for',
+        # Dashboard translations
+        'what_to_search_today': 'What do you want to search for today?',
+        'all_results': 'All Results',
+        'search_here': 'Search here...',
+        'systems_regulations': 'Systems / Regulations',
+        'judicial_precedents': 'Judicial Precedents',
+        'orders_directives': 'Orders / Directives',
+        'books_sources': 'Books / Sources',
+        'supporting_forms': 'Supporting Forms',
+        'saudi_law_updates': 'Saudi Law Updates',
+        'show_more': 'Show More',
+        'update_1': 'Latest Legal Update',
+        'update_2': 'Regulation Changes',
+        'update_3': 'Court Decisions',
+        'search_legal_documents': 'Search legal documents and precedents',
+        'analyze_contracts_documents': 'Analyze contracts and documents',
+        'manage_your_documents': 'Manage your documents',
+        'scrape_legal_websites': 'Scrape legal websites',
+        # Navigation translations
+        'back': 'Back',
+        # Signup page translations
+        'join_dali_family': 'Join the DALI Family',
+        'legal_research_description': 'Access AI-powered legal research tools with comprehensive database of Saudi legal documents, regulations, and case law.',
+        'document_analysis_description': 'Upload and analyze legal documents with AI-powered insights, contract review, and compliance checking.',
+        'why_choose_dali': 'Why Choose DALI?',
+        'why_choose_description': 'DALI Legal AI provides comprehensive legal research tools specifically designed for Saudi Arabian law, helping legal professionals work more efficiently and accurately.',
+        'learn_more': 'Learn More',
+        'already_have_account': 'Already have account?',
+        'enter_first_name': 'Enter your first name',
+        'enter_last_name': 'Enter your last name',
+        'enter_company_name': 'Enter your company name',
+        'enter_job_title': 'Enter your job title',
+        'enter_employee_id': 'Enter employee ID (optional)',
+        'enter_phone': 'Enter phone number (optional)',
+        'enter_department': 'Enter your department (optional)',
+        'user': 'User',
+        'admin': 'Admin',
+        'login_here': 'Login here',
+        'please_fill_required_fields': 'Please fill in all required fields',
+        'creating_account': 'Creating account...',
+        'research_result': 'Research Result',
+        'query': 'Query',
+        'recent_research': 'Recent Research',
+        'new_research': 'New Research',
+        'analysis_result': 'Analysis Result',
+        'document': 'Document',
+        'search_results': 'Search Results'
     },
     'ar': {
         'attach': 'إرفاق',
@@ -475,17 +923,346 @@ LANGUAGES = {
         'new_chat': 'محادثة جديدة',
         'search': 'بحث',
         'cancel': 'إلغاء',
+        'navigation': 'التنقل',
+        'dashboard': 'لوحة التحكم',
+        'legal_research': 'البحث القانوني',
+        'document_analysis': 'تحليل المستندات',
+        'knowledge_base': 'قاعدة المعرفة',
+        'web_research': 'البحث على الويب',
+        'settings': 'الإعدادات',
+        'welcome_title': '⚖️ مرحبًا بك في دالي للذكاء الاصطناعي القانوني',
+        'welcome_subtitle': 'مساعدك القانوني الذكي جاهز لمساعدتك في:',
+        'welcome_bullet1': 'البحث والتحليل القانوني',
+        'welcome_bullet2': 'مراجعة المستندات وتقديم الرؤى',
+        'welcome_bullet3': 'تحليل العقود',
+        'welcome_bullet4': 'إرشادات الامتثال',
+        'welcome_hint': 'ابدأ بطرح سؤال أو تحميل مستند باستخدام الأزرار أدناه.',
+        'recent_activity': 'النشاط الأخير',
+        'no_recent_activity': 'لا يوجد نشاط حديث. ابدأ بطرح سؤال قانوني أو تحميل مستند.',
+        'quick_actions': 'الإجراءات السريعة',
+        'start_legal_research': 'بدء البحث القانوني',
+        'analyze_document': 'تحليل المستند',
+        'web_research_action': 'البحث على الويب',
+        'system_status': 'حالة النظام',
+        'system_initialized': 'تم تهيئة النظام',
+        'vector_store_ready': 'قاعدة البيانات المتجهة جاهزة',
+        'web_scraper_ready': 'أداة استخراج الويب جاهزة',
+        'quick_stats': 'الإحصائيات السريعة',
+        'documents': 'المستندات',
+        'conversations': 'المحادثات',
+        # Login/Signup translations
+        'login': 'تسجيل الدخول',
+        'signup': 'إنشاء حساب',
+        'create_account': 'إنشاء حساب',
+        'join_dali': 'انضم إلى DALI Legal AI للوصول إلى أدوات البحث القانوني المتقدمة.',
+        'username': 'اسم المستخدم',
+        'password': 'كلمة المرور',
+        'email': 'البريد الإلكتروني',
+        'first_name': 'الاسم الأول',
+        'last_name': 'اسم العائلة',
+        'company_name': 'اسم الشركة',
+        'job_title': 'المسمى الوظيفي',
+        'employee_id': 'رقم الموظف',
+        'phone_number': 'رقم الهاتف',
+        'department': 'القسم',
+        'role': 'الدور',
+        'user_role': 'مستخدم',
+        'admin_role': 'مدير',
+        'manager_role': 'مدير',
+        'lawyer_role': 'محامي',
+        'paralegal_role': 'مساعد قانوني',
+        'dont_have_account': 'ليس لديك حساب؟',
+        'already_have_account': 'لديك حساب بالفعل؟',
+        'login_here': 'سجل الدخول هنا',
+        'signup_here': 'أنشئ حساب هنا',
+        'hello': 'مرحباً',
+        # Modern Dashboard translations
+        'time_saved': 'الوقت المحفوظ',
+        'accuracy': 'الدقة',
+        'type': 'النوع',
+        'description': 'الوصف',
+        'date': 'التاريخ',
+        'status': 'الحالة',
+        'completed': 'مكتمل',
+        'quick_actions_subtitle': 'المهام الشائعة والاختصارات',
+        'recent_activity_subtitle': 'أحدث أبحاثك القانونية وتحليل المستندات',
+        'system_status_subtitle': 'صحة النظام والأداء الحالي',
+        'performance': 'الأداء',
+        'performance_subtitle': 'أوقات الاستجابة والكفاءة',
+        'response_time': 'وقت الاستجابة',
+        'uptime': 'وقت التشغيل',
+        'tips': 'النصائح والمساعدة',
+        'tips_subtitle': 'احصل على أقصى استفادة من DALI',
+        'tip_1_title': 'نصيحة احترافية:',
+        'tip_1_content': 'استخدم المصطلحات القانونية المحددة للحصول على نتائج بحث أفضل',
+        'tip_2_title': 'ميزة جديدة:',
+        'tip_2_content': 'جرب تحليل المستندات المحسن للعقود',
+        'view_help': 'عرض مركز المساعدة',
+        # Admin Dashboard translations
+        'admin_dashboard': 'لوحة تحكم المدير',
+        'admin_panel': 'لوحة الإدارة',
+        'user_management': 'إدارة المستخدمين',
+        'document_management': 'إدارة المستندات',
+        'analytics': 'التحليلات',
+        'system_settings': 'إعدادات النظام',
+        'system_logs': 'سجلات النظام',
+        'admin_dashboard_subtitle': 'نظرة عامة على النظام وأدوات الإدارة',
+        'refresh_data': 'تحديث البيانات',
+        'export_report': 'تصدير التقرير',
+        'total_users': 'إجمالي المستخدمين',
+        'total_conversations': 'إجمالي المحادثات',
+        'system_uptime': 'وقت تشغيل النظام',
+        'user_activity': 'نشاط المستخدمين',
+        'user_activity_subtitle': 'أحدث إجراءات المستخدمين واستخدام النظام',
+        'user': 'المستخدم',
+        'action': 'الإجراء',
+        'timestamp': 'الطابع الزمني',
+        'system_performance': 'أداء النظام',
+        'system_performance_subtitle': 'مقاييس النظام في الوقت الفعلي والأداء',
+        'cpu_usage': 'استخدام المعالج',
+        'memory_usage': 'استخدام الذاكرة',
+        'disk_usage': 'استخدام القرص',
+        'network_usage': 'استخدام الشبكة',
+        'system_status_subtitle': 'حالة جميع مكونات النظام',
+        'web_server': 'خادم الويب',
+        'database': 'قاعدة البيانات',
+        'vector_store': 'مخزن المتجهات',
+        'ai_engine': 'محرك الذكاء الاصطناعي',
+        'web_scraper': 'أداة استخراج الويب',
+        'file_storage': 'تخزين الملفات',
+        'quick_actions_subtitle': 'المهام الإدارية الشائعة',
+        'manage_users': 'إدارة المستخدمين',
+        'view_logs': 'عرض سجلات النظام',
+        'backup_system': 'نسخ احتياطي للنظام',
+        'alerts': 'التنبيهات والإشعارات',
+        'alerts_subtitle': 'تنبيهات النظام والإشعارات المهمة',
+        'alert_1_title': 'تحذير التخزين:',
+        'alert_1_content': 'استخدام القرص يقترب من 80%',
+        'alert_2_title': 'تحديث متاح:',
+        'alert_2_content': 'تحديث نظام جديد جاهز للتثبيت',
+        'alert_3_title': 'اكتمل النسخ الاحتياطي:',
+        'alert_3_content': 'اكتمل النسخ الاحتياطي اليومي بنجاح',
+        # ChatGPT-style UI translations
+        'new_chat': 'محادثة جديدة',
+        'legal_tools': 'الأدوات القانونية',
+        'account': 'الحساب',
+        'role_admin': 'مدير',
+        'role_user': 'مستخدم',
+        'role_manager': 'مدير',
+        'role_lawyer': 'محامي',
+        'role_paralegal': 'مساعد قانوني',
+        'welcome_title': 'مرحباً بك في DALI Legal AI',
+        'welcome_description': 'مساعدك القانوني الذكي جاهز لمساعدتك في البحث وتحليل المستندات والرؤى القانونية.',
+        'type_message': 'اكتب سؤالك القانوني هنا...',
+        'overview': 'نظرة عامة',
+        'management': 'الإدارة',
+        'system': 'النظام',
+        'system_overview': 'نظرة عامة على النظام',
+        'system_overview_subtitle': 'المقاييس الرئيسية وصحة النظام',
+        'new_users_week': 'مستخدمين جدد هذا الأسبوع',
+        # Settings functionality translations
+        'system_configuration': 'إعدادات النظام',
+        'configure_llm_settings': 'تكوين إعدادات LLM والنظام',
+        'model_provider': 'مزود النموذج',
+        'current_model': 'النموذج الحالي',
+        'response_temperature': 'درجة حرارة الاستجابة',
+        'max_response_tokens': 'الحد الأقصى لرموز الاستجابة',
+        'update_llm_settings': 'تحديث إعدادات LLM',
+        'vector_store_settings': 'إعدادات مخزن المتجهات',
+        'configure_document_processing': 'تكوين إعدادات معالجة المستندات',
+        'document_chunk_size': 'حجم قطع المستندات',
+        'chunk_overlap': 'تداخل القطع',
+        'update_vector_store_settings': 'تحديث إعدادات مخزن المتجهات',
+        'clear_conversation_history': 'مسح تاريخ المحادثات',
+        'reset_knowledge_base': 'إعادة تعيين قاعدة المعرفة',
+        'export_conversation_history': 'تصدير تاريخ المحادثات',
+        # New settings tab translations
+        'manage_your_preferences': 'إدارة تفضيلات حسابك وإعدادات النظام',
+        'llm_settings': 'إعدادات LLM',
+        'customize_your_experience': 'تخصيص تجربتك وتفضيلات الواجهة',
+        'toggle_theme': 'تبديل المظهر',
+        'toggle_language': 'تبديل اللغة',
+        'notification_settings': 'إعدادات الإشعارات',
+        # Login page translations
+        'welcome_back': 'مرحباً بعودتك',
+        'login_subtitle': 'سجل الدخول إلى حسابك في دالي للذكاء الاصطناعي القانوني',
+        'language': 'اللغة',
+        'select_your_preferred_language': 'اختر لغتك المفضلة',
+        'enter_your_credentials': 'أدخل اسم المستخدم وكلمة المرور للوصول إلى حسابك',
+        'enter_username': 'أدخل اسم المستخدم',
+        'enter_password': 'أدخل كلمة المرور',
+        'new_user': 'مستخدم جديد؟',
+        'create_account_subtitle': 'أنشئ حساباً جديداً للبدء',
+        'what_you_get': 'ما ستحصل عليه',
+        'powerful_legal_ai_features': 'الوصول إلى ميزات الذكاء الاصطناعي القانوني القوية',
+        'research_description': 'البحث والتحليل القانوني بالذكاء الاصطناعي',
+        'analysis_description': 'رفع وتحليل المستندات القانونية',
+        'web_description': 'استخراج وتحليل محتوى الويب',
+        'kb_description': 'بناء قاعدة المعرفة القانونية الشخصية',
+        'please_fill_all_fields': 'يرجى ملء جميع الحقول',
+        'logging_in': 'جاري تسجيل الدخول...',
+        # Modern login page translations
+        'welcome_to_dali': 'مرحباً بك في دالي للذكاء الاصطناعي القانوني',
+        'legal_updates': 'التحديثات القانونية',
+        'modification_date': 'تاريخ التعديل:',
+        'effective_in_18_days': 'يسري التعديل بعد 18 يوم: 21 ساعة: 03 دقائق',
+        'amendment_link': 'رابط التعديل:',
+        'royal_decree_m44': 'المرسوم الملكي رقم (م/44) لعام 1446',
+        'amendment_description': 'إضافة تعريفين للمادة، بالنص التالي: الإسناد: خدمة توفير عامل للعمل لدى غير صاحب العمل وذلك من خلال منشأة مرخص لها لهذا الغرض.',
+        'copy_update': 'نسخ التحديث',
+        'countdown_feature': 'ميزة العد التنازلي للتحديثات القادمة',
+        'countdown_description': 'يمكنك رؤية التحديثات القادمة للنظام قبل سريانها، مع وجود عداد تنازلي لموعد السريان، لتكون على استعداد مسبق، واطلاع دائم',
+        'view_all_updates': 'عرض كل التحديثات',
+        'legal_ai': 'الذكاء الاصطناعي القانوني',
+        'request_free_trial': 'طلب تجربة المنصة مجاناً',
+        'enter_username': 'أدخل اسم المستخدم',
+        'remember_me': 'تذكرني',
+        'remember_description': 'عند الموافقة استمتع بتسجيل دخول أطول وأكثر راحة على نفس المتصفح.',
+        'forgot_password': 'هل نسيت كلمة المرور؟',
+        'copied': 'تم النسخ!',
+        # Knowledge Base Management translations
+        'knowledge_base_management': 'إدارة قاعدة المعرفة',
+        'manage_your_documents': 'عرض وإدارة المستندات المرفوعة',
+        'file_name': 'اسم الملف',
+        'file_type': 'النوع',
+        'upload_date': 'تاريخ الرفع',
+        'file_size': 'الحجم',
+        'refresh': 'تحديث',
+        'export_kb': 'تصدير قاعدة المعرفة',
+        # Admin User Management translations
+        'user_management': 'إدارة المستخدمين',
+        'manage_all_users': 'إدارة جميع المستخدمين والأدوار والصلاحيات',
+        'user_statistics': 'إحصائيات المستخدمين',
+        'overview_of_user_data': 'نظرة عامة على بيانات المستخدمين والنشاط',
+        'total_users': 'إجمالي المستخدمين',
+        'active_users': 'المستخدمون النشطون',
+        'admin_users': 'مستخدمو الإدارة',
+        'all_users': 'جميع المستخدمين',
+        'manage_user_accounts': 'إدارة حسابات المستخدمين والأدوار والصلاحيات',
+        'export_users': 'تصدير المستخدمين',
+        'bulk_actions': 'إجراءات مجمعة',
+        'username': 'اسم المستخدم',
+        'email': 'البريد الإلكتروني',
+        'role': 'الدور',
+        'status': 'الحالة',
+        'last_active': 'آخر نشاط',
+        'created_at': 'تاريخ الإنشاء',
+        # Profile Management translations
+        'manage_your_profile': 'إدارة معلوماتك الشخصية والتفضيلات',
+        'username_cannot_change': 'لا يمكن تغيير اسم المستخدم',
+        'email_cannot_change': 'لا يمكن تغيير البريد الإلكتروني',
+        'save_changes': 'حفظ التغييرات',
+        'reset': 'إعادة تعيين',
+        'saving': 'جاري الحفظ...',
+        'profile_updated_successfully': 'تم تحديث الملف الشخصي بنجاح!',
+        'error_updating_profile': 'خطأ في تحديث الملف الشخصي',
+        'confirm_reset_profile': 'هل أنت متأكد من أنك تريد إعادة تعيين جميع التغييرات؟',
+        # Password Change translations
+        'current_password': 'كلمة المرور الحالية',
+        'new_password': 'كلمة المرور الجديدة',
+        'confirm_password': 'تأكيد كلمة المرور الجديدة',
+        'password_min_length': 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+        'cancel': 'إلغاء',
+        'passwords_do_not_match': 'كلمات المرور الجديدة غير متطابقة',
+        'password_too_short': 'يجب أن تكون كلمة المرور 6 أحرف على الأقل',
+        'changing_password': 'جاري تغيير كلمة المرور...',
+        'password_changed_successfully': 'تم تغيير كلمة المرور بنجاح!',
+        'error_changing_password': 'خطأ في تغيير كلمة المرور',
+        # Document Analysis translations
+        'download_pdf': 'تحميل PDF',
+        'share_analysis': 'مشاركة التحليل',
+        'add_to_kb': 'إضافة إلى قاعدة المعرفة',
+        'no_analysis_to_download': 'لا يوجد تحليل متاح للتحميل',
+        'enter_username_to_share': 'أدخل اسم المستخدم لمشاركة التحليل معه:',
+        'no_analysis_to_share': 'لا يوجد تحليل متاح للمشاركة',
+        'analysis_shared_successfully': 'تم مشاركة التحليل بنجاح!',
+        'error_sharing_analysis': 'خطأ في مشاركة التحليل',
+        'no_analysis_to_add': 'لا يوجد تحليل متاح لإضافته إلى قاعدة المعرفة',
+        'analysis_added_to_kb': 'تم إضافة التحليل إلى قاعدة المعرفة بنجاح!',
+        'error_adding_to_kb': 'خطأ في إضافة إلى قاعدة المعرفة',
+        # Voice-to-Text translations
+        'voice_input': 'إدخال صوتي',
+        'listening': 'جاري الاستماع...',
+        'voice_recognition_error': 'خطأ في التعرف على الصوت. يرجى المحاولة مرة أخرى.',
+        'voice_not_supported': 'التعرف على الصوت غير مدعوم في هذا المتصفح.',
+        'error_starting_voice': 'خطأ في بدء التعرف على الصوت. يرجى المحاولة مرة أخرى.',
+        # Document sharing translations
+        'share_document': 'مشاركة المستند',
+        'select_user': 'اختر المستخدم للمشاركة معه',
+        'loading_users': 'جاري تحميل المستخدمين...',
+        'error_loading_users': 'خطأ في تحميل المستخدمين',
+        'please_select_user': 'يرجى اختيار مستخدم للمشاركة معه',
+        'no_document_selected': 'لم يتم اختيار مستند',
+        'document_shared_successfully': 'تم مشاركة المستند بنجاح!',
+        'error_sharing_document': 'خطأ في مشاركة المستند',
+        'share': 'مشاركة',
+        # Document view translations
+        'document_viewer': 'عارض المستندات',
+        'document_type': 'النوع',
+        'source': 'المصدر',
+        'created': 'تاريخ الإنشاء',
+        'download': 'تحميل',
+        'edit': 'تعديل',
+        'edit_functionality_coming_soon': 'وظيفة التعديل قريباً!',
+        # AI Analysis translations
+        'ai_analysis': 'التحليل بالذكاء الاصطناعي',
+        'analysis_for_query': 'التحليل لـ',
+        # Dashboard translations
+        'what_to_search_today': 'ما الذي تود البحث عنه اليوم؟',
+        'all_results': 'جميع النتائج',
+        'search_here': 'ابحث هنا...',
+        'systems_regulations': 'أنظمة / لوائح',
+        'judicial_precedents': 'سوابق قضائية',
+        'orders_directives': 'أوامر / تعاميم',
+        'books_sources': 'كتب / مصادر ثانوية',
+        'supporting_forms': 'نماذج مساندة',
+        'saudi_law_updates': 'تحديثات القانون السعودي',
+        'show_more': 'عرض المزيد',
+        'update_1': 'أحدث التحديثات القانونية',
+        'update_2': 'تغييرات اللوائح',
+        'update_3': 'قرارات المحاكم',
+        'search_legal_documents': 'البحث في المستندات القانونية والسوابق',
+        'analyze_contracts_documents': 'تحليل العقود والمستندات',
+        'manage_your_documents': 'إدارة مستنداتك',
+        'scrape_legal_websites': 'استخراج البيانات من المواقع القانونية',
+        # Navigation translations
+        'back': 'رجوع',
+        # Signup page translations
+        'join_dali_family': 'انضم إلى عائلة دالي',
+        'legal_research_description': 'الوصول إلى أدوات البحث القانوني بالذكاء الاصطناعي مع قاعدة بيانات شاملة للمستندات القانونية السعودية واللوائح والسوابق القضائية.',
+        'document_analysis_description': 'رفع وتحليل المستندات القانونية مع رؤى مدعومة بالذكاء الاصطناعي ومراجعة العقود والتحقق من الامتثال.',
+        'why_choose_dali': 'لماذا تختار دالي؟',
+        'why_choose_description': 'دالي للذكاء الاصطناعي القانوني يوفر أدوات بحث قانوني شاملة مصممة خصيصاً للقانون السعودي، مما يساعد المهنيين القانونيين على العمل بكفاءة ودقة أكبر.',
+        'learn_more': 'اعرف المزيد',
+        'already_have_account': 'لديك حساب بالفعل؟',
+        'enter_first_name': 'أدخل اسمك الأول',
+        'enter_last_name': 'أدخل اسمك الأخير',
+        'enter_company_name': 'أدخل اسم الشركة',
+        'enter_job_title': 'أدخل المسمى الوظيفي',
+        'enter_employee_id': 'أدخل رقم الموظف (اختياري)',
+        'enter_phone': 'أدخل رقم الهاتف (اختياري)',
+        'enter_department': 'أدخل القسم (اختياري)',
+        'user': 'مستخدم',
+        'admin': 'مدير',
+        'login_here': 'سجل الدخول هنا',
+        'please_fill_required_fields': 'يرجى ملء جميع الحقول المطلوبة',
+        'creating_account': 'جاري إنشاء الحساب...',
+        'research_result': 'نتيجة البحث',
+        'query': 'الاستعلام',
+        'recent_research': 'البحث الأخير',
+        'new_research': 'بحث جديد',
+        'analysis_result': 'نتيجة التحليل',
+        'document': 'المستند',
+        'search_results': 'نتائج البحث'
     }
 }
-def t(key):
-    lang = "en" # Default to English
+def t(key, request=None):
+    """Translation function that uses session language"""
+    if request and hasattr(request, 'session'):
+        lang = request.session.get("language", "en")
+    else:
+        lang = "en"  # Default to English
     return LANGUAGES[lang].get(key, key)
-# Language toggle button at the top right
-lang = "en" # Default to English
-lang_toggle_label = 'العربية' if lang == 'en' else 'English'
-# if st.button(lang_toggle_label, key='lang_toggle', help='Switch language', use_container_width=False):
-#     st.session_state.language = 'ar' if lang == 'en' else 'en'
-#     st.rerun()
 
 
 # Remove the entire UserDatabase class and all references to it, including instantiation and method calls.
@@ -1795,91 +2572,229 @@ def root(request: Request):
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     stats = {"total_documents": 0, "conversations": 0}
-    return templates.TemplateResponse("login.html", {"request": request, "stats": stats, "active_page": None})
+    return templates.TemplateResponse("login.html", {"request": request, "stats": stats, "active_page": None, "t": lambda key: t(key, request)})
 
 @app.get("/signup", response_class=HTMLResponse)
 def signup_page(request: Request):
     stats = {"total_documents": 0, "conversations": 0}
-    return templates.TemplateResponse("signup.html", {"request": request, "stats": stats, "active_page": None})
+    return templates.TemplateResponse("signup.html", {"request": request, "stats": stats, "active_page": None, "t": lambda key: t(key, request)})
 
 def get_current_user(request: Request):
     user = request.session.get("user")
     if not user:
         raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+    
+    # Ensure user has greeting_name for personalized greeting
+    if "greeting_name" not in user:
+        cursor = user_store.conn.cursor(dictionary=True)
+        cursor.execute("SELECT first_name, last_name FROM users WHERE id = %s", (user["id"],))
+        user_details = cursor.fetchone()
+        cursor.close()
+        
+        # Create personalized greeting
+        first_name = user_details.get('first_name', '') if user_details else ''
+        last_name = user_details.get('last_name', '') if user_details else ''
+        
+        if first_name and last_name:
+            greeting_name = f"{first_name} {last_name[0].upper()}."
+        elif first_name:
+            greeting_name = first_name
+        else:
+            greeting_name = user["username"]
+        
+        # Update session with greeting name
+        user["greeting_name"] = greeting_name
+        request.session["user"] = user
+    
     return user
 
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, user: dict = Depends(get_current_user)):
-    recent_conversations = []  # Replace with real data if available
-    stats = {"total_documents": 0, "conversations": 0}
+    # Calculate actual stats for the current user
+    user_id = user["id"]
+    result = safe_mysql_query(
+        "SELECT COUNT(*) as total_documents FROM documents WHERE user_id = %s", 
+        (user_id,), 
+        fetch_one=True
+    )
+    total_documents = result['total_documents'] if result else 0
+    
+    stats = {"total_documents": total_documents, "conversations": 0}
     return templates.TemplateResponse(
-        "dashboard.html",
-        {"request": request, "user": user, "recent_conversations": recent_conversations, "stats": stats, "active_page": "dashboard"}
+        "chatgpt_dashboard.html",
+        {"request": request, "user": user, "stats": stats, "active_page": "dashboard", "t": lambda key: t(key, request)}
+    )
+
+@app.get("/admin/dashboard", response_class=HTMLResponse)
+def admin_dashboard(request: Request, user: dict = Depends(get_current_user)):
+    # Check if user is admin
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied. Admin role required.")
+    
+    # Calculate admin stats
+    cursor = user_store.conn.cursor(dictionary=True)
+    
+    # Total users
+    cursor.execute("SELECT COUNT(*) as total FROM users")
+    total_users = cursor.fetchone()["total"]
+    
+    # New users this week
+    cursor.execute("SELECT COUNT(*) as total FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)")
+    new_users_week = cursor.fetchone()["total"]
+    
+    # Total documents
+    cursor.execute("SELECT COUNT(*) as total FROM documents")
+    total_documents = cursor.fetchone()["total"]
+    
+    # Recent activities (placeholder)
+    recent_activities = [
+        {"user_name": "John S.", "action": "Document Upload", "timestamp": "2 minutes ago"},
+        {"user_name": "Sarah M.", "action": "Legal Research", "timestamp": "5 minutes ago"},
+        {"user_name": "Ahmed A.", "action": "Web Research", "timestamp": "10 minutes ago"},
+        {"user_name": "Lisa K.", "action": "Document Analysis", "timestamp": "15 minutes ago"},
+    ]
+    
+    cursor.close()
+    
+    admin_stats = {
+        "total_users": total_users,
+        "new_users_week": new_users_week,
+        "total_documents": total_documents,
+        "system_uptime": "99.9%",
+        "recent_activities": recent_activities
+    }
+    
+    return templates.TemplateResponse(
+        "chatgpt_admin_dashboard.html",
+        {"request": request, "user": user, "admin_stats": admin_stats, "active_page": "admin-dashboard", "t": lambda key: t(key, request)}
+    )
+
+@app.get("/admin/users", response_class=HTMLResponse)
+def admin_users(request: Request, user: dict = Depends(get_current_user)):
+    """Admin user management page"""
+    # Check if user is admin
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied. Admin role required.")
+    
+    return templates.TemplateResponse(
+        "chatgpt_admin_users.html",
+        {"request": request, "user": user, "active_page": "admin-users", "t": lambda key: t(key, request)}
     )
 
 @app.get("/legal-research", response_class=HTMLResponse)
 def legal_research(request: Request, user: dict = Depends(get_current_user)):
-    stats = {"total_documents": 0, "conversations": 0}
-    return templates.TemplateResponse("legal_research.html", {"request": request, "user": user, "stats": stats, "active_page": "legal-research"})
+    return templates.TemplateResponse(
+        "chatgpt_legal_research.html",
+        {"request": request, "user": user, "active_page": "legal-research", "t": lambda key: t(key, request)}
+    )
 
 @app.get("/document-analysis", response_class=HTMLResponse)
 def document_analysis(request: Request, user: dict = Depends(get_current_user)):
-    stats = {"total_documents": 0, "conversations": 0}
-    return templates.TemplateResponse("document_analysis.html", {"request": request, "user": user, "stats": stats, "active_page": "document-analysis"})
+    return templates.TemplateResponse(
+        "chatgpt_document_analysis.html",
+        {"request": request, "user": user, "active_page": "document-analysis", "t": lambda key: t(key, request)}
+    )
 
 @app.get("/knowledge-base", response_class=HTMLResponse)
 def knowledge_base(request: Request, user: dict = Depends(get_current_user)):
-    # Calculate stats for the current user
-    user_id = user["id"]
-    cursor = user_store.conn.cursor(dictionary=True)
-    cursor.execute("SELECT COUNT(*) as total FROM documents WHERE user_id = %s", (user_id,))
-    total_documents = cursor.fetchone()["total"]
-    cursor.execute("SELECT DISTINCT document_type FROM documents WHERE user_id = %s", (user_id,))
-    document_types = [row["document_type"] for row in cursor.fetchall()]
-    cursor.execute("SELECT DISTINCT source FROM documents WHERE user_id = %s", (user_id,))
-    sources = [row["source"] for row in cursor.fetchall()]
-    cursor.execute("SELECT id, title, document_type, source, created_at FROM documents WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
-    documents = cursor.fetchall()
-    cursor.close()
-    stats = {
-        "total_documents": total_documents,
-        "document_types": document_types,
-        "sources": sources,
-        "conversations": 0  # Placeholder, update if you track conversations
-    }
-    return templates.TemplateResponse("knowledge_base.html", {"request": request, "user": user, "stats": stats, "active_page": "knowledge-base", "documents": documents})
+    return templates.TemplateResponse(
+        "chatgpt_knowledge_base.html",
+        {"request": request, "user": user, "active_page": "knowledge-base", "t": lambda key: t(key, request)}
+    )
 
 @app.get("/web-research", response_class=HTMLResponse)
 def web_research(request: Request, user: dict = Depends(get_current_user)):
-    stats = {"total_documents": 0, "conversations": 0}
-    return templates.TemplateResponse("web_research.html", {"request": request, "user": user, "stats": stats, "active_page": "web-research"})
+    return templates.TemplateResponse(
+        "chatgpt_web_research.html",
+        {"request": request, "user": user, "active_page": "web-research", "t": lambda key: t(key, request)}
+    )
 
 @app.get("/settings", response_class=HTMLResponse)
 def settings(request: Request, user: dict = Depends(get_current_user)):
-    stats = {"total_documents": 0, "conversations": 0}
     # Load user settings if available
-    settings = user.get("settings", {}) if user else {}
-    current_provider = settings.get("llm_provider", "ollama")
-    current_model = settings.get("llm_model", "llama3:8b")
-    return templates.TemplateResponse("settings.html", {"request": request, "user": user, "stats": stats, "active_page": "settings", "current_provider": current_provider, "current_model": current_model})
+    settings_data = user.get("settings", {}) if user else {}
+    current_provider = settings_data.get("llm_provider", "ollama")
+    current_model = settings_data.get("llm_model", "llama3:8b")
+    
+    return templates.TemplateResponse(
+        "chatgpt_settings.html",
+        {"request": request, "user": user, "active_page": "settings", "current_provider": current_provider, "current_model": current_model, "t": lambda key: t(key, request)}
+    )
 
 @app.post("/login", response_class=HTMLResponse)
 def login_post(request: Request, username: str = Form(...), password: str = Form(...)):
     stats = {"total_documents": 0, "conversations": 0}
     user = user_store.get_user_by_username(username)
     if not user or not pwd_context.verify(password, user['password_hash']):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid username or password.", "stats": stats, "active_page": None})
-    request.session["user"] = {"id": user["id"], "username": user["username"], "role": user["role"]}
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid username or password.", "stats": stats, "active_page": None, "t": lambda key: t(key, request)})
+    
+    # Fetch user's first and last name for personalized greeting
+    cursor = user_store.conn.cursor(dictionary=True)
+    cursor.execute("SELECT first_name, last_name FROM users WHERE id = %s", (user["id"],))
+    user_details = cursor.fetchone()
+    cursor.close()
+    
+    # Create personalized greeting
+    first_name = user_details.get('first_name', '') if user_details else ''
+    last_name = user_details.get('last_name', '') if user_details else ''
+    
+    if first_name and last_name:
+        greeting_name = f"{first_name} {last_name[0].upper()}."
+    elif first_name:
+        greeting_name = first_name
+    else:
+        greeting_name = user["username"]
+    
+    request.session["user"] = {
+        "id": user["id"], 
+        "username": user["username"], 
+        "role": user["role"],
+        "greeting_name": greeting_name
+    }
     log_activity(user["id"], "login", {"username": user["username"]})
     return RedirectResponse(url="/dashboard", status_code=303)
 
 @app.post("/signup", response_class=HTMLResponse)
-def signup_post(request: Request, username: str = Form(...), email: str = Form(...), password: str = Form(...)):
+def signup_post(
+    request: Request, 
+    username: str = Form(...), 
+    email: str = Form(...), 
+    password: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    company_name: str = Form(...),
+    job_title: str = Form(...),
+    employee_id: str = Form(None),
+    phone: str = Form(None),
+    department: str = Form(None),
+    role: str = Form("user")
+):
     stats = {"total_documents": 0, "conversations": 0}
+    
+    # Check if username already exists
     if user_store.get_user_by_username(username):
-        return templates.TemplateResponse("signup.html", {"request": request, "error": "Username already exists.", "stats": stats, "active_page": None})
+        return templates.TemplateResponse("signup.html", {
+            "request": request, 
+            "error": "Username already exists.", 
+            "stats": stats, 
+            "active_page": None,
+            "t": lambda key: t(key, request)
+        })
+    
+    # Hash password and add user with all fields
     password_hash = pwd_context.hash(password)
-    user_store.add_user(username, email, password_hash)
+    
+    # Use raw SQL to insert with all fields
+    cursor = user_store.conn.cursor()
+    cursor.execute('''
+        INSERT INTO users (username, email, password_hash, first_name, last_name, 
+                         company_name, job_title, employee_id, phone, department, role)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ''', (username, email, password_hash, first_name, last_name, 
+          company_name, job_title, employee_id, phone, department, role))
+    user_store.conn.commit()
+    cursor.close()
+    
     return RedirectResponse(url="/login", status_code=303)
 
 @app.get("/logout")
@@ -1891,38 +2806,104 @@ def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 @app.post("/legal-research", response_class=HTMLResponse)
-def legal_research_post(request: Request, user: dict = Depends(get_current_user), query: str = Form(...), jurisdiction: str = Form(...), include_web_search: str = Form(None)):
+def legal_research_post(request: Request, user: dict = Depends(get_current_user), query: str = Form(...), jurisdiction: str = Form(...), include_web_search: str = Form(None), conversation_id: int = Form(None)):
     stats = {"total_documents": 0, "conversations": 0}
     error = None
     research_result = None
     kb_results = []
     web_results = []
+    current_conversation_id = conversation_id
+    
     try:
+        # Create new conversation if none provided
+        if not current_conversation_id:
+            # Generate a title from the query
+            title = query[:50] + "..." if len(query) > 50 else query
+            current_conversation_id = user_store.create_conversation(user["id"], title, "legal_research")
+        
+        # Add user message to conversation
+        user_store.add_message_to_conversation(current_conversation_id, "user", query)
+        
         llm_engine = LLMEngine.from_user_settings(user.get('settings'))
-        # Try to find a document in the user's KB that matches the query (e.g., 'case law 007.txt')
+        
+        # Get conversation history for context
+        conversation_messages = user_store.get_conversation_messages(current_conversation_id)
+        conversation_history = []
+        for msg in conversation_messages[:-1]:  # Exclude the current user message
+            conversation_history.append({
+                "role": msg["sender_type"],
+                "content": msg["message"]
+            })
+        
+        # Try to find relevant documents in the user's knowledge base using vector search
         doc_context = None
-        if query:
-            cursor = user_store.conn.cursor(dictionary=True)
-            cursor.execute("SELECT title, content FROM documents WHERE user_id = %s", (user["id"],))
-            docs = cursor.fetchall()
-            cursor.close()
-            for doc in docs:
-                if doc["title"].lower() in query.lower():
-                    doc_context = f"Document: {doc['title']}\n{doc['content'][:2000]}..."  # Limit to 2000 chars
-                    break
-        # If no direct match, fallback to vector search
+        kb_results = []
+        if query and MYSQL_AVAILABLE and user_store:
+            try:
+                # Use vector search to find relevant documents from user's knowledge base
+                query_embedding = vector_store._generate_embedding(query)
+                kb_results = user_store.search_documents(user["id"], query_embedding, top_k=5)
+                
+                print(f"DEBUG: Found {len(kb_results)} documents in knowledge base")
+                for i, result in enumerate(kb_results):
+                    print(f"DEBUG: Result {i+1}: {result.get('title', 'Untitled')} - Score: {result.get('score', 0):.3f}")
+                
+                if kb_results:
+                    # Filter results by relevance score (threshold of 0.3)
+                    relevant_results = [r for r in kb_results if r.get('score', 0) >= 0.3]
+                    print(f"DEBUG: {len(relevant_results)} results above threshold 0.3")
+                    if relevant_results:
+                        doc_context = "=== KNOWLEDGE BASE DOCUMENTS ===\n\n"
+                        doc_context += "\n\n".join([
+                            f"Document: {r.get('title', 'Untitled')}\nRelevance Score: {r.get('score', 0):.3f}\nContent: {r.get('content', '')[:1500]}..."
+                            for r in relevant_results[:3]  # Limit to top 3 most relevant
+                        ])
+                        doc_context += "\n\n=== END KNOWLEDGE BASE ===\n\n"
+            except Exception as kb_error:
+                print(f"Knowledge base search failed: {kb_error}")
+                # Fallback to simple title matching
+                try:
+                    cursor = user_store._get_connection().cursor(dictionary=True)
+                    cursor.execute("SELECT title, content FROM documents WHERE user_id = %s", (user["id"],))
+                    docs = cursor.fetchall()
+                    cursor.close()
+                    for doc in docs:
+                        if any(keyword.lower() in doc["title"].lower() or keyword.lower() in doc["content"].lower() 
+                               for keyword in query.lower().split()):
+                            doc_context = f"=== KNOWLEDGE BASE DOCUMENTS ===\n\nDocument: {doc['title']}\nContent: {doc['content'][:2000]}...\n\n=== END KNOWLEDGE BASE ===\n\n"
+                            break
+                except Exception as fallback_error:
+                    print(f"Fallback search also failed: {fallback_error}")
+        
+        # If still no context found, try global vector search as last resort
         if not doc_context:
-            kb_results = vector_store.search(query, n_results=3)
-            if kb_results:
-                doc_context = "\n\n".join([f"Document: {r['metadata']['title']}\n{r['content'][:1000]}..." for r in kb_results])
-        research_result = llm_engine.legal_research(query, jurisdiction) if not doc_context else llm_engine.generate_response(query, context=doc_context)
+            try:
+                kb_results = vector_store.search(query, n_results=3)
+                if kb_results:
+                    doc_context = "\n\n".join([f"Document: {r['metadata']['title']}\n{r['content'][:1000]}..." for r in kb_results])
+            except Exception as global_error:
+                print(f"Global vector search failed: {global_error}")
+        
+        # Generate response with conversation context
+        print(f"DEBUG: Document context found: {bool(doc_context)}")
+        if doc_context:
+            print(f"DEBUG: Context preview: {doc_context[:200]}...")
+        research_result = llm_engine.generate_response(query, context=doc_context, conversation_history=conversation_history)
+        
+        # Add AI response to conversation
+        user_store.add_message_to_conversation(current_conversation_id, "assistant", research_result)
+        
         # Web research (placeholder)
         if include_web_search:
             web_results = []  # Implement web scraping if needed
+            
     except Exception as e:
         error = str(e)
+        if current_conversation_id:
+            user_store.add_message_to_conversation(current_conversation_id, "assistant", f"Error: {error}")
+    
     return templates.TemplateResponse(
-        "legal_research.html",
+        "chatgpt_legal_research.html",
         {
             "request": request,
             "user": user,
@@ -1934,7 +2915,9 @@ def legal_research_post(request: Request, user: dict = Depends(get_current_user)
             "research_result": research_result,
             "kb_results": kb_results,
             "web_results": web_results,
-            "error": error
+            "error": error,
+            "conversation_id": current_conversation_id,
+            "t": lambda key: t(key, request)
         }
     )
 
@@ -1969,7 +2952,7 @@ def document_analysis_post(request: Request, user: dict = Depends(get_current_us
     except Exception as e:
         error = str(e)
     return templates.TemplateResponse(
-        "document_analysis.html",
+        "chatgpt_document_analysis.html",
         {
             "request": request,
             "user": user,
@@ -1977,21 +2960,81 @@ def document_analysis_post(request: Request, user: dict = Depends(get_current_us
             "active_page": "document-analysis",
             "analysis_result": analysis_result,
             "kb_success": kb_success,
-            "error": error
+            "error": error,
+            "t": lambda key: t(key, request)
         }
     )
 
 @app.post("/knowledge-base", response_class=HTMLResponse)
 def knowledge_base_post(request: Request, user: dict = Depends(get_current_user), search_query: str = Form(...), num_results: int = Form(...), min_score: float = Form(...)):
-    stats = {"total_documents": 0, "conversations": 0, "document_types": {}, "sources": {}}
+    # Calculate actual stats for the current user
+    user_id = user["id"]
+    
+    # Get document count
+    result = safe_mysql_query(
+        "SELECT COUNT(*) as total FROM documents WHERE user_id = %s", 
+        (user_id,), 
+        fetch_one=True
+    )
+    total_documents = result['total'] if result else 0
+    
+    # Get document types
+    document_types_result = safe_mysql_query(
+        "SELECT DISTINCT document_type FROM documents WHERE user_id = %s", 
+        (user_id,), 
+        fetch_all=True
+    )
+    document_types = [row["document_type"] for row in document_types_result] if document_types_result else []
+    
+    # Get sources
+    sources_result = safe_mysql_query(
+        "SELECT DISTINCT source FROM documents WHERE user_id = %s", 
+        (user_id,), 
+        fetch_all=True
+    )
+    sources = [row["source"] for row in sources_result] if sources_result else []
+    
+    stats = {"total_documents": total_documents, "conversations": 0, "document_types": document_types, "sources": sources}
     error = None
     results = []
+    ai_analysis = None
+    
     try:
-        results = vector_store.similarity_search_with_score_threshold(search_query, score_threshold=min_score, max_results=num_results)
+        # Try MySQL vector store for user-specific search first
+        if MYSQL_AVAILABLE and user_store:
+            try:
+                query_embedding = vector_store._generate_embedding(search_query)
+                results = user_store.search_documents(user_id, query_embedding, top_k=num_results)
+                # Filter by score threshold
+                results = [r for r in results if r.get('score', 0) >= min_score]
+            except Exception as mysql_error:
+                print(f"MySQL search failed, falling back to ChromaDB: {mysql_error}")
+                # Fallback to ChromaDB global search
+                results = vector_store.search(search_query, n_results=num_results)
+                # Filter by score threshold
+                results = [r for r in results if r.get('score', 0) >= min_score]
+        else:
+            print("MySQL not available, using ChromaDB global search")
+            # Use ChromaDB global search
+            results = vector_store.search(search_query, n_results=num_results)
+            # Filter by score threshold
+            results = [r for r in results if r.get('score', 0) >= min_score]
+        
+        # Generate AI analysis if we have results
+        if results and len(results) > 0:
+            try:
+                # Combine top results for analysis
+                combined_content = "\n\n".join([f"Document: {r.get('title', 'Untitled')}\nContent: {r.get('content', '')[:1000]}" for r in results[:3]])
+                ai_analysis = LLMEngine.from_user_settings(user.get('settings', {})).analyze_document(combined_content, "knowledge_base_search")
+            except Exception as analysis_error:
+                print(f"Error generating AI analysis: {analysis_error}")
+                ai_analysis = f"Analysis temporarily unavailable: {str(analysis_error)}"
+                
     except Exception as e:
         error = str(e)
+        results = []
     return templates.TemplateResponse(
-        "knowledge_base.html",
+        "chatgpt_knowledge_base.html",
         {
             "request": request,
             "user": user,
@@ -2001,7 +3044,9 @@ def knowledge_base_post(request: Request, user: dict = Depends(get_current_user)
             "num_results": num_results,
             "min_score": min_score,
             "results": results,
-            "error": error
+            "ai_analysis": ai_analysis,
+            "error": error,
+            "t": lambda key: t(key, request)
         }
     )
 
@@ -2036,22 +3081,32 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
                     "content_plain": content_plain or "No plain text extracted."
                 })
                 if add_to_kb:
-                    metadata = create_legal_document_metadata(
-                        title=result.title or url,
-                        document_type="web_research",
-                        source=url,
-                        date_created=datetime.now().isoformat()
-                    )
-                    embedding = vector_store._generate_embedding(result.content)
-                    user_store.add_document(
-                        user_id=user["id"],
-                        title=result.title or url,
-                        document_type="web_research",
-                        source=url,
-                        content=result.content,
-                        embedding=np.array(embedding, dtype=np.float32),
-                        metadata=metadata
-                    )
+                    # Split content into chunks for better processing
+                    chunks = vector_store.text_splitter.split_text(result.content)
+                    success_count = 0
+                    
+                    for i, chunk in enumerate(chunks):
+                        metadata = create_legal_document_metadata(
+                            title=f"{result.title or url} - Part {i+1}",
+                            document_type="web_research",
+                            source=url,
+                            date_created=datetime.now().isoformat()
+                        )
+                        
+                        embedding = vector_store._generate_embedding(chunk)
+                        user_store.add_document(
+                            user_id=user["id"],
+                            title=f"{result.title or url} - Part {i+1}",
+                            document_type="web_research",
+                            source=url,
+                            content=chunk,
+                            embedding=np.array(embedding, dtype=np.float32),
+                            metadata=metadata
+                        )
+                        success_count += 1
+                    
+                    if success_count > 0:
+                        log_activity(user["id"], "web_research_added", {"url": url, "chunks": success_count})
             else:
                 all_results.append({
                     "title": f"Failed to scrape {url}",
@@ -2062,7 +3117,7 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
     except Exception as e:
         error = str(e)
     return templates.TemplateResponse(
-        "web_research.html",
+        "chatgpt_web_research.html",
         {
             "request": request,
             "user": user,
@@ -2072,7 +3127,8 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
             "max_pages": max_pages,
             "add_to_kb": add_to_kb,
             "all_results": all_results,
-            "error": error
+            "error": error,
+            "t": lambda key: t(key, request)
         }
     )
 
@@ -2096,14 +3152,15 @@ def settings_post(request: Request, user: dict = Depends(get_current_user), mode
     # Update session
     request.session["user"]["settings"] = settings
     return templates.TemplateResponse(
-        "settings.html",
+        "chatgpt_settings.html",
         {
             "request": request,
             "user": user,
             "stats": stats,
             "active_page": "settings",
             "current_provider": settings.get("llm_provider", "ollama"),
-            "current_model": settings.get("llm_model", "llama3:8b")
+            "current_model": settings.get("llm_model", "llama3:8b"),
+            "t": lambda key: t(key, request)
         }
     )
 
@@ -2349,6 +3406,825 @@ def deny_permission_request(request: Request, user: dict = Depends(get_current_u
     user_store.conn.commit()
     cursor.close()
     return RedirectResponse(url="/my-permission-requests", status_code=303)
+
+@app.get("/api/users/all")
+def api_users_all(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        users_result = safe_mysql_query(
+            "SELECT id, username, last_active FROM users WHERE id != %s", 
+            (user["id"],), 
+            fetch_all=True
+        )
+        
+        if not users_result:
+            return {"users": []}
+            
+        users = users_result
+        now = datetime.utcnow()
+        online_cutoff = now - timedelta(minutes=5)
+        for u in users:
+            # If last_active is None, treat as offline
+            if u.get("last_active"):
+                try:
+                    last_active_dt = u["last_active"]
+                    if isinstance(last_active_dt, str):
+                        last_active_dt = datetime.fromisoformat(last_active_dt)
+                    u["online"] = last_active_dt > online_cutoff
+                except Exception:
+                    u["online"] = False
+            else:
+                u["online"] = False
+        return {"users": users}
+    except Exception as e:
+        # Return empty users list if MySQL is not available
+        print(f"MySQL connection error in api_users_all: {e}")
+        return {"users": []}
+
+@app.post("/api/language/toggle")
+def api_language_toggle(request: Request):
+    """Toggle language between English and Arabic"""
+    current_lang = request.session.get("language", "en")
+    new_lang = "ar" if current_lang == "en" else "en"
+    request.session["language"] = new_lang
+    return {"success": True, "language": new_lang}
+
+# Knowledge Base API Endpoints
+@app.get("/api/knowledge-base/my-documents")
+def api_get_my_documents(request: Request):
+    """Get all documents for the current user"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        documents = safe_mysql_query(
+            "SELECT id, title, document_type, source, content, created_at FROM documents WHERE user_id = %s ORDER BY created_at DESC",
+            (user["id"],),
+            fetch_all=True
+        )
+        
+        if documents is None:
+            return {"documents": []}
+        
+        # Format documents for frontend
+        formatted_docs = []
+        for doc in documents:
+            formatted_docs.append({
+                "id": doc["id"],
+                "title": doc["title"] or "Untitled Document",
+                "document_type": doc["document_type"] or "Unknown",
+                "source": doc["source"],
+                "content": doc["content"],
+                "created_at": doc["created_at"].isoformat() if doc["created_at"] else None
+            })
+        
+        return {"documents": formatted_docs}
+    except Exception as e:
+        print(f"Error fetching documents: {e}")
+        return {"documents": []}
+
+@app.get("/api/knowledge-base/document/{document_id}")
+def api_get_document(request: Request, document_id: int):
+    """Get a specific document by ID"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        document = safe_mysql_query(
+            "SELECT id, title, document_type, source, content, created_at FROM documents WHERE id = %s AND user_id = %s",
+            (document_id, user["id"]),
+            fetch_one=True
+        )
+        
+        if not document:
+            return {"error": "Document not found"}
+        
+        return {
+            "id": document["id"],
+            "title": document["title"],
+            "document_type": document["document_type"],
+            "source": document["source"],
+            "content": document["content"],
+            "created_at": document["created_at"].isoformat() if document["created_at"] else None
+        }
+    except Exception as e:
+        print(f"Error fetching document: {e}")
+        return {"error": "Failed to fetch document"}
+
+@app.get("/api/knowledge-base/document/{document_id}/pdf")
+def api_download_document_pdf(request: Request, document_id: int):
+    """Download document as PDF"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        document = safe_mysql_query(
+            "SELECT title, content FROM documents WHERE id = %s AND user_id = %s",
+            (document_id, user["id"]),
+            fetch_one=True
+        )
+        
+        if not document:
+            return {"error": "Document not found"}
+        
+        # Generate PDF content (simplified - you might want to use a proper PDF library)
+        pdf_content = f"""
+Document: {document['title'] or 'Untitled'}
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+Content:
+{document['content']}
+        """
+        
+        from fastapi.responses import Response
+        return Response(
+            content=pdf_content,
+            media_type="text/plain",
+            headers={"Content-Disposition": f"attachment; filename=document_{document_id}.txt"}
+        )
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return {"error": "Failed to generate PDF"}
+
+@app.get("/document/{document_id}", response_class=HTMLResponse)
+def view_document(request: Request, document_id: int):
+    """View document in a formatted page"""
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    try:
+        document = safe_mysql_query(
+            "SELECT id, title, document_type, source, content, created_at FROM documents WHERE id = %s AND user_id = %s",
+            (document_id, user["id"]),
+            fetch_one=True
+        )
+        
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        return templates.TemplateResponse(
+            "document_view.html",
+            {
+                "request": request,
+                "user": user,
+                "document": document,
+                "t": lambda key: t(key, request)
+            }
+        )
+    except Exception as e:
+        print(f"Error viewing document: {e}")
+        raise HTTPException(status_code=500, detail="Error viewing document")
+
+@app.delete("/api/knowledge-base/document/{document_id}")
+def api_delete_document(request: Request, document_id: int):
+    """Delete a document"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        result = safe_mysql_query(
+            "DELETE FROM documents WHERE id = %s AND user_id = %s",
+            (document_id, user["id"])
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "Document not found"}
+    except Exception as e:
+        print(f"Error deleting document: {e}")
+        return {"error": "Failed to delete document"}
+
+@app.post("/api/knowledge-base/share")
+def api_share_document(request: Request):
+    """Share a document with another user"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        document_id = data.get("document_id")
+        recipient_username = data.get("recipient_username")
+        
+        if not document_id or not recipient_username:
+            return {"error": "Missing required fields"}
+        
+        # Get recipient user
+        recipient = safe_mysql_query(
+            "SELECT id FROM users WHERE username = %s",
+            (recipient_username,),
+            fetch_one=True
+        )
+        
+        if not recipient:
+            return {"error": "Recipient user not found"}
+        
+        # Check if document belongs to current user
+        document = safe_mysql_query(
+            "SELECT id FROM documents WHERE id = %s AND user_id = %s",
+            (document_id, user["id"]),
+            fetch_one=True
+        )
+        
+        if not document:
+            return {"error": "Document not found"}
+        
+        # Share the document
+        safe_mysql_query(
+            "INSERT INTO shared_documents (document_id, shared_with_user_id, shared_by_user_id) VALUES (%s, %s, %s)",
+            (document_id, recipient["id"], user["id"])
+        )
+        
+        return {"success": True}
+    except Exception as e:
+        print(f"Error sharing document: {e}")
+        return {"error": "Failed to share document"}
+
+@app.get("/api/knowledge-base/export")
+def api_export_knowledge_base(request: Request):
+    """Export knowledge base as JSON"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        documents = safe_mysql_query(
+            "SELECT id, title, document_type, source, content, created_at FROM documents WHERE user_id = %s ORDER BY created_at DESC",
+            (user["id"],),
+            fetch_all=True
+        )
+        
+        if documents is None:
+            documents = []
+        
+        export_data = {
+            "user_id": user["id"],
+            "username": user["username"],
+            "export_date": datetime.now().isoformat(),
+            "documents": documents
+        }
+        
+        from fastapi.responses import Response
+        import json
+        
+        return Response(
+            content=json.dumps(export_data, indent=2, default=str),
+            media_type="application/json",
+            headers={"Content-Disposition": "attachment; filename=knowledge-base-export.json"}
+        )
+    except Exception as e:
+        print(f"Error exporting knowledge base: {e}")
+        return {"error": "Failed to export knowledge base"}
+
+# Admin API Endpoints
+@app.get("/api/admin/users")
+def api_admin_get_users(request: Request):
+    """Get all users for admin management"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        users = safe_mysql_query(
+            "SELECT id, username, email, role, is_active, last_active, created_at FROM users ORDER BY created_at DESC",
+            fetch_all=True
+        )
+        
+        if users is None:
+            return {"users": []}
+        
+        # Format users for frontend
+        formatted_users = []
+        for u in users:
+            formatted_users.append({
+                "id": u["id"],
+                "username": u["username"],
+                "email": u["email"],
+                "role": u["role"],
+                "is_active": bool(u["is_active"]),
+                "last_active": u["last_active"].isoformat() if u["last_active"] else None,
+                "created_at": u["created_at"].isoformat() if u["created_at"] else None
+            })
+        
+        return {"users": formatted_users}
+    except Exception as e:
+        print(f"Error fetching users: {e}")
+        return {"users": []}
+
+@app.get("/api/admin/users/{user_id}")
+def api_admin_get_user(request: Request, user_id: int):
+    """Get a specific user by ID for admin"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        user_data = safe_mysql_query(
+            "SELECT id, username, email, role, is_active, last_active, created_at, first_name, last_name, company_name, job_title, employee_id, phone, department FROM users WHERE id = %s",
+            (user_id,),
+            fetch_one=True
+        )
+        
+        if not user_data:
+            return {"error": "User not found"}
+        
+        return {
+            "id": user_data["id"],
+            "username": user_data["username"],
+            "email": user_data["email"],
+            "role": user_data["role"],
+            "is_active": bool(user_data["is_active"]),
+            "last_active": user_data["last_active"].isoformat() if user_data["last_active"] else None,
+            "created_at": user_data["created_at"].isoformat() if user_data["created_at"] else None,
+            "first_name": user_data["first_name"],
+            "last_name": user_data["last_name"],
+            "company_name": user_data["company_name"],
+            "job_title": user_data["job_title"],
+            "employee_id": user_data["employee_id"],
+            "phone": user_data["phone"],
+            "department": user_data["department"]
+        }
+    except Exception as e:
+        print(f"Error fetching user: {e}")
+        return {"error": "Failed to fetch user"}
+
+@app.post("/api/admin/users/{user_id}/toggle-status")
+def api_admin_toggle_user_status(request: Request, user_id: int):
+    """Toggle user active status"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        data = request.json()
+        action = data.get("action")
+        
+        if action not in ["ban", "activate"]:
+            return {"error": "Invalid action"}
+        
+        new_status = action == "activate"
+        
+        result = safe_mysql_query(
+            "UPDATE users SET is_active = %s WHERE id = %s",
+            (new_status, user_id)
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "User not found"}
+    except Exception as e:
+        print(f"Error toggling user status: {e}")
+        return {"error": "Failed to update user status"}
+
+@app.delete("/api/admin/users/{user_id}")
+def api_admin_delete_user(request: Request, user_id: int):
+    """Delete a user"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        # Don't allow admin to delete themselves
+        if user["id"] == user_id:
+            return {"error": "Cannot delete your own account"}
+        
+        result = safe_mysql_query(
+            "DELETE FROM users WHERE id = %s",
+            (user_id,)
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "User not found"}
+    except Exception as e:
+        print(f"Error deleting user: {e}")
+        return {"error": "Failed to delete user"}
+
+@app.post("/api/admin/users/bulk-activate")
+def api_admin_bulk_activate_users(request: Request):
+    """Bulk activate users"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        data = request.json()
+        user_ids = data.get("user_ids", [])
+        
+        if not user_ids:
+            return {"error": "No users selected"}
+        
+        placeholders = ",".join(["%s"] * len(user_ids))
+        result = safe_mysql_query(
+            f"UPDATE users SET is_active = 1 WHERE id IN ({placeholders})",
+            user_ids
+        )
+        
+        return {"success": True, "updated": result}
+    except Exception as e:
+        print(f"Error bulk activating users: {e}")
+        return {"error": "Failed to activate users"}
+
+@app.post("/api/admin/users/bulk-deactivate")
+def api_admin_bulk_deactivate_users(request: Request):
+    """Bulk deactivate users"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        data = request.json()
+        user_ids = data.get("user_ids", [])
+        
+        if not user_ids:
+            return {"error": "No users selected"}
+        
+        placeholders = ",".join(["%s"] * len(user_ids))
+        result = safe_mysql_query(
+            f"UPDATE users SET is_active = 0 WHERE id IN ({placeholders})",
+            user_ids
+        )
+        
+        return {"success": True, "updated": result}
+    except Exception as e:
+        print(f"Error bulk deactivating users: {e}")
+        return {"error": "Failed to deactivate users"}
+
+@app.post("/api/admin/users/bulk-delete")
+def api_admin_bulk_delete_users(request: Request):
+    """Bulk delete users"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        data = request.json()
+        user_ids = data.get("user_ids", [])
+        
+        if not user_ids:
+            return {"error": "No users selected"}
+        
+        # Don't allow admin to delete themselves
+        if user["id"] in user_ids:
+            return {"error": "Cannot delete your own account"}
+        
+        placeholders = ",".join(["%s"] * len(user_ids))
+        result = safe_mysql_query(
+            f"DELETE FROM users WHERE id IN ({placeholders})",
+            user_ids
+        )
+        
+        return {"success": True, "deleted": result}
+    except Exception as e:
+        print(f"Error bulk deleting users: {e}")
+        return {"error": "Failed to delete users"}
+
+@app.post("/api/admin/users/bulk-change-role")
+def api_admin_bulk_change_role(request: Request):
+    """Bulk change user roles"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        data = request.json()
+        user_ids = data.get("user_ids", [])
+        new_role = data.get("new_role")
+        
+        if not user_ids or not new_role:
+            return {"error": "Missing required fields"}
+        
+        if new_role not in ["user", "admin"]:
+            return {"error": "Invalid role"}
+        
+        placeholders = ",".join(["%s"] * len(user_ids))
+        result = safe_mysql_query(
+            f"UPDATE users SET role = %s WHERE id IN ({placeholders})",
+            [new_role] + user_ids
+        )
+        
+        return {"success": True, "updated": result}
+    except Exception as e:
+        print(f"Error bulk changing roles: {e}")
+        return {"error": "Failed to change user roles"}
+
+@app.get("/api/admin/users/export")
+def api_admin_export_users(request: Request):
+    """Export all users as JSON"""
+    user = get_current_user(request)
+    if not user or user.get("role") != "admin":
+        return {"error": "Access denied. Admin role required."}
+    
+    try:
+        users = safe_mysql_query(
+            "SELECT id, username, email, role, is_active, last_active, created_at, first_name, last_name, company_name, job_title, employee_id, phone, department FROM users ORDER BY created_at DESC",
+            fetch_all=True
+        )
+        
+        if users is None:
+            users = []
+        
+        export_data = {
+            "exported_by": user["username"],
+            "export_date": datetime.now().isoformat(),
+            "total_users": len(users),
+            "users": users
+        }
+        
+        from fastapi.responses import Response
+        import json
+        
+        return Response(
+            content=json.dumps(export_data, indent=2, default=str),
+            media_type="application/json",
+            headers={"Content-Disposition": "attachment; filename=users-export.json"}
+        )
+    except Exception as e:
+        print(f"Error exporting users: {e}")
+        return {"error": "Failed to export users"}
+
+# User Profile API Endpoints
+@app.post("/api/user/profile/update")
+def api_update_user_profile(request: Request):
+    """Update user profile information"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        
+        # Validate required fields
+        if not data.get("first_name") or not data.get("last_name"):
+            return {"error": "First name and last name are required"}
+        
+        # Update user profile
+        result = safe_mysql_query(
+            """UPDATE users SET 
+                first_name = %s, 
+                last_name = %s, 
+                company_name = %s, 
+                job_title = %s, 
+                employee_id = %s, 
+                phone = %s, 
+                department = %s 
+            WHERE id = %s""",
+            (
+                data.get("first_name"),
+                data.get("last_name"),
+                data.get("company_name"),
+                data.get("job_title"),
+                data.get("employee_id"),
+                data.get("phone"),
+                data.get("department"),
+                user["id"]
+            )
+        )
+        
+        if result > 0:
+            # Update session with new greeting name
+            greeting_name = f"{data.get('first_name')} {data.get('last_name', '')[:1]}."
+            request.session["greeting_name"] = greeting_name
+            
+            return {"success": True, "greeting_name": greeting_name}
+        else:
+            return {"error": "Failed to update profile"}
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        return {"error": "Failed to update profile"}
+
+@app.post("/api/user/greeting/update")
+def api_update_greeting_name(request: Request):
+    """Update greeting name in session"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        
+        if first_name and last_name:
+            greeting_name = f"{first_name} {last_name[:1]}."
+        elif first_name:
+            greeting_name = first_name
+        else:
+            greeting_name = user["username"]
+        
+        request.session["greeting_name"] = greeting_name
+        
+        return {"success": True, "greeting_name": greeting_name}
+    except Exception as e:
+        print(f"Error updating greeting name: {e}")
+        return {"error": "Failed to update greeting name"}
+
+@app.post("/api/user/password/change")
+def api_change_password(request: Request):
+    """Change user password"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        current_password = data.get("current_password")
+        new_password = data.get("new_password")
+        
+        if not current_password or not new_password:
+            return {"error": "Current password and new password are required"}
+        
+        if len(new_password) < 6:
+            return {"error": "New password must be at least 6 characters long"}
+        
+        # Verify current password
+        import bcrypt
+        user_data = safe_mysql_query(
+            "SELECT password_hash FROM users WHERE id = %s",
+            (user["id"],),
+            fetch_one=True
+        )
+        
+        if not user_data:
+            return {"error": "User not found"}
+        
+        # Check current password
+        if not bcrypt.checkpw(current_password.encode('utf-8'), user_data["password_hash"].encode('utf-8')):
+            return {"error": "Current password is incorrect"}
+        
+        # Hash new password
+        new_password_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        # Update password
+        result = safe_mysql_query(
+            "UPDATE users SET password_hash = %s WHERE id = %s",
+            (new_password_hash, user["id"])
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "Failed to update password"}
+    except Exception as e:
+        print(f"Error changing password: {e}")
+        return {"error": "Failed to change password"}
+
+# Document Analysis API Endpoints
+@app.post("/api/document-analysis/share")
+def api_share_document_analysis(request: Request):
+    """Share document analysis with another user"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        recipient_username = data.get("recipient_username")
+        analysis_text = data.get("analysis_text")
+        document_title = data.get("document_title")
+        
+        if not recipient_username or not analysis_text:
+            return {"error": "Missing required fields"}
+        
+        # Get recipient user
+        recipient = safe_mysql_query(
+            "SELECT id FROM users WHERE username = %s",
+            (recipient_username,),
+            fetch_one=True
+        )
+        
+        if not recipient:
+            return {"error": "Recipient user not found"}
+        
+        # Add analysis to recipient's knowledge base
+        result = safe_mysql_query(
+            """INSERT INTO documents (user_id, title, document_type, source, content, metadata) 
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            (
+                recipient["id"],
+                f"Shared Analysis: {document_title}",
+                "analysis",
+                "shared_analysis",
+                analysis_text,
+                f'{{"shared_by": "{user["username"]}", "original_title": "{document_title}"}}'
+            )
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "Failed to share analysis"}
+    except Exception as e:
+        print(f"Error sharing analysis: {e}")
+        return {"error": "Failed to share analysis"}
+
+@app.post("/api/knowledge-base/add-analysis")
+def api_add_analysis_to_kb(request: Request):
+    """Add analysis to user's knowledge base"""
+    user = get_current_user(request)
+    if not user:
+        return {"error": "Not authenticated"}
+    
+    try:
+        data = request.json()
+        title = data.get("title")
+        content = data.get("content")
+        document_type = data.get("document_type", "analysis")
+        source = data.get("source", "document_analysis")
+        
+        if not title or not content:
+            return {"error": "Title and content are required"}
+        
+        # Add to knowledge base
+        result = safe_mysql_query(
+            """INSERT INTO documents (user_id, title, document_type, source, content, metadata) 
+               VALUES (%s, %s, %s, %s, %s, %s)""",
+            (
+                user["id"],
+                title,
+                document_type,
+                source,
+                content,
+                '{"added_from": "document_analysis"}'
+            )
+        )
+        
+        if result > 0:
+            return {"success": True}
+        else:
+            return {"error": "Failed to add to knowledge base"}
+    except Exception as e:
+        print(f"Error adding to knowledge base: {e}")
+        return {"error": "Failed to add to knowledge base"}
+
+@app.post("/api/user/update_activity")
+def api_update_activity(request: Request):
+    """Update user's last activity timestamp"""
+    user = request.session.get("user")
+    if not user:
+        return JSONResponse({"error": "Not authenticated"}, status_code=401)
+    
+    try:
+        result = safe_mysql_query(
+            "UPDATE users SET last_active = NOW() WHERE id = %s", 
+            (user["id"],)
+        )
+        return {"success": True}
+    except Exception as e:
+        # Return success even if MySQL is not available
+        print(f"MySQL connection error in api_update_activity: {e}")
+        return {"success": True}
+
+@app.get("/api/conversations")
+def api_get_conversations(request: Request, user: dict = Depends(get_current_user)):
+    """Get all conversations for the current user"""
+    try:
+        conversations = user_store.get_user_conversations(user["id"])
+        return {"conversations": conversations}
+    except Exception as e:
+        print(f"MySQL connection error in api_get_conversations: {e}")
+        return {"conversations": []}
+
+@app.post("/api/conversations")
+def api_create_conversation(request: Request, user: dict = Depends(get_current_user), title: str = Form(...), conversation_type: str = Form("legal_research")):
+    """Create a new conversation"""
+    conversation_id = user_store.create_conversation(user["id"], title, conversation_type)
+    return {"conversation_id": conversation_id, "success": True}
+
+@app.get("/api/conversations/{conversation_id}/messages")
+def api_get_conversation_messages(conversation_id: int, request: Request, user: dict = Depends(get_current_user)):
+    """Get all messages for a specific conversation"""
+    messages = user_store.get_conversation_messages(conversation_id)
+    return {"messages": messages}
+
+@app.post("/api/conversations/{conversation_id}/messages")
+def api_add_message_to_conversation(conversation_id: int, request: Request, user: dict = Depends(get_current_user), sender_type: str = Form(...), message: str = Form(...)):
+    """Add a message to a conversation"""
+    user_store.add_message_to_conversation(conversation_id, sender_type, message)
+    return {"success": True}
+
+@app.put("/api/conversations/{conversation_id}/title")
+def api_update_conversation_title(conversation_id: int, request: Request, user: dict = Depends(get_current_user), new_title: str = Form(...)):
+    """Update conversation title"""
+    user_store.update_conversation_title(conversation_id, new_title)
+    return {"success": True}
+
+@app.delete("/api/conversations/{conversation_id}")
+def api_delete_conversation(conversation_id: int, request: Request, user: dict = Depends(get_current_user)):
+    """Delete a conversation"""
+    user_store.delete_conversation(conversation_id)
+    return {"success": True}
 
 if __name__ == "__main__":
     # Initialize and run the application

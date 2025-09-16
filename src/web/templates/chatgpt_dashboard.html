@@ -1,0 +1,413 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}DALI Legal AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/chatgpt-ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <!-- ChatGPT-Style Sidebar -->
+    <aside class="chatgpt-sidebar" id="sidebar">
+        <div class="chatgpt-sidebar-header">
+            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
+            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
+        </div>
+        
+        <button class="chatgpt-new-chat-btn" onclick="startNewChat()">
+            <span>+</span>
+            {{ t('new_chat') if t else 'New Chat' }}
+        </button>
+        
+        <nav class="chatgpt-nav">
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/legal-research" class="chatgpt-nav-link {% if active_page=='legal-research' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">🔍</span>
+                        {{ t('legal_research') if t else 'Legal Research' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/document-analysis" class="chatgpt-nav-link {% if active_page=='document-analysis' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📄</span>
+                        {{ t('document_analysis') if t else 'Document Analysis' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/knowledge-base" class="chatgpt-nav-link {% if active_page=='knowledge-base' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📚</span>
+                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/web-research" class="chatgpt-nav-link {% if active_page=='web-research' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">🌐</span>
+                        {{ t('web_research') if t else 'Web Research' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/settings" class="chatgpt-nav-link {% if active_page=='settings' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⚙️</span>
+                        {{ t('settings') if t else 'Settings' }}
+                    </a>
+                </div>
+                {% if user and user.role == 'admin' %}
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/dashboard" class="chatgpt-nav-link {% if active_page=='admin-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">👑</span>
+                        {{ t('admin_panel') if t else 'Admin Panel' }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </nav>
+        
+        {% if user %}
+        <div class="chatgpt-user-info">
+            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
+            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
+            <form method="get" action="/logout">
+                <button type="submit" class="chatgpt-logout-btn">
+                    {{ t('logout') if t else 'Logout' }}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+    
+    <!-- Main Chat Interface -->
+    <main class="chatgpt-main">
+        <!-- Mobile Menu Button -->
+        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
+            ☰
+        </button>
+        
+        <!-- Chat Header -->
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-title">{{ t('welcome_title') if t else 'Welcome to DALI Legal AI' }}</div>
+            <div class="chatgpt-header-subtitle">{{ t('welcome_subtitle') if t else 'How can I help you with your legal research today?' }}</div>
+        </div>
+        
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-prompt">{{ t('what_to_search_today') if t else 'What do you want to search for today?' }}</div>
+            <div class="search-container">
+                <div class="search-bar">
+                    <select class="search-filter">
+                        <option value="all">{{ t('all_results') if t else 'All Results' }}</option>
+                        <option value="legal_research">{{ t('legal_research') if t else 'Legal Research' }}</option>
+                        <option value="document_analysis">{{ t('document_analysis') if t else 'Document Analysis' }}</option>
+                        <option value="knowledge_base">{{ t('knowledge_base') if t else 'Knowledge Base' }}</option>
+                    </select>
+                    <input type="text" class="search-input" placeholder="{{ t('search_here') if t else 'Search here...' }}" id="mainSearchInput">
+                    <button class="search-btn" onclick="performMainSearch()">🔍</button>
+                </div>
+            </div>
+            
+            <!-- Category Filters -->
+            <div class="category-filters">
+                <button class="category-btn" data-category="systems" onclick="filterByCategory('systems')">
+                    <div class="category-dot green"></div>
+                    {{ t('systems_regulations') if t else 'Systems / Regulations' }}
+                </button>
+                <button class="category-btn" data-category="precedents" onclick="filterByCategory('precedents')">
+                    <div class="category-dot yellow"></div>
+                    {{ t('judicial_precedents') if t else 'Judicial Precedents' }}
+                </button>
+                <button class="category-btn" data-category="orders" onclick="filterByCategory('orders')">
+                    <div class="category-dot red"></div>
+                    {{ t('orders_directives') if t else 'Orders / Directives' }}
+                </button>
+                <button class="category-btn" data-category="books" onclick="filterByCategory('books')">
+                    <div class="category-dot blue"></div>
+                    {{ t('books_sources') if t else 'Books / Sources' }}
+                </button>
+                <button class="category-btn" data-category="forms" onclick="filterByCategory('forms')">
+                    <div class="category-dot grey"></div>
+                    {{ t('supporting_forms') if t else 'Supporting Forms' }}
+                </button>
+            </div>
+        </div>
+        
+        <!-- Content Updates Section -->
+        <div class="content-updates">
+            <div class="updates-header">
+                <h3>{{ t('saudi_law_updates') if t else 'Saudi Law Updates' }}</h3>
+                <button class="show-more-btn">{{ t('show_more') if t else 'Show More' }} ← →</button>
+            </div>
+            <div class="updates-cards">
+                <div class="update-card">
+                    <div class="card-placeholder">{{ t('update_1') if t else 'Latest Legal Update' }}</div>
+                </div>
+                <div class="update-card">
+                    <div class="card-placeholder">{{ t('update_2') if t else 'Regulation Changes' }}</div>
+                </div>
+                <div class="update-card">
+                    <div class="card-placeholder">{{ t('update_3') if t else 'Court Decisions' }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="action-grid">
+                <button class="action-card" onclick="startLegalResearch()">
+                    <div class="action-icon">🔍</div>
+                    <div class="action-title">{{ t('legal_research') if t else 'Legal Research' }}</div>
+                    <div class="action-subtitle">{{ t('search_legal_documents') if t else 'Search legal documents and precedents' }}</div>
+                </button>
+                <button class="action-card" onclick="analyzeDocument()">
+                    <div class="action-icon">📄</div>
+                    <div class="action-title">{{ t('document_analysis') if t else 'Document Analysis' }}</div>
+                    <div class="action-subtitle">{{ t('analyze_contracts_documents') if t else 'Analyze contracts and documents' }}</div>
+                </button>
+                <button class="action-card" onclick="viewKnowledgeBase()">
+                    <div class="action-icon">📚</div>
+                    <div class="action-title">{{ t('knowledge_base') if t else 'Knowledge Base' }}</div>
+                    <div class="action-subtitle">{{ t('manage_your_documents') if t else 'Manage your documents' }}</div>
+                </button>
+                <button class="action-card" onclick="webResearch()">
+                    <div class="action-icon">🌐</div>
+                    <div class="action-title">{{ t('web_research') if t else 'Web Research' }}</div>
+                    <div class="action-subtitle">{{ t('scrape_legal_websites') if t else 'Scrape legal websites' }}</div>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Messages Area -->
+        <div class="chatgpt-messages" id="chatMessages" style="display: none;">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        
+        <!-- Input Area -->
+        <div class="chatgpt-input-area">
+            <div class="chatgpt-input-container">
+                <textarea 
+                    class="chatgpt-input" 
+                    id="chatInput" 
+                    placeholder="{{ t('type_message') if t else 'Type your legal question here...' }}"
+                    rows="1"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button class="chatgpt-send-btn" id="sendBtn" onclick="sendMessage()">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+// ChatGPT-style functionality
+let currentChatId = null;
+let isTyping = false;
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+function startNewChat() {
+    currentChatId = null;
+    document.getElementById('welcomeScreen').style.display = 'flex';
+    document.getElementById('chatMessages').style.display = 'none';
+    document.getElementById('chatInput').value = '';
+    document.getElementById('chatInput').focus();
+}
+
+function startLegalResearch() {
+    window.location.href = '/legal-research';
+}
+
+function analyzeDocument() {
+    window.location.href = '/document-analysis';
+}
+
+function webResearch() {
+    window.location.href = '/web-research';
+}
+
+function viewKnowledgeBase() {
+    window.location.href = '/knowledge-base';
+}
+
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || isTyping) return;
+    
+    // Hide welcome screen and show messages
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('chatMessages').style.display = 'flex';
+    
+    // Add user message
+    addMessage('user', message);
+    
+    // Clear input
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Simulate AI response (replace with actual API call)
+    setTimeout(() => {
+        hideTypingIndicator();
+        addMessage('assistant', 'I understand your legal question. Let me help you with that. This is a simulated response - in the actual implementation, this would connect to your legal research API.');
+    }, 2000);
+}
+
+function addMessage(sender, text) {
+    const messagesContainer = document.getElementById('chatMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chatgpt-message';
+    
+    const avatar = document.createElement('div');
+    avatar.className = `chatgpt-message-avatar ${sender}`;
+    avatar.textContent = sender === 'user' ? 'U' : 'AI';
+    
+    const content = document.createElement('div');
+    content.className = 'chatgpt-message-content';
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'chatgpt-message-text';
+    textDiv.textContent = text;
+    
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'chatgpt-message-meta';
+    metaDiv.textContent = new Date().toLocaleTimeString();
+    
+    content.appendChild(textDiv);
+    content.appendChild(metaDiv);
+    
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(content);
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    isTyping = true;
+    const messagesContainer = document.getElementById('chatMessages');
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chatgpt-message';
+    typingDiv.id = 'typingIndicator';
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'chatgpt-message-avatar assistant';
+    avatar.textContent = 'AI';
+    
+    const content = document.createElement('div');
+    content.className = 'chatgpt-message-content';
+    
+    const typingContent = document.createElement('div');
+    typingContent.className = 'chatgpt-typing';
+    typingContent.innerHTML = `
+        <span>AI is typing</span>
+        <div class="chatgpt-typing-dots">
+            <div class="chatgpt-typing-dot"></div>
+            <div class="chatgpt-typing-dot"></div>
+            <div class="chatgpt-typing-dot"></div>
+        </div>
+    `;
+    
+    content.appendChild(typingContent);
+    
+    typingDiv.appendChild(avatar);
+    typingDiv.appendChild(content);
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    isTyping = false;
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+}
+
+// New Dashboard Functions
+function performMainSearch() {
+    const searchInput = document.getElementById('mainSearchInput');
+    const searchFilter = document.querySelector('.search-filter');
+    const query = searchInput.value.trim();
+    const filter = searchFilter.value;
+    
+    if (!query) {
+        alert('Please enter a search query');
+        return;
+    }
+    
+    // Redirect to appropriate page based on filter
+    switch(filter) {
+        case 'legal_research':
+            window.location.href = `/legal-research?query=${encodeURIComponent(query)}`;
+            break;
+        case 'document_analysis':
+            window.location.href = `/document-analysis?query=${encodeURIComponent(query)}`;
+            break;
+        case 'knowledge_base':
+            window.location.href = `/knowledge-base?query=${encodeURIComponent(query)}`;
+            break;
+        default:
+            // Default to legal research
+            window.location.href = `/legal-research?query=${encodeURIComponent(query)}`;
+    }
+}
+
+function filterByCategory(category) {
+    // Remove active class from all category buttons
+    document.querySelectorAll('.category-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Add active class to clicked button
+    event.target.closest('.category-btn').classList.add('active');
+    
+    // You can implement category-specific filtering here
+    console.log('Filtering by category:', category);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chatInput').focus();
+    
+    // Close sidebar on mobile when clicking outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(event.target) && 
+            !mobileMenu.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
+</script>
+{% endblock %}

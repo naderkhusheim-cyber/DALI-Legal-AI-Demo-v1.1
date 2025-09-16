@@ -1,12 +1,662 @@
-{% extends "base.html" %}
-{% block title %}Login - DALI Legal AI{% endblock %}
+{% extends "chatgpt_base.html" %}
+
+{% block title %}{{ t('login') if t else 'Login' }} - DALI Legal AI{% endblock %}
+
 {% block content %}
-<h1>Login</h1>
-{% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
-<form method="post" action="/login">
-    <label>Username:<br><input type="text" name="username" required></label><br><br>
-    <label>Password:<br><input type="password" name="password" required></label><br><br>
-    <button type="submit">Login</button>
+<style>
+/* Modern Legal Platform Style with Dark Mode */
+.chatgpt-body {
+    background: #1a1a1a;
+    color: #ffffff;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.modern-login-container {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d30 100%);
+}
+
+.left-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #2a2a3a 0%, #3a3a4a 100%);
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.left-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.03"/><circle cx="50" cy="10" r="0.5" fill="%23ffffff" opacity="0.04"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    pointer-events: none;
+}
+
+.right-panel {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.features-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.feature-icon {
+    width: 24px;
+    height: 24px;
+    background: #10a37f;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+}
+
+.feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.feature-details {
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #b0b0b0;
+}
+
+.detail-label {
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    color: #10a37f;
+    font-weight: 500;
+}
+
+.feature-description {
+    background: rgba(16, 163, 127, 0.1);
+    border: 1px solid rgba(16, 163, 127, 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #e0e0e0;
+}
+
+.copy-button {
+    background: #10a37f;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+    margin-bottom: 2rem;
+}
+
+.copy-button:hover {
+    background: #0d8a6b;
+    transform: translateY(-1px);
+}
+
+.feature-highlight {
+    margin-bottom: 2rem;
+}
+
+.highlight-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+.highlight-description {
+    font-size: 1rem;
+    color: #b0b0b0;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.pagination-dots {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dot.active {
+    background: #10a37f;
+    transform: scale(1.2);
+}
+
+.view-all-button {
+    background: transparent;
+    color: #10a37f;
+    border: 2px solid #10a37f;
+    border-radius: 0.75rem;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.view-all-button:hover {
+    background: #10a37f;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.login-section {
+    max-width: 400px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.brand-logo {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.logo-text {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #10a37f;
+    margin-bottom: 0.5rem;
+}
+
+.logo-subtitle {
+    font-size: 1rem;
+    color: #b0b0b0;
+}
+
+.login-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.login-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.login-btn.primary {
+    background: #10a37f;
+    color: white;
+}
+
+.login-btn.secondary {
+    background: transparent;
+    color: #10a37f;
+    border: 2px solid #10a37f;
+}
+
+.login-btn:hover {
+    transform: translateY(-2px);
+}
+
+.login-form {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #10a37f;
+    box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+}
+
+.form-input::placeholder {
+    color: #666;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.remember-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.remember-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #10a37f;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+}
+
+.remember-checkbox:checked {
+    background: #10a37f;
+}
+
+.remember-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.remember-text {
+    font-size: 0.9rem;
+    color: #b0b0b0;
+    line-height: 1.4;
+}
+
+.forgot-password {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.forgot-link {
+    color: #10a37f;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.forgot-link:hover {
+    text-decoration: underline;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 1rem;
+    background: #10a37f;
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submit-button:hover {
+    background: #0d8a6b;
+    transform: translateY(-2px);
+}
+
+.submit-button:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.language-toggle {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.language-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+    .modern-login-container {
+        flex-direction: column;
+    }
+    
+    .left-panel, .right-panel {
+        padding: 2rem;
+    }
+    
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .login-buttons {
+        flex-direction: column;
+    }
+    
+    .language-toggle {
+        position: static;
+        margin-bottom: 2rem;
+        align-self: flex-end;
+    }
+}
+</style>
+
+<div class="modern-login-container">
+    <!-- Language Toggle -->
+    <button id="language-toggle" class="language-toggle">
+        <span id="language-toggle-text">العربية</span>
+    </button>
+    
+    <!-- Left Panel - Features -->
+    <div class="left-panel">
+        <h1 class="main-title">{{ t('welcome_to_dali') if t else 'Welcome to DALI Legal AI' }}</h1>
+        
+        <div class="features-section">
+            <div class="feature-header">
+                <div class="feature-icon">⚖️</div>
+                <h3 class="feature-title">{{ t('legal_updates') if t else 'Legal Updates' }}</h3>
+            </div>
+            
+            <div class="feature-details">
+                <div class="detail-item">
+                    <div class="detail-label">{{ t('modification_date') if t else 'Modification Date:' }}</div>
+                    <div class="detail-value">{{ t('effective_in_18_days') if t else 'Effective in 18 days: 21 hours: 03 minutes' }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">{{ t('amendment_link') if t else 'Amendment Link:' }}</div>
+                    <div class="detail-value">{{ t('royal_decree_m44') if t else 'Royal Decree No. (M/44) for 1446' }}</div>
+                </div>
+            </div>
+            
+            <div class="feature-description">
+                {{ t('amendment_description') if t else 'Adding two definitions to the article, with the following text: Assignment: a service providing a worker to work for a non-employer through a licensed establishment for this purpose.' }}
+            </div>
+            
+            <button class="copy-button">
+                📋 {{ t('copy_update') if t else 'Copy Update' }}
+            </button>
+        </div>
+        
+        <div class="feature-highlight">
+            <h3 class="highlight-title">{{ t('countdown_feature') if t else 'Upcoming Updates Countdown Feature' }}</h3>
+            <p class="highlight-description">
+                {{ t('countdown_description') if t else 'You can see upcoming system updates before they take effect, with a countdown to the effective date, to be prepared in advance and stay informed.' }}
+            </p>
+            
+            <div class="pagination-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot active"></div>
+            </div>
+            
+            <button class="view-all-button">
+                {{ t('view_all_updates') if t else 'View All Updates' }}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Right Panel - Login Form -->
+    <div class="right-panel">
+        <div class="login-section">
+            <div class="brand-logo">
+                <div class="logo-text">DALI</div>
+                <div class="logo-subtitle">{{ t('legal_ai') if t else 'Legal AI' }}</div>
+            </div>
+            
+            <div class="login-buttons">
+                <button class="login-btn secondary">{{ t('request_free_trial') if t else 'Request Free Trial' }}</button>
+                <button class="login-btn primary">{{ t('login') if t else 'Login' }}</button>
+            </div>
+            
+            {% if error %}
+            <div class="chatgpt-error-message">
+                <div class="chatgpt-error-icon">⚠️</div>
+                <div class="chatgpt-error-text">{{ error }}</div>
+            </div>
+            {% endif %}
+            
+            <form method="post" action="/login" class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">{{ t('username') if t else 'Username' }}</label>
+                    <input type="text" name="username" class="form-input" required 
+                           placeholder="{{ t('enter_username') if t else 'Enter your username' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('password') if t else 'Password' }}</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" name="password" class="form-input" required 
+                               placeholder="{{ t('enter_password') if t else 'Enter your password' }}">
+                        <button type="button" class="password-toggle">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="remember-section">
+                    <input type="checkbox" class="remember-checkbox" id="remember">
+                    <label for="remember" class="remember-text">
+                        {{ t('remember_me') if t else 'Remember me' }}<br>
+                        <small>{{ t('remember_description') if t else 'When approved, enjoy longer and more comfortable login on the same browser.' }}</small>
+                    </label>
+                </div>
+                
+                <div class="forgot-password">
+                    <a href="#" class="forgot-link">{{ t('forgot_password') if t else 'Forgot password?' }}</a>
+                </div>
+                
+                <button type="submit" class="submit-button">
+                    🔐 {{ t('login') if t else 'Login' }}
+                </button>
 </form>
-<p>Don't have an account? <a href="/signup">Sign up</a></p>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="color: #b0b0b0; font-size: 0.9rem;">
+                    {{ t('dont_have_account') if t else "Don't have an account?" }} 
+                    <a href="/signup" style="color: #10a37f; text-decoration: none; font-weight: 500;">
+                        {{ t('signup_here') if t else 'Sign up here' }}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Language toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const languageToggle = document.getElementById('language-toggle');
+    const languageToggleText = document.getElementById('language-toggle-text');
+    
+    if (languageToggle && languageToggleText) {
+        let currentLanguage = 'en';
+        languageToggleText.textContent = currentLanguage === 'en' ? 'العربية' : 'English';
+        
+        languageToggle.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/language/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentLanguage = data.language;
+                    languageToggleText.textContent = currentLanguage === 'en' ? 'العربية' : 'English';
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error toggling language:', error);
+            }
+        });
+    }
+    
+    // Password toggle functionality
+    const passwordToggle = document.querySelector('.password-toggle');
+    const passwordInput = document.querySelector('input[name="password"]');
+    
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', function() {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordToggle.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                passwordToggle.textContent = '👁️';
+            }
+        });
+    }
+    
+    // Form validation and loading state
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(e) {
+            const username = document.querySelector('input[name="username"]').value.trim();
+            const password = document.querySelector('input[name="password"]').value;
+            
+            if (!username || !password) {
+                e.preventDefault();
+                alert('{{ t("please_fill_all_fields") if t else "Please fill in all fields" }}');
+                return;
+            }
+            
+            const submitButton = loginForm.querySelector('.submit-button');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '⏳ {{ t("logging_in") if t else "Logging in..." }}';
+            submitButton.disabled = true;
+            
+            setTimeout(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }, 3000);
+        });
+    }
+    
+    // Copy button functionality
+    const copyButton = document.querySelector('.copy-button');
+    if (copyButton) {
+        copyButton.addEventListener('click', function() {
+            const text = '{{ t("amendment_description") if t else "Adding two definitions to the article, with the following text: Assignment: a service providing a worker to work for a non-employer through a licensed establishment for this purpose." }}';
+            navigator.clipboard.writeText(text).then(() => {
+                copyButton.innerHTML = '✅ {{ t("copied") if t else "Copied!" }}';
+                setTimeout(() => {
+                    copyButton.innerHTML = '📋 {{ t("copy_update") if t else "Copy Update" }}';
+                }, 2000);
+            });
+        });
+    }
+    
+    // Pagination dots functionality
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', function() {
+            dots.forEach(d => d.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
 {% endblock %}

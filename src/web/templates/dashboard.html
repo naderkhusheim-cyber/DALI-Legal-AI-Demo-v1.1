@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - DALI Legal AI{% endblock %}
+{% block title %}{{ t('dashboard') if t else 'Dashboard' }} - DALI Legal AI{% endblock %}
 {% block content %}
 <div class="main-header">
-    <h1>⚖️ DALI Legal AI System</h1>
-    <p>Your intelligent legal research and document analysis assistant</p>
+    <h1>{{ t('welcome_title') if t else '⚖️ DALI Legal AI System' }}</h1>
+    <p>{{ t('welcome_subtitle') if t else 'Your intelligent legal research and document analysis assistant' }}</p>
 </div>
 <div style="display:flex;gap:2rem;margin-bottom:2rem;">
     <div class="metric-card" style="flex:1;background:#e3eaf2;">
-        <h3>🔎 Legal Research</h3>
-        <p>Conduct comprehensive legal research with AI-powered insights and citations.</p>
+        <h3>🔎 {{ t('legal_research') if t else 'Legal Research' }}</h3>
+        <p>{{ t('welcome_bullet1') if t else 'Conduct comprehensive legal research with AI-powered insights and citations.' }}</p>
     </div>
     <div class="metric-card" style="flex:1;background:#f8f9fa;">
-        <h3>📄 Document Analysis</h3>
-        <p>Analyze contracts, agreements, and legal documents with advanced AI.</p>
+        <h3>📄 {{ t('document_analysis') if t else 'Document Analysis' }}</h3>
+        <p>{{ t('welcome_bullet2') if t else 'Analyze contracts, agreements, and legal documents with advanced AI.' }}</p>
     </div>
     <div class="metric-card" style="flex:1;background:#f8f9fa;">
-        <h3>📚 Knowledge Management</h3>
-        <p>Build and search your firm's legal knowledge base with semantic search.</p>
+        <h3>📚 {{ t('knowledge_base') if t else 'Knowledge Management' }}</h3>
+        <p>{{ t('welcome_bullet3') if t else 'Build and search your firm\'s legal knowledge base with semantic search.' }}</p>
     </div>
 </div>
-<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Recent Activity</div>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">{{ t('recent_activity') if t else 'Recent Activity' }}</div>
 {% if recent_conversations %}
     <div style="margin-bottom:1rem;">
         {% for conv in recent_conversations %}
@@ -30,12 +30,12 @@
         {% endfor %}
     </div>
 {% else %}
-    <div class="info-message">No recent activity. Start by asking a legal question or uploading a document.</div>
+    <div class="info-message">{{ t('no_recent_activity') if t else 'No recent activity. Start by asking a legal question or uploading a document.' }}</div>
 {% endif %}
-<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Quick Actions</div>
+<div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">{{ t('quick_actions') if t else 'Quick Actions' }}</div>
 <div style="display:flex;gap:2rem;">
-    <form method="get" action="/legal-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#e3eaf2;">🔎 Start Legal Research</button></form>
-    <form method="get" action="/document-analysis" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">📄 Analyze Document</button></form>
-    <form method="get" action="/web-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">🌐 Web Research</button></form>
+    <form method="get" action="/legal-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#e3eaf2;">🔎 {{ t('start_legal_research') if t else 'Start Legal Research' }}</button></form>
+    <form method="get" action="/document-analysis" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">📄 {{ t('analyze_document') if t else 'Analyze Document' }}</button></form>
+    <form method="get" action="/web-research" style="flex:1;"><button class="metric-card" style="width:100%;background:#f8f9fa;">🌐 {{ t('web_research_action') if t else 'Web Research' }}</button></form>
 </div>
 {% endblock %}

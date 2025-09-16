@@ -1,0 +1,266 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}{{ t('admin_dashboard') if t else 'Admin Dashboard' }} - DALI Legal AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/chatgpt-ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <!-- Admin Sidebar -->
+    <aside class="chatgpt-sidebar" id="sidebar">
+        <div class="chatgpt-sidebar-header">
+            <div class="chatgpt-sidebar-title">👑 DALI Admin</div>
+            <div class="chatgpt-sidebar-subtitle">{{ t('admin_panel') if t else 'Administration Panel' }}</div>
+        </div>
+        
+        <button class="chatgpt-new-chat-btn" onclick="refreshData()">
+            <span>🔄</span>
+            {{ t('refresh_data') if t else 'Refresh Data' }}
+        </button>
+        
+        <nav class="chatgpt-nav">
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('overview') if t else 'Overview' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/dashboard" class="chatgpt-nav-link {% if active_page=='admin-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📊</span>
+                        {{ t('dashboard') if t else 'Dashboard' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/analytics" class="chatgpt-nav-link {% if active_page=='admin-analytics' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📈</span>
+                        {{ t('analytics') if t else 'Analytics' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('management') if t else 'Management' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/users" class="chatgpt-nav-link {% if active_page=='admin-users' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">👥</span>
+                        {{ t('user_management') if t else 'User Management' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/documents" class="chatgpt-nav-link {% if active_page=='admin-documents' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📄</span>
+                        {{ t('document_management') if t else 'Document Management' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('system') if t else 'System' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/system" class="chatgpt-nav-link {% if active_page=='admin-system' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⚙️</span>
+                        {{ t('system_settings') if t else 'System Settings' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/logs" class="chatgpt-nav-link {% if active_page=='admin-logs' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📋</span>
+                        {{ t('system_logs') if t else 'System Logs' }}
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        {% if user %}
+        <div class="chatgpt-user-info">
+            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
+            <div class="chatgpt-user-role">{{ t('admin_role') if t else 'Administrator' }}</div>
+            <form method="get" action="/logout">
+                <button type="submit" class="chatgpt-logout-btn">
+                    {{ t('logout') if t else 'Logout' }}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+    
+    <!-- Main Admin Interface -->
+    <main class="chatgpt-main">
+        <!-- Mobile Menu Button -->
+        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
+            ☰
+        </button>
+        
+        <!-- Admin Header -->
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-title">{{ t('admin_dashboard') if t else 'Admin Dashboard' }}</div>
+            <div class="chatgpt-header-subtitle">{{ t('admin_dashboard_subtitle') if t else 'System overview and management tools' }}</div>
+        </div>
+        
+        <!-- Admin Content -->
+        <div class="chatgpt-messages" style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-xl);">
+            <!-- System Stats -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('system_overview') if t else 'System Overview' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('system_overview_subtitle') if t else 'Key metrics and system health' }}</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--chatgpt-spacing-lg);">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 600; color: var(--chatgpt-text-accent); margin-bottom: var(--chatgpt-spacing-sm);">
+                            {{ admin_stats.total_users or 0 }}
+                        </div>
+                        <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">
+                            {{ t('total_users') if t else 'Total Users' }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 600; color: var(--chatgpt-text-accent); margin-bottom: var(--chatgpt-spacing-sm);">
+                            {{ admin_stats.total_documents or 0 }}
+                        </div>
+                        <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">
+                            {{ t('total_documents') if t else 'Total Documents' }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 600; color: var(--chatgpt-text-accent); margin-bottom: var(--chatgpt-spacing-sm);">
+                            {{ admin_stats.system_uptime or '99.9%' }}
+                        </div>
+                        <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">
+                            {{ t('system_uptime') if t else 'System Uptime' }}
+                        </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 600; color: var(--chatgpt-text-accent); margin-bottom: var(--chatgpt-spacing-sm);">
+                            {{ admin_stats.new_users_week or 0 }}
+                        </div>
+                        <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">
+                            {{ t('new_users_week') if t else 'New Users This Week' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Status -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('system_status') if t else 'System Status' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('system_status_subtitle') if t else 'All system components status' }}</div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-md);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <span>{{ t('web_server') if t else 'Web Server' }}</span>
+                        <span style="color: var(--chatgpt-text-accent); font-weight: 500;">Online</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <span>{{ t('database') if t else 'Database' }}</span>
+                        <span style="color: var(--chatgpt-text-accent); font-weight: 500;">Online</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <span>{{ t('vector_store') if t else 'Vector Store' }}</span>
+                        <span style="color: var(--chatgpt-text-accent); font-weight: 500;">Online</span>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <span>{{ t('ai_engine') if t else 'AI Engine' }}</span>
+                        <span style="color: var(--chatgpt-text-accent); font-weight: 500;">Online</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('recent_activity') if t else 'Recent Activity' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('recent_activity_subtitle') if t else 'Latest user actions and system events' }}</div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-md);">
+                    {% for activity in admin_stats.recent_activities %}
+                    <div style="display: flex; align-items: center; gap: var(--chatgpt-spacing-md); padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <div style="width: 32px; height: 32px; background-color: var(--chatgpt-bg-active); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: var(--chatgpt-font-size-sm); font-weight: 600;">
+                            {{ activity.user_name[0].upper() }}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; color: var(--chatgpt-text-primary);">{{ activity.user_name }}</div>
+                            <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">{{ activity.action }}</div>
+                        </div>
+                        <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-muted);">{{ activity.timestamp }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('quick_actions') if t else 'Quick Actions' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('quick_actions_subtitle') if t else 'Common administrative tasks' }}</div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--chatgpt-spacing-md);">
+                    <button class="chatgpt-btn chatgpt-btn-primary" onclick="manageUsers()">
+                        👥 {{ t('manage_users') if t else 'Manage Users' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="viewLogs()">
+                        📋 {{ t('view_logs') if t else 'View Logs' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="backupSystem()">
+                        💾 {{ t('backup_system') if t else 'Backup System' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="systemSettings()">
+                        ⚙️ {{ t('system_settings') if t else 'System Settings' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+function refreshData() {
+    location.reload();
+}
+
+function manageUsers() {
+    window.location.href = '/admin/users';
+}
+
+function viewLogs() {
+    window.location.href = '/admin/logs';
+}
+
+function backupSystem() {
+    if (confirm('Are you sure you want to create a system backup?')) {
+        alert('Backup started...');
+    }
+}
+
+function systemSettings() {
+    window.location.href = '/admin/system';
+}
+
+// Close sidebar on mobile when clicking outside
+document.addEventListener('click', function(event) {
+    const sidebar = document.getElementById('sidebar');
+    const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
+    
+    if (window.innerWidth <= 768 && 
+        !sidebar.contains(event.target) && 
+        !mobileMenu.contains(event.target)) {
+        sidebar.classList.remove('open');
+    }
+});
+</script>
+{% endblock %}

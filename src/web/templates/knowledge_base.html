@@ -49,6 +49,7 @@
                 <th>Type</th>
                 <th>Source</th>
                 <th>Uploaded</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -58,9 +59,68 @@
                 <td>{{ doc.document_type }}</td>
                 <td>{{ doc.source }}</td>
                 <td>{{ doc.created_at }}</td>
+                <td>
+                    <button onclick="shareDocument({{ doc.id }})" class="metric-card" style="background:#e3eaf2;color:#1f4e79;border:1px solid #b8c5d1;padding:0.25rem 0.5rem;font-size:0.8rem;">📤 Share</button>
+                </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 {% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function shareDocument(docId) {
+    // Get list of users to share with
+    fetch('/api/users/all')
+        .then(response => response.json())
+        .then(data => {
+            if (data.users && data.users.length > 0) {
+                let userList = 'Select user to share with:\n';
+                data.users.forEach((user, index) => {
+                    userList += `${index + 1}. ${user.username}\n`;
+                });
+                
+                const userChoice = prompt(userList + '\nEnter user number:');
+                const userIndex = parseInt(userChoice) - 1;
+                
+                if (userIndex >= 0 && userIndex < data.users.length) {
+                    const selectedUser = data.users[userIndex];
+                    
+                    // Share the document
+                    fetch('/api/knowledge-base/share', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            doc_id: docId,
+                            receiver_id: selectedUser.id
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            alert(`Document shared successfully with ${selectedUser.username}!`);
+                        } else {
+                            alert(`Failed to share document: ${result.error}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error sharing document:', error);
+                        alert('Error sharing document');
+                    });
+                } else {
+                    alert('Invalid user selection');
+                }
+            } else {
+                alert('No other users found to share with');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching users:', error);
+            alert('Error fetching users');
+        });
+}
+</script>
 {% endblock %}

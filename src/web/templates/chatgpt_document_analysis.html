@@ -1,0 +1,608 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}{{ t('document_analysis') if t else 'Document Analysis' }} - DALI Legal AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/chatgpt-ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <!-- ChatGPT-Style Sidebar -->
+    <aside class="chatgpt-sidebar" id="sidebar">
+        <div class="chatgpt-sidebar-header">
+            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
+            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
+        </div>
+        
+        <button class="chatgpt-new-chat-btn" onclick="startNewAnalysis()">
+            <span>+</span>
+            {{ t('new_analysis') if t else 'New Analysis' }}
+        </button>
+        
+        <nav class="chatgpt-nav">
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/dashboard" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">🏠</span>
+                        {{ t('dashboard') if t else 'Dashboard' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/legal-research" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">🔍</span>
+                        {{ t('legal_research') if t else 'Legal Research' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/document-analysis" class="chatgpt-nav-link active">
+                        <span class="chatgpt-nav-icon">📄</span>
+                        {{ t('document_analysis') if t else 'Document Analysis' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/knowledge-base" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">📚</span>
+                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/web-research" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">🌐</span>
+                        {{ t('web_research') if t else 'Web Research' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/settings" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">⚙️</span>
+                        {{ t('settings') if t else 'Settings' }}
+                    </a>
+                </div>
+                {% if user and user.role == 'admin' %}
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/dashboard" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">👑</span>
+                        {{ t('admin_panel') if t else 'Admin Panel' }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </nav>
+        
+        {% if user %}
+        <div class="chatgpt-user-info">
+            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
+            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
+            <form method="get" action="/logout">
+                <button type="submit" class="chatgpt-logout-btn">
+                    {{ t('logout') if t else 'Logout' }}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+    
+    <!-- Main Document Analysis Interface -->
+    <main class="chatgpt-main">
+        <!-- Mobile Menu Button -->
+        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
+            ☰
+        </button>
+        
+        <!-- Analysis Header -->
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-title">{{ t('document_analysis') if t else 'Document Analysis' }}</div>
+            <div class="chatgpt-header-subtitle">{{ t('document_analysis_subtitle') if t else 'Upload and analyze legal documents with AI-powered insights' }}</div>
+        </div>
+        
+        <!-- Welcome Screen -->
+        <div class="chatgpt-welcome" id="welcomeScreen">
+            <div class="chatgpt-welcome-icon">📄</div>
+            <h1 class="chatgpt-welcome-title">{{ t('document_analysis') if t else 'Document Analysis' }}</h1>
+            <p class="chatgpt-welcome-subtitle">{{ t('document_analysis_description') if t else 'Upload legal documents, contracts, or agreements and get AI-powered analysis, summaries, and insights.' }}</p>
+            
+            <div class="chatgpt-welcome-actions">
+                <button class="chatgpt-action-btn" onclick="uploadDocument()">
+                    📤 {{ t('upload_document') if t else 'Upload Document' }}
+                </button>
+                <button class="chatgpt-action-btn" onclick="analyzeContract()">
+                    📋 {{ t('analyze_contract') if t else 'Analyze Contract' }}
+                </button>
+                <button class="chatgpt-action-btn" onclick="summarizeDocument()">
+                    📝 {{ t('summarize_document') if t else 'Summarize Document' }}
+                </button>
+                <button class="chatgpt-action-btn" onclick="extractClauses()">
+                    🔍 {{ t('extract_clauses') if t else 'Extract Clauses' }}
+                </button>
+            </div>
+        </div>
+        
+        <!-- Upload Area -->
+        <div class="chatgpt-messages" id="uploadArea" style="display: none;">
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('upload_document') if t else 'Upload Document' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('upload_subtitle') if t else 'Select a legal document to analyze' }}</div>
+                </div>
+                
+                <form id="documentUploadForm" enctype="multipart/form-data">
+                    <div class="chatgpt-form-group">
+                        <label class="chatgpt-form-label">{{ t('select_file') if t else 'Select File' }}</label>
+                        <input type="file" class="chatgpt-form-input" id="documentFile" accept=".pdf,.doc,.docx,.txt" required>
+                    </div>
+                    
+                    <div class="chatgpt-form-group">
+                        <label class="chatgpt-form-label">{{ t('analysis_type') if t else 'Analysis Type' }}</label>
+                        <select class="chatgpt-form-input" id="analysisType">
+                            <option value="summary">{{ t('summary') if t else 'Summary' }}</option>
+                            <option value="contract">{{ t('contract_analysis') if t else 'Contract Analysis' }}</option>
+                            <option value="clauses">{{ t('extract_clauses') if t else 'Extract Clauses' }}</option>
+                            <option value="compliance">{{ t('compliance_check') if t else 'Compliance Check' }}</option>
+                        </select>
+                    </div>
+                    
+                    <div class="chatgpt-form-group">
+                        <label class="chatgpt-form-label">{{ t('document_title') if t else 'Document Title' }}</label>
+                        <input type="text" class="chatgpt-form-input" id="documentTitle" placeholder="{{ t('enter_title') if t else 'Enter document title...' }}">
+                    </div>
+                    
+                    <button type="submit" class="chatgpt-btn chatgpt-btn-primary" style="width: 100%;">
+                        📤 {{ t('upload_and_analyze') if t else 'Upload & Analyze' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Analysis Result Display (for form submissions) -->
+        {% if analysis_result %}
+        <div class="chatgpt-research-result" id="analysisResult">
+            <div class="chatgpt-research-header">
+                <h2>{{ t('analysis_result') if t else 'Analysis Result' }}</h2>
+                <p class="chatgpt-research-query">{{ t('document') if t else 'Document' }}: {{ document_title or 'Uploaded Document' }}</p>
+                
+                <!-- Analysis Actions -->
+                <div class="analysis-actions">
+                    <button class="chatgpt-btn chatgpt-btn-primary" onclick="downloadAnalysisPDF()">
+                        📄 {{ t('download_pdf') if t else 'Download PDF' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="shareAnalysis()">
+                        📤 {{ t('share_analysis') if t else 'Share Analysis' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="addToKnowledgeBase()">
+                        📚 {{ t('add_to_kb') if t else 'Add to Knowledge Base' }}
+                    </button>
+                </div>
+            </div>
+            <div class="chatgpt-research-content">
+                <div class="legal-research-result">{{ analysis_result }}</div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Chat Messages Area -->
+        <div class="chatgpt-messages" id="chatMessages" style="display: none;">
+            <!-- Messages will be dynamically added here -->
+        </div>
+        
+        <!-- Input Area -->
+        <div class="chatgpt-input-area">
+            <div class="chatgpt-input-container">
+                <textarea 
+                    class="chatgpt-input" 
+                    id="chatInput" 
+                    placeholder="{{ t('ask_about_document') if t else 'Ask questions about your document...' }}"
+                    rows="1"
+                    onkeydown="handleKeyDown(event)"
+                    oninput="autoResize(this)"
+                ></textarea>
+                <button class="chatgpt-send-btn" id="sendBtn" onclick="sendMessage()">
+                    ➤
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+let currentDocumentId = null;
+let isAnalyzing = false;
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+function startNewAnalysis() {
+    currentDocumentId = null;
+    document.getElementById('welcomeScreen').style.display = 'flex';
+    document.getElementById('uploadArea').style.display = 'none';
+    document.getElementById('chatMessages').style.display = 'none';
+    document.getElementById('chatInput').value = '';
+}
+
+// Analysis Action Functions
+function downloadAnalysisPDF() {
+    const analysisResult = document.querySelector('.legal-research-result');
+    if (!analysisResult) {
+        alert('{{ t("no_analysis_to_download") if t else "No analysis available to download" }}');
+        return;
+    }
+    
+    const analysisText = analysisResult.textContent;
+    const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
+    
+    // Create PDF content
+    const pdfContent = `
+Document Analysis Report
+Generated: ${new Date().toLocaleDateString()}
+${documentTitle}
+
+Analysis Results:
+${analysisText}
+    `;
+    
+    // Create and download file
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `document-analysis-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+function shareAnalysis() {
+    const recipient = prompt('{{ t("enter_username_to_share") if t else "Enter username to share analysis with:" }}');
+    if (recipient) {
+        const analysisResult = document.querySelector('.legal-research-result');
+        if (!analysisResult) {
+            alert('{{ t("no_analysis_to_share") if t else "No analysis available to share" }}');
+            return;
+        }
+        
+        const analysisText = analysisResult.textContent;
+        const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
+        
+        fetch('/api/document-analysis/share', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recipient_username: recipient,
+                analysis_text: analysisText,
+                document_title: documentTitle
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('{{ t("analysis_shared_successfully") if t else "Analysis shared successfully!" }}');
+            } else {
+                alert('{{ t("error_sharing_analysis") if t else "Error sharing analysis" }}: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error sharing analysis:', error);
+            alert('{{ t("error_sharing_analysis") if t else "Error sharing analysis" }}');
+        });
+    }
+}
+
+function addToKnowledgeBase() {
+    const analysisResult = document.querySelector('.legal-research-result');
+    if (!analysisResult) {
+        alert('{{ t("no_analysis_to_add") if t else "No analysis available to add to knowledge base" }}');
+        return;
+    }
+    
+    const analysisText = analysisResult.textContent;
+    const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
+    
+    fetch('/api/knowledge-base/add-analysis', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: documentTitle,
+            content: analysisText,
+            document_type: 'analysis',
+            source: 'document_analysis'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('{{ t("analysis_added_to_kb") if t else "Analysis added to knowledge base successfully!" }}');
+        } else {
+            alert('{{ t("error_adding_to_kb") if t else "Error adding to knowledge base" }}: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to knowledge base:', error);
+        alert('{{ t("error_adding_to_kb") if t else "Error adding to knowledge base" }}');
+    });
+}
+
+function uploadDocument() {
+    document.getElementById('welcomeScreen').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'flex';
+    document.getElementById('chatMessages').style.display = 'none';
+}
+
+function analyzeContract() {
+    document.getElementById('analysisType').value = 'contract';
+    uploadDocument();
+}
+
+function summarizeDocument() {
+    document.getElementById('analysisType').value = 'summary';
+    uploadDocument();
+}
+
+function extractClauses() {
+    document.getElementById('analysisType').value = 'clauses';
+    uploadDocument();
+}
+
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+}
+
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+}
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message || isAnalyzing) return;
+    
+    // Add user message
+    addMessage('user', message);
+    
+    // Clear input
+    input.value = '';
+    input.style.height = 'auto';
+    
+    // Show typing indicator
+    showTypingIndicator();
+    
+    // Simulate AI response (replace with actual API call)
+    setTimeout(() => {
+        hideTypingIndicator();
+        addMessage('assistant', 'I understand your question about the document. This is a simulated response - in the actual implementation, this would analyze your uploaded document and provide specific insights.');
+    }, 2000);
+}
+
+function formatMessage(text) {
+    // Convert the text to HTML with proper formatting
+    let formatted = text
+        // Convert numbered lists (1. **text**: description)
+        .replace(/(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*?)(?=\d+\.\s*\*\*|$)/gs, (match, num, title, desc) => {
+            return `<div class="chatgpt-list-item">
+                <div class="chatgpt-list-number">${num}.</div>
+                <div class="chatgpt-list-content">
+                    <div class="chatgpt-list-title">${title}</div>
+                    <div class="chatgpt-list-description">${desc.trim()}</div>
+                </div>
+            </div>`;
+        })
+        // Convert bold text **text** to <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Convert line breaks to <br>
+        .replace(/\n/g, '<br>')
+        // Convert double line breaks to paragraph breaks
+        .replace(/(<br>\s*){2,}/g, '</p><p>')
+        // Wrap in paragraph tags
+        .replace(/^(.*)$/, '<p>$1</p>')
+        // Clean up empty paragraphs
+        .replace(/<p><\/p>/g, '')
+        .replace(/<p><br><\/p>/g, '');
+    
+    return formatted;
+}
+
+function addMessage(sender, text) {
+        const messagesContainer = document.getElementById('chatMessages');
+    if (messagesContainer.style.display === 'none') {
+        messagesContainer.style.display = 'flex';
+    }
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'chatgpt-message';
+    
+    const avatar = document.createElement('div');
+    avatar.className = `chatgpt-message-avatar ${sender}`;
+    avatar.textContent = sender === 'user' ? 'U' : 'AI';
+    
+    const content = document.createElement('div');
+    content.className = 'chatgpt-message-content';
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'chatgpt-message-text';
+    
+    if (sender === 'assistant') {
+        // Format AI responses with proper HTML
+        textDiv.innerHTML = formatMessage(text);
+    } else {
+        // Keep user messages as plain text
+        textDiv.textContent = text;
+    }
+    
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'chatgpt-message-meta';
+    metaDiv.textContent = new Date().toLocaleTimeString();
+    
+    content.appendChild(textDiv);
+    content.appendChild(metaDiv);
+    
+    messageDiv.appendChild(avatar);
+    messageDiv.appendChild(content);
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTypingIndicator() {
+    isAnalyzing = true;
+        const messagesContainer = document.getElementById('chatMessages');
+    if (messagesContainer.style.display === 'none') {
+        messagesContainer.style.display = 'flex';
+    }
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chatgpt-message';
+    typingDiv.id = 'typingIndicator';
+    
+    const avatar = document.createElement('div');
+    avatar.className = 'chatgpt-message-avatar assistant';
+    avatar.textContent = 'AI';
+    
+    const content = document.createElement('div');
+    content.className = 'chatgpt-message-content';
+    
+    const typingContent = document.createElement('div');
+    typingContent.className = 'chatgpt-typing';
+    typingContent.innerHTML = `
+        <span>AI is analyzing...</span>
+        <div class="chatgpt-typing-dots">
+            <div class="chatgpt-typing-dot"></div>
+            <div class="chatgpt-typing-dot"></div>
+            <div class="chatgpt-typing-dot"></div>
+        </div>
+    `;
+    
+    content.appendChild(typingContent);
+    
+    typingDiv.appendChild(avatar);
+    typingDiv.appendChild(content);
+    
+    messagesContainer.appendChild(typingDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function hideTypingIndicator() {
+    isAnalyzing = false;
+    const typingIndicator = document.getElementById('typingIndicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+// Document upload form handling
+document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('documentFile');
+    const analysisType = document.getElementById('analysisType').value;
+    const documentTitle = document.getElementById('documentTitle').value;
+    
+    if (!fileInput.files[0]) {
+        alert('Please select a file to upload.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('document', fileInput.files[0]);
+    formData.append('analysis_type', analysisType);
+    formData.append('add_to_kb', 'on'); // Always add to knowledge base
+    
+    // Show uploading indicator
+    showTypingIndicator();
+    
+    fetch('/document-analysis', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        hideTypingIndicator();
+        // Extract the analysis result from the response
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        let result = 'Document uploaded and analyzed successfully!';
+        
+        // Look for analysis result in various possible locations
+        const resultSelectors = [
+            '.analysis-result',
+            '.document-analysis-result',
+            '.result',
+            '.analysis',
+            '.content',
+            'p',
+            '.response'
+        ];
+        
+        for (const selector of resultSelectors) {
+            const element = doc.querySelector(selector);
+            if (element && element.textContent.trim()) {
+                const text = element.textContent.trim();
+                if (text.length > 50) {
+                    result = text;
+                    break;
+                }
+            }
+        }
+        
+        // If no specific result found, look for any meaningful content
+        if (result === 'Document uploaded and analyzed successfully!') {
+            const bodyText = doc.body.textContent.trim();
+            if (bodyText && bodyText.length > 50) {
+                // Extract meaningful content (skip navigation, headers, etc.)
+                const lines = bodyText.split('\n').filter(line => 
+                    line.trim().length > 20 && 
+                    !line.includes('DALI') && 
+                    !line.includes('Navigation') &&
+                    !line.includes('Settings') &&
+                    !line.includes('Document Analysis')
+                );
+                if (lines.length > 0) {
+                    result = lines.slice(0, 5).join('\n').trim(); // Take first 5 meaningful lines
+                }
+            }
+        }
+        
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('chatMessages').style.display = 'flex';
+        addMessage('assistant', result);
+    })
+    .catch(error => {
+        hideTypingIndicator();
+        alert('Error uploading document. Please try again.');
+        console.error('Error:', error);
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('chatInput').focus();
+    
+    // Close sidebar on mobile when clicking outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(event.target) && 
+            !mobileMenu.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
+</script>
+{% endblock %}

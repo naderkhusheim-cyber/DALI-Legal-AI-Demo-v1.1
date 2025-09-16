@@ -1,0 +1,110 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}{{ document.title or 'Document' }} - DALI Legal AI{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <main class="chatgpt-main">
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-content">
+                <button class="chatgpt-back-btn" onclick="goBack()">
+                    <span>←</span>
+                    {{ t('back') if t else 'Back' }}
+                </button>
+                <div class="chatgpt-header-text">
+                    <div class="chatgpt-header-title">{{ document.title or 'Untitled Document' }}</div>
+                    <div class="chatgpt-header-subtitle">{{ t('document_viewer') if t else 'Document Viewer' }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chatgpt-messages">
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ document.title or 'Untitled Document' }}</div>
+                    <div class="chatgpt-card-subtitle">
+                        {{ t('document_type') if t else 'Type' }}: {{ document.document_type or 'Unknown' }} | 
+                        {{ t('source') if t else 'Source' }}: {{ document.source or 'Unknown' }} | 
+                        {{ t('created') if t else 'Created' }}: {{ document.created_at.strftime('%Y-%m-%d %H:%M') if document.created_at else 'Unknown' }}
+                    </div>
+                </div>
+                
+                <div class="document-content">
+                    <pre class="document-text">{{ document.content }}</pre>
+                </div>
+                
+                <div class="document-actions">
+                    <button class="chatgpt-btn chatgpt-btn-primary" onclick="downloadDocument()">
+                        📄 {{ t('download') if t else 'Download' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="shareDocument()">
+                        📤 {{ t('share') if t else 'Share' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="editDocument()">
+                        ✏️ {{ t('edit') if t else 'Edit' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.document-content {
+    margin: var(--chatgpt-spacing-lg) 0;
+    padding: var(--chatgpt-spacing-lg);
+    background: var(--chatgpt-bg-secondary);
+    border-radius: var(--chatgpt-border-radius);
+    border: 1px solid var(--chatgpt-border-color);
+}
+
+.document-text {
+    font-family: 'Courier New', monospace;
+    font-size: var(--chatgpt-font-size-sm);
+    line-height: 1.6;
+    color: var(--chatgpt-text-primary);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.document-actions {
+    display: flex;
+    gap: var(--chatgpt-spacing-md);
+    margin-top: var(--chatgpt-spacing-lg);
+    flex-wrap: wrap;
+}
+
+.document-actions .chatgpt-btn {
+    flex: 1;
+    min-width: 120px;
+}
+</style>
+
+<script>
+const documentId = {{ document.id }};
+
+function goBack() {
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        window.location.href = '/settings';
+    }
+}
+
+function downloadDocument() {
+    window.open(`/api/knowledge-base/document/${documentId}/pdf`, '_blank');
+}
+
+function shareDocument() {
+    // Redirect to settings with sharing modal
+    window.location.href = `/settings?share=${documentId}`;
+}
+
+function editDocument() {
+    // For now, just show an alert - could be enhanced with inline editing
+    alert('{{ t("edit_functionality_coming_soon") if t else "Edit functionality coming soon!" }}');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,487 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}{{ t('user_management') if t else 'User Management' }} - DALI Admin{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <!-- Admin Sidebar -->
+    <aside class="chatgpt-sidebar" id="sidebar">
+        <div class="chatgpt-sidebar-header">
+            <div class="chatgpt-sidebar-title">👑 DALI Admin</div>
+            <div class="chatgpt-sidebar-subtitle">{{ t('admin_panel') if t else 'Administration Panel' }}</div>
+        </div>
+        
+        <button class="chatgpt-new-chat-btn" onclick="refreshData()">
+            <span>🔄</span>
+            {{ t('refresh_data') if t else 'Refresh Data' }}
+        </button>
+        
+        <nav class="chatgpt-nav">
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('overview') if t else 'Overview' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/dashboard" class="chatgpt-nav-link {% if active_page=='admin-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📊</span>
+                        {{ t('dashboard') if t else 'Dashboard' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/analytics" class="chatgpt-nav-link {% if active_page=='admin-analytics' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📈</span>
+                        {{ t('analytics') if t else 'Analytics' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('management') if t else 'Management' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/users" class="chatgpt-nav-link {% if active_page=='admin-users' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">👥</span>
+                        {{ t('user_management') if t else 'User Management' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/documents" class="chatgpt-nav-link {% if active_page=='admin-documents' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📄</span>
+                        {{ t('document_management') if t else 'Document Management' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/system" class="chatgpt-nav-link {% if active_page=='admin-system' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⚙️</span>
+                        {{ t('system_settings') if t else 'System Settings' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('security') if t else 'Security' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/logs" class="chatgpt-nav-link {% if active_page=='admin-logs' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📋</span>
+                        {{ t('activity_logs') if t else 'Activity Logs' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/security" class="chatgpt-nav-link {% if active_page=='admin-security' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">🔒</span>
+                        {{ t('security_settings') if t else 'Security Settings' }}
+                    </a>
+                </div>
+            </div>
+        </nav>
+        
+        <div class="chatgpt-sidebar-footer">
+            <div class="chatgpt-user-info">
+                <div class="chatgpt-user-avatar">👑</div>
+                <div class="chatgpt-user-details">
+                    <div class="chatgpt-user-name">{{ user.username }}</div>
+                    <div class="chatgpt-user-role">{{ t('admin') if t else 'Admin' }}</div>
+                </div>
+            </div>
+            <a href="/logout" class="chatgpt-logout-btn">
+                <span>🚪</span>
+                {{ t('logout') if t else 'Logout' }}
+            </a>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="chatgpt-main">
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-title">{{ t('user_management') if t else 'User Management' }}</div>
+            <div class="chatgpt-header-subtitle">{{ t('manage_all_users') if t else 'Manage all users, roles, and permissions' }}</div>
+        </div>
+        
+        <!-- User Management Content -->
+        <div class="chatgpt-messages" style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-xl);">
+            <!-- User Statistics -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('user_statistics') if t else 'User Statistics' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('overview_of_user_data') if t else 'Overview of user data and activity' }}</div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-users">-</div>
+                        <div class="stat-label">{{ t('total_users') if t else 'Total Users' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="active-users">-</div>
+                        <div class="stat-label">{{ t('active_users') if t else 'Active Users' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="new-users-week">-</div>
+                        <div class="stat-label">{{ t('new_users_week') if t else 'New This Week' }}</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="admin-users">-</div>
+                        <div class="stat-label">{{ t('admin_users') if t else 'Admin Users' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Management Table -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('all_users') if t else 'All Users' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('manage_user_accounts') if t else 'Manage user accounts, roles, and permissions' }}</div>
+                </div>
+                
+                <div class="user-management-actions">
+                    <button class="chatgpt-btn chatgpt-btn-primary" onclick="refreshUsers()">
+                        🔄 {{ t('refresh') if t else 'Refresh' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="exportUsers()">
+                        📥 {{ t('export_users') if t else 'Export Users' }}
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="bulkActions()">
+                        ⚡ {{ t('bulk_actions') if t else 'Bulk Actions' }}
+                    </button>
+                </div>
+                
+                <div class="user-table-container">
+                    <table class="user-management-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="select-all-users" onchange="toggleSelectAll()">
+                                </th>
+                                <th>{{ t('username') if t else 'Username' }}</th>
+                                <th>{{ t('email') if t else 'Email' }}</th>
+                                <th>{{ t('role') if t else 'Role' }}</th>
+                                <th>{{ t('status') if t else 'Status' }}</th>
+                                <th>{{ t('last_active') if t else 'Last Active' }}</th>
+                                <th>{{ t('created_at') if t else 'Created' }}</th>
+                                <th>{{ t('actions') if t else 'Actions' }}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Users will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Mobile Menu Button -->
+<button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<script>
+// User Management Functions
+function loadUsers() {
+    fetch('/api/admin/users')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="user-checkbox" value="${user.id}">
+                        </td>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            <span class="role-badge ${user.role}">${user.role}</span>
+                        </td>
+                        <td>
+                            <span class="status-badge ${user.is_active ? 'active' : 'inactive'}">
+                                ${user.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                        </td>
+                        <td>${user.last_active ? new Date(user.last_active).toLocaleDateString() : 'Never'}</td>
+                        <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="file-action-btn primary" onclick="viewUser(${user.id})">
+                                👁️ View
+                            </button>
+                            <button class="file-action-btn secondary" onclick="editUser(${user.id})">
+                                ✏️ Edit
+                            </button>
+                            <button class="file-action-btn secondary" onclick="toggleUserStatus(${user.id}, ${user.is_active})">
+                                ${user.is_active ? '🚫 Ban' : '✅ Activate'}
+                            </button>
+                            <button class="file-action-btn error" onclick="deleteUser(${user.id})">
+                                🗑️ Delete
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                
+                // Update statistics
+                updateUserStats(data.users);
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--chatgpt-text-secondary);">No users found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--chatgpt-error-color);">Error loading users</td></tr>';
+        });
+}
+
+function updateUserStats(users) {
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.is_active).length;
+    const newUsersWeek = users.filter(u => {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return new Date(u.created_at) > weekAgo;
+    }).length;
+    const adminUsers = users.filter(u => u.role === 'admin').length;
+    
+    document.getElementById('total-users').textContent = totalUsers;
+    document.getElementById('active-users').textContent = activeUsers;
+    document.getElementById('new-users-week').textContent = newUsersWeek;
+    document.getElementById('admin-users').textContent = adminUsers;
+}
+
+function refreshUsers() {
+    loadUsers();
+}
+
+function exportUsers() {
+    fetch('/api/admin/users/export')
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'users-export.json';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error exporting users:', error);
+            alert('Error exporting users');
+        });
+}
+
+function bulkActions() {
+    const selectedUsers = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+    if (selectedUsers.length === 0) {
+        alert('Please select users first');
+        return;
+    }
+    
+    const action = prompt(`Selected ${selectedUsers.length} users. Choose action:\n1. Activate\n2. Deactivate\n3. Delete\n4. Change Role`);
+    
+    switch(action) {
+        case '1':
+            bulkActivateUsers(selectedUsers);
+            break;
+        case '2':
+            bulkDeactivateUsers(selectedUsers);
+            break;
+        case '3':
+            if (confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) {
+                bulkDeleteUsers(selectedUsers);
+            }
+            break;
+        case '4':
+            const newRole = prompt('Enter new role (user/admin):');
+            if (newRole && ['user', 'admin'].includes(newRole)) {
+                bulkChangeRole(selectedUsers, newRole);
+            }
+            break;
+    }
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all-users');
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+}
+
+function viewUser(userId) {
+    window.open(`/api/admin/users/${userId}`, '_blank');
+}
+
+function editUser(userId) {
+    // Open edit modal or redirect to edit page
+    alert('Edit user functionality will be implemented soon!');
+}
+
+function toggleUserStatus(userId, currentStatus) {
+    const action = currentStatus ? 'ban' : 'activate';
+    if (confirm(`Are you sure you want to ${action} this user?`)) {
+        fetch(`/api/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`User ${action}ed successfully!`);
+                loadUsers(); // Refresh the table
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling user status:', error);
+            alert('Error updating user status');
+        });
+    }
+}
+
+function deleteUser(userId) {
+    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('User deleted successfully!');
+                loadUsers(); // Refresh the table
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting user:', error);
+            alert('Error deleting user');
+        });
+    }
+}
+
+function bulkActivateUsers(userIds) {
+    fetch('/api/admin/users/bulk-activate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_ids: userIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${userIds.length} users activated successfully!`);
+            loadUsers();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error bulk activating users:', error);
+        alert('Error activating users');
+    });
+}
+
+function bulkDeactivateUsers(userIds) {
+    fetch('/api/admin/users/bulk-deactivate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_ids: userIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${userIds.length} users deactivated successfully!`);
+            loadUsers();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error bulk deactivating users:', error);
+        alert('Error deactivating users');
+    });
+}
+
+function bulkDeleteUsers(userIds) {
+    fetch('/api/admin/users/bulk-delete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_ids: userIds })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${userIds.length} users deleted successfully!`);
+            loadUsers();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error bulk deleting users:', error);
+        alert('Error deleting users');
+    });
+}
+
+function bulkChangeRole(userIds, newRole) {
+    fetch('/api/admin/users/bulk-change-role', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user_ids: userIds, new_role: newRole })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`${userIds.length} users role changed to ${newRole} successfully!`);
+            loadUsers();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error bulk changing role:', error);
+        alert('Error changing user roles');
+    });
+}
+
+function refreshData() {
+    loadUsers();
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('active');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+    
+    // Close sidebar on mobile when clicking outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(event.target) && 
+            !mobileMenu.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+});
+</script>
+{% endblock %}

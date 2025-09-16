@@ -18,7 +18,12 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
-import mysql.connector
+try:
+    import mysql.connector
+    MYSQL_AVAILABLE = True
+except ImportError:
+    MYSQL_AVAILABLE = False
+    print("MySQL connector not available. Using ChromaDB only.")
 
 try:
     import torch  # type: ignore
@@ -461,24 +466,92 @@ class MySQLVectorStore:
     Per-user knowledge base using MySQL for document, chunk, and embedding storage.
     """
     def __init__(self, mysql_config):
-        import mysql.connector
-        self.conn = mysql.connector.connect(**mysql_config)
-        self._ensure_tables()
+        if not MYSQL_AVAILABLE:
+            raise ImportError("MySQL connector not available")
+        try:
+            # Store original config for fallback connections
+            self.mysql_config = mysql_config.copy()
+            # Add connection pooling and timeout settings
+            mysql_config.update({
+                'pool_name': 'dali_pool',
+                'pool_size': 5,
+                'pool_reset_session': True,
+                'autocommit': True,
+                'connect_timeout': 10,
+                'read_timeout': 10,
+                'write_timeout': 10,
+                'charset': 'utf8mb4',
+                'use_unicode': True
+            })
+            self.conn = mysql.connector.connect(**mysql_config)
+            self._ensure_tables()
+        except Exception as e:
+            print(f"MySQL connection failed: {e}")
+            raise
+
+    def _get_connection(self):
+        """Get a fresh connection from the pool"""
+        try:
+            # Try to get a connection from the pool
+            return mysql.connector.connect(
+                pool_name='dali_pool',
+                pool_reset_session=True
+            )
+        except Exception as e:
+            print(f"Failed to get connection from pool: {e}")
+            # Fallback to creating a new connection
+            return mysql.connector.connect(**self.mysql_config)
+    
+    def _execute_query(self, query, params=None, fetch_one=False, fetch_all=False):
+        """Execute a query with proper connection handling"""
+        conn = None
+        cursor = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query, params)
+            
+            if fetch_one:
+                return cursor.fetchone()
+            elif fetch_all:
+                return cursor.fetchall()
+            else:
+                return cursor.rowcount
+        except Exception as e:
+            print(f"Query execution error: {e}")
+            raise
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     def _ensure_tables(self):
-        cursor = self.conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                role VARCHAR(32) DEFAULT 'user',
-                is_active BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB;
+        conn = None
+        cursor = None
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    first_name VARCHAR(255),
+                    last_name VARCHAR(255),
+                    company_name VARCHAR(255),
+                    job_title VARCHAR(255),
+                    employee_id VARCHAR(255),
+                    phone VARCHAR(50),
+                    department VARCHAR(255),
+                    role VARCHAR(32) DEFAULT 'user',
+                    is_active BOOLEAN DEFAULT FALSE,
+                    last_active DATETIME NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB;
         ''')
-        cursor.execute('''
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS documents (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
@@ -492,7 +565,7 @@ class MySQLVectorStore:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB;
         ''')
-        cursor.execute('''
+            cursor.execute('''
             CREATE TABLE IF NOT EXISTS shared_documents (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 document_id INT NOT NULL,
@@ -504,39 +577,70 @@ class MySQLVectorStore:
                 FOREIGN KEY (shared_by_user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB;
         ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS user_chats (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                sender_id INT NOT NULL,
-                receiver_id INT NOT NULL,
-                message TEXT NOT NULL,
-                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB;
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    title VARCHAR(255) NOT NULL,
+                    conversation_type VARCHAR(64) DEFAULT 'legal_research',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB;
         ''')
-        # Optional: shared_analysis table for future
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS shared_analysis (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                analysis_id INT NOT NULL,
-                shared_with_user_id INT NOT NULL,
-                shared_by_user_id INT NOT NULL,
-                shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB;
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS conversation_messages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    conversation_id INT NOT NULL,
+                    sender_type ENUM('user', 'assistant') NOT NULL,
+                    message TEXT NOT NULL,
+                    metadata TEXT,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB;
         ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS activity_log (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                user_id INT,
-                event_type VARCHAR(64),
-                event_data TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-            ) ENGINE=InnoDB;
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_chats (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    sender_id INT NOT NULL,
+                    receiver_id INT NOT NULL,
+                    message TEXT NOT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB;
+            ''')
+            # Optional: shared_analysis table for future
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS shared_analysis (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    analysis_id INT NOT NULL,
+                    shared_with_user_id INT NOT NULL,
+                    shared_by_user_id INT NOT NULL,
+                    shared_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB;
         ''')
-        self.conn.commit()
-        cursor.close()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS activity_log (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT,
+                    event_type VARCHAR(64),
+                    event_data TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+                ) ENGINE=InnoDB;
+            ''')
+            conn.commit()
+        except Exception as e:
+            print(f"Error creating tables: {e}")
+            if conn:
+                conn.rollback()
+            raise
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     def share_document(self, document_id, shared_with_user_id, shared_by_user_id):
         cursor = self.conn.cursor()
@@ -617,9 +721,74 @@ class MySQLVectorStore:
         for doc in docs:
             emb = np.frombuffer(doc['embedding'], dtype=np.float32)
             sim = np.dot(query_embedding, emb) / (np.linalg.norm(query_embedding) * np.linalg.norm(emb) + 1e-8)
+            doc['score'] = float(sim)  # Add score to document
             scored.append((sim, doc))
         scored.sort(reverse=True, key=lambda x: x[0])
         return [doc for sim, doc in scored[:top_k]]
+
+    def create_conversation(self, user_id, title, conversation_type='legal_research'):
+        """Create a new conversation"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO conversations (user_id, title, conversation_type)
+            VALUES (%s, %s, %s)
+        ''', (user_id, title, conversation_type))
+        conversation_id = cursor.lastrowid
+        self.conn.commit()
+        cursor.close()
+        return conversation_id
+
+    def get_user_conversations(self, user_id):
+        """Get all conversations for a user"""
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT * FROM conversations 
+            WHERE user_id = %s 
+            ORDER BY updated_at DESC
+        ''', (user_id,))
+        conversations = cursor.fetchall()
+        cursor.close()
+        return conversations
+
+    def get_conversation_messages(self, conversation_id):
+        """Get all messages for a conversation"""
+        cursor = self.conn.cursor(dictionary=True)
+        cursor.execute('''
+            SELECT * FROM conversation_messages 
+            WHERE conversation_id = %s 
+            ORDER BY sent_at ASC
+        ''', (conversation_id,))
+        messages = cursor.fetchall()
+        cursor.close()
+        return messages
+
+    def add_message_to_conversation(self, conversation_id, sender_type, message, metadata=None):
+        """Add a message to a conversation"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO conversation_messages (conversation_id, sender_type, message, metadata)
+            VALUES (%s, %s, %s, %s)
+        ''', (conversation_id, sender_type, message, metadata))
+        self.conn.commit()
+        cursor.close()
+
+    def update_conversation_title(self, conversation_id, new_title):
+        """Update conversation title"""
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            UPDATE conversations 
+            SET title = %s, updated_at = CURRENT_TIMESTAMP 
+            WHERE id = %s
+        ''', (new_title, conversation_id))
+        self.conn.commit()
+        cursor.close()
+
+    def delete_conversation(self, conversation_id):
+        """Delete a conversation and all its messages"""
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM conversations WHERE id = %s', (conversation_id,))
+        self.conn.commit()
+        cursor.close()
 
 
 if __name__ == "__main__":

@@ -4,32 +4,39 @@
     <small>سيادة للأفكار الطموحة</small>
 </div>
 
+<!-- Language Toggle -->
+<div style="margin-bottom:1rem;text-align:center;">
+    <button id="language-toggle" class="metric-card" style="background:#e3eaf2;color:#1f4e79;border:1px solid #b8c5d1;width:90%;margin:auto;cursor:pointer;">
+        <span id="language-toggle-text">العربية</span>
+    </button>
+</div>
+
 <!-- Navigation -->
 <div style="margin-bottom:2rem;">
-    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Navigation</div>
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">{{ t('navigation') if t else 'Navigation' }}</div>
     <form method="get" action="">
         <select name="page" id="sidebar-nav-select" onchange="window.location.href=this.value" style="width:100%;padding:0.5rem;border-radius:6px;background:#f8f9fa;font-weight:bold;">
-            <option value="/dashboard" {% if active_page=='dashboard' %}selected style="background:#e3eaf2;"{% endif %}>🏠 Dashboard</option>
-            <option value="/legal-research" {% if active_page=='legal-research' %}selected style="background:#e3eaf2;"{% endif %}>🔎 Legal Research</option>
-            <option value="/document-analysis" {% if active_page=='document-analysis' %}selected style="background:#e3eaf2;"{% endif %}>📄 Document Analysis</option>
-            <option value="/knowledge-base" {% if active_page=='knowledge-base' %}selected style="background:#e3eaf2;"{% endif %}>📚 Knowledge Base</option>
-            <option value="/web-research" {% if active_page=='web-research' %}selected style="background:#e3eaf2;"{% endif %}>🌐 Web Research</option>
-            <option value="/settings" {% if active_page=='settings' %}selected style="background:#e3eaf2;"{% endif %}>⚙️ Settings</option>
+            <option value="/dashboard" {% if active_page=='dashboard' %}selected style="background:#e3eaf2;"{% endif %}>🏠 {{ t('dashboard') if t else 'Dashboard' }}</option>
+            <option value="/legal-research" {% if active_page=='legal-research' %}selected style="background:#e3eaf2;"{% endif %}>🔎 {{ t('legal_research') if t else 'Legal Research' }}</option>
+            <option value="/document-analysis" {% if active_page=='document-analysis' %}selected style="background:#e3eaf2;"{% endif %}>📄 {{ t('document_analysis') if t else 'Document Analysis' }}</option>
+            <option value="/knowledge-base" {% if active_page=='knowledge-base' %}selected style="background:#e3eaf2;"{% endif %}>📚 {{ t('knowledge_base') if t else 'Knowledge Base' }}</option>
+            <option value="/web-research" {% if active_page=='web-research' %}selected style="background:#e3eaf2;"{% endif %}>🌐 {{ t('web_research') if t else 'Web Research' }}</option>
+            <option value="/settings" {% if active_page=='settings' %}selected style="background:#e3eaf2;"{% endif %}>⚙️ {{ t('settings') if t else 'Settings' }}</option>
         </select>
     </form>
 </div>
 
 <!-- System Status -->
 <div style="margin-bottom:2rem;">
-    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">System Status</div>
-    <div class="success-message">✅ System Initialized</div>
-    <div class="success-message">✅ Vector Store Ready</div>
-    <div class="success-message">✅ Web Scraper Ready</div>
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">{{ t('system_status') if t else 'System Status' }}</div>
+    <div class="success-message">✅ {{ t('system_initialized') if t else 'System Initialized' }}</div>
+    <div class="success-message">✅ {{ t('vector_store_ready') if t else 'Vector Store Ready' }}</div>
+    <div class="success-message">✅ {{ t('web_scraper_ready') if t else 'Web Scraper Ready' }}</div>
 </div>
 
 <!-- Quick Stats -->
 <div>
-    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">Quick Stats</div>
-    <div class="metric-card">📄 Documents: {{ stats.total_documents or 0 }}</div>
-    <div class="metric-card">💬 Conversations: {{ stats.conversations or 0 }}</div>
+    <div style="font-weight:bold;font-size:1.1rem;margin-bottom:0.5rem;">{{ t('quick_stats') if t else 'Quick Stats' }}</div>
+    <div class="metric-card">📄 {{ t('documents') if t else 'Documents' }}: {{ stats.total_documents or 0 }}</div>
+    <div class="metric-card">💬 {{ t('conversations') if t else 'Conversations' }}: {{ stats.conversations or 0 }}</div>
 </div>

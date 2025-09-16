@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DALI Legal AI{% endblock %}</title>
+    <link rel="stylesheet" href="/static/chatbox.css">
+    <link rel="stylesheet" href="/static/chatgpt-ui.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body class="chatgpt-body">
+    <!-- Language Toggle Button -->
+    <div id="language-toggle-wrapper" style="position:fixed;top:32px;right:32px;z-index:9999;">
+        <button id="language-toggle" onclick="toggleLanguage()" title="Toggle Language">
+            🌐 {{ t('language') if t else 'Language' }}
+        </button>
+    </div>
+    
+    {% block content %}{% endblock %}
+    
+    <!-- Floating Chat Box UI -->
+    <div id="chatbox-toggle-wrapper" style="position:fixed;bottom:32px;right:32px;z-index:9999;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+        <button id="chatbox-toggle" title="Open Chat">💬</button>
+    </div>
+    <div id="chatbox-container">
+        <div id="chatbox-header">
+            <span>Chat</span>
+            <button id="chatbox-close">&times;</button>
+        </div>
+        <div id="chatbox-messages"></div>
+        <div id="chatbox-input">
+            <input id="chatbox-input-field" type="text" placeholder="Type a message...">
+            <button id="chatbox-send">Send</button>
+        </div>
+    </div>
+    <script>
+        window.CURRENT_USER = {% if user %}{{ user.username|tojson }}{% else %}null{% endif %};
+        window.CURRENT_USER_ID = {% if user %}{{ user.id|int }}{% else %}null{% endif %};
+        
+        // Language Toggle Function
+        function toggleLanguage() {
+            fetch('/api/language/toggle', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+    <script src="/static/chatbox.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

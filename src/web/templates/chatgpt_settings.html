@@ -1,0 +1,872 @@
+{% extends "chatgpt_base.html" %}
+
+{% block title %}{{ t('settings') if t else 'Settings' }} - DALI Legal AI{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <main class="chatgpt-main">
+        <div class="chatgpt-header">
+            <div class="chatgpt-header-content">
+                <button class="chatgpt-back-btn" onclick="goBack()">
+                    <span>←</span>
+                    {{ t('back') if t else 'Back' }}
+                </button>
+                <div class="chatgpt-header-text">
+                    <div class="chatgpt-header-title">{{ t('settings') if t else 'Settings' }}</div>
+                    <div class="chatgpt-header-subtitle">{{ t('settings_subtitle') if t else 'Manage your account preferences and system settings' }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Content -->
+        <div class="chatgpt-messages" style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-xl);">
+            <!-- Settings Tabs -->
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-title">{{ t('settings') if t else 'Settings' }}</div>
+                    <div class="chatgpt-card-subtitle">{{ t('manage_your_preferences') if t else 'Manage your account preferences and system settings' }}</div>
+                </div>
+                
+                <div class="settings-tabs">
+                    <button class="settings-tab active" onclick="showSettingsTab('system-config')">
+                        🔧 {{ t('system_configuration') if t else 'System Configuration' }}
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('user-profile')">
+                        👤 {{ t('user_profile') if t else 'User Profile' }}
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('system-preferences')">
+                        ⚙️ {{ t('system_preferences') if t else 'System Preferences' }}
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('data-management')">
+                        📊 {{ t('data_management') if t else 'Data Management' }}
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('security')">
+                        🔒 {{ t('security_settings') if t else 'Security Settings' }}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- System Configuration Tab -->
+            <div id="system-config" class="settings-tab-content active">
+                <!-- LLM Settings -->
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('llm_settings') if t else 'LLM Settings' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('configure_llm_settings') if t else 'Configure LLM and system settings' }}</div>
+                    </div>
+                    
+                    <form method="post" action="/settings">
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('model_provider') if t else 'Model Provider' }}</label>
+                            <select class="chatgpt-form-input" name="model_provider" onchange="updateModelOptions()">
+                                <option value="ollama" {% if current_provider == 'ollama' %}selected{% endif %}>Ollama (Local)</option>
+                                <option value="openai" {% if current_provider == 'openai' %}selected{% endif %}>OpenAI (ChatGPT)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('current_model') if t else 'Current Model' }}</label>
+                            <select class="chatgpt-form-input" name="current_model">
+                                <optgroup label="Ollama Models" id="ollama_models" {% if current_provider != 'ollama' %}style="display:none;"{% endif %}>
+                                    <option value="llama3:8b" {% if current_model == 'llama3:8b' %}selected{% endif %}>llama3:8b</option>
+                                    <option value="mistral" {% if current_model == 'mistral' %}selected{% endif %}>mistral</option>
+                                    <option value="codellama" {% if current_model == 'codellama' %}selected{% endif %}>codellama</option>
+                                </optgroup>
+                                <optgroup label="OpenAI Models" id="openai_models" {% if current_provider != 'openai' %}style="display:none;"{% endif %}>
+                                    <option value="gpt-4o" {% if current_model == 'gpt-4o' %}selected{% endif %}>gpt-4o</option>
+                                    <option value="gpt-3.5-turbo" {% if current_model == 'gpt-3.5-turbo' %}selected{% endif %}>gpt-3.5-turbo</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('response_temperature') if t else 'Response Temperature' }}</label>
+                            <input type="range" class="chatgpt-form-input" name="temperature" min="0" max="1" step="0.01" value="0.3" oninput="this.nextElementSibling.value = this.value">
+                            <output>0.3</output>
+                        </div>
+                        
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('max_response_tokens') if t else 'Max Response Tokens' }}</label>
+                            <input type="number" class="chatgpt-form-input" name="max_tokens" min="100" max="4000" value="2048">
+                        </div>
+                        
+                        <button type="submit" class="chatgpt-btn chatgpt-btn-primary" style="width: 100%;">
+                            🔧 {{ t('update_llm_settings') if t else 'Update LLM Settings' }}
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Vector Store Settings -->
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('vector_store_settings') if t else 'Vector Store Settings' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('configure_document_processing') if t else 'Configure document processing settings' }}</div>
+                    </div>
+                    
+                    <form method="post" action="/settings">
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('document_chunk_size') if t else 'Document Chunk Size' }}</label>
+                            <input type="number" class="chatgpt-form-input" name="chunk_size" min="500" max="2000" value="1000">
+                        </div>
+                        
+                        <div class="chatgpt-form-group">
+                            <label class="chatgpt-form-label">{{ t('chunk_overlap') if t else 'Chunk Overlap' }}</label>
+                            <input type="number" class="chatgpt-form-input" name="chunk_overlap" min="50" max="500" value="200">
+                        </div>
+                        
+                        <button type="submit" class="chatgpt-btn chatgpt-btn-primary" style="width: 100%;">
+                            📚 {{ t('update_vector_store_settings') if t else 'Update Vector Store Settings' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- User Profile Tab -->
+            <div id="user-profile" class="settings-tab-content">
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('user_profile') if t else 'User Profile' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('manage_your_profile') if t else 'Manage your personal information and preferences' }}</div>
+                    </div>
+                    
+                    <form id="profile-form" onsubmit="updateProfile(event)">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--chatgpt-spacing-lg);">
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('username') if t else 'Username' }}</label>
+                                <input type="text" class="chatgpt-form-input" value="{{ user.username if user else '' }}" readonly>
+                                <small class="form-help-text">{{ t('username_cannot_change') if t else 'Username cannot be changed' }}</small>
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('email') if t else 'Email' }}</label>
+                                <input type="email" class="chatgpt-form-input" value="{{ user.email if user else '' }}" readonly>
+                                <small class="form-help-text">{{ t('email_cannot_change') if t else 'Email cannot be changed' }}</small>
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('first_name') if t else 'First Name' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="first_name" value="{{ user.first_name if user else '' }}" required>
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('last_name') if t else 'Last Name' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="last_name" value="{{ user.last_name if user else '' }}" required>
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('company_name') if t else 'Company Name' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="company_name" value="{{ user.company_name if user else '' }}">
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('job_title') if t else 'Job Title' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="job_title" value="{{ user.job_title if user else '' }}">
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('employee_id') if t else 'Employee ID' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="employee_id" value="{{ user.employee_id if user else '' }}">
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('phone') if t else 'Phone Number' }}</label>
+                                <input type="tel" class="chatgpt-form-input" name="phone" value="{{ user.phone if user else '' }}">
+                            </div>
+                            
+                            <div class="chatgpt-form-group">
+                                <label class="chatgpt-form-label">{{ t('department') if t else 'Department' }}</label>
+                                <input type="text" class="chatgpt-form-input" name="department" value="{{ user.department if user else '' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="profile-actions">
+                            <button type="submit" class="chatgpt-btn chatgpt-btn-primary">
+                                💾 {{ t('save_changes') if t else 'Save Changes' }}
+                            </button>
+                            <button type="button" class="chatgpt-btn chatgpt-btn-secondary" onclick="resetProfileForm()">
+                                🔄 {{ t('reset') if t else 'Reset' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- System Preferences Tab -->
+            <div id="system-preferences" class="settings-tab-content">
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('system_preferences') if t else 'System Preferences' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('customize_your_experience') if t else 'Customize your experience and interface preferences' }}</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-lg);">
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="toggleTheme()">
+                            🌙 {{ t('toggle_theme') if t else 'Toggle Theme' }}
+                        </button>
+                        
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="toggleLanguage()">
+                            🌐 {{ t('toggle_language') if t else 'Toggle Language' }}
+                        </button>
+                        
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="notificationSettings()">
+                            🔔 {{ t('notification_settings') if t else 'Notification Settings' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Management Tab -->
+            <div id="data-management" class="settings-tab-content">
+                <!-- Knowledge Base Management -->
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('knowledge_base_management') if t else 'Knowledge Base Management' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('manage_your_documents') if t else 'View and manage your uploaded documents' }}</div>
+                    </div>
+                    
+                    <div class="knowledge-base-table-container">
+                        <table class="knowledge-base-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('file_name') if t else 'File Name' }}</th>
+                                    <th>{{ t('file_type') if t else 'Type' }}</th>
+                                    <th>{{ t('upload_date') if t else 'Upload Date' }}</th>
+                                    <th>{{ t('file_size') if t else 'Size' }}</th>
+                                    <th>{{ t('actions') if t else 'Actions' }}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="knowledge-base-table-body">
+                                <!-- Documents will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="table-actions">
+                        <button class="chatgpt-btn chatgpt-btn-primary" onclick="refreshKnowledgeBase()">
+                            🔄 {{ t('refresh') if t else 'Refresh' }}
+                        </button>
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="exportKnowledgeBase()">
+                            📥 {{ t('export_kb') if t else 'Export Knowledge Base' }}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Data Management Actions -->
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('data_management') if t else 'Data Management' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('manage_your_data') if t else 'Manage your documents and data' }}</div>
+                    </div>
+                    
+                    <form method="post" action="/settings">
+                        <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-lg);">
+                            <button type="submit" name="clear_history" value="1" class="chatgpt-btn chatgpt-btn-secondary">
+                                🧹 {{ t('clear_conversation_history') if t else 'Clear Conversation History' }}
+                            </button>
+                            
+                            <button type="submit" name="reset_kb" value="1" class="chatgpt-btn chatgpt-btn-error">
+                                🗑️ {{ t('reset_knowledge_base') if t else 'Reset Knowledge Base' }}
+                            </button>
+                            
+                            <button type="submit" name="export_history" value="1" class="chatgpt-btn chatgpt-btn-secondary">
+                                📥 {{ t('export_conversation_history') if t else 'Export Conversation History' }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Settings Tab -->
+            <div id="security" class="settings-tab-content">
+                <div class="chatgpt-card">
+                    <div class="chatgpt-card-header">
+                        <div class="chatgpt-card-title">{{ t('security_settings') if t else 'Security Settings' }}</div>
+                        <div class="chatgpt-card-subtitle">{{ t('manage_your_security') if t else 'Manage your account security and privacy' }}</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-lg);">
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="changePassword()">
+                            🔒 {{ t('change_password') if t else 'Change Password' }}
+                        </button>
+                        
+                        <button class="chatgpt-btn chatgpt-btn-secondary" onclick="sessionManagement()">
+                            📱 {{ t('session_management') if t else 'Session Management' }}
+                        </button>
+                        
+                        <button class="chatgpt-btn chatgpt-btn-error" onclick="deleteAccount()">
+                            🗑️ {{ t('delete_account') if t else 'Delete Account' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Password Change Modal -->
+<div id="password-change-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{{ t('change_password') if t else 'Change Password' }}</h3>
+            <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+        </div>
+        
+        <form id="password-change-form" onsubmit="changePasswordSubmit(event)">
+            <div class="modal-body">
+                <div class="chatgpt-form-group">
+                    <label class="chatgpt-form-label">{{ t('current_password') if t else 'Current Password' }}</label>
+                    <input type="password" class="chatgpt-form-input" name="current_password" required>
+                </div>
+                
+                <div class="chatgpt-form-group">
+                    <label class="chatgpt-form-label">{{ t('new_password') if t else 'New Password' }}</label>
+                    <input type="password" class="chatgpt-form-input" name="new_password" required minlength="6">
+                    <small class="form-help-text">{{ t('password_min_length') if t else 'Password must be at least 6 characters long' }}</small>
+                </div>
+                
+                <div class="chatgpt-form-group">
+                    <label class="chatgpt-form-label">{{ t('confirm_password') if t else 'Confirm New Password' }}</label>
+                    <input type="password" class="chatgpt-form-input" name="confirm_password" required minlength="6">
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="chatgpt-btn chatgpt-btn-secondary" onclick="closePasswordModal()">
+                    {{ t('cancel') if t else 'Cancel' }}
+                </button>
+                <button type="submit" class="chatgpt-btn chatgpt-btn-primary">
+                    {{ t('change_password') if t else 'Change Password' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Document Sharing Modal -->
+<div id="sharing-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>{{ t('share_document') if t else 'Share Document' }}</h3>
+            <button class="modal-close" onclick="closeSharingModal()">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="chatgpt-form-group">
+                <label class="chatgpt-form-label">{{ t('select_user') if t else 'Select User to Share With' }}</label>
+                <select id="user-select" class="chatgpt-form-input">
+                    <option value="">{{ t('loading_users') if t else 'Loading users...' }}</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="chatgpt-btn chatgpt-btn-secondary" onclick="closeSharingModal()">
+                {{ t('cancel') if t else 'Cancel' }}
+            </button>
+            <button type="button" class="chatgpt-btn chatgpt-btn-primary" onclick="confirmShare()">
+                {{ t('share') if t else 'Share' }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--chatgpt-spacing-sm);
+    margin-bottom: var(--chatgpt-spacing-lg);
+}
+
+.settings-tab {
+    padding: var(--chatgpt-spacing-sm) var(--chatgpt-spacing-md);
+    border: 1px solid var(--chatgpt-border-color);
+    background: var(--chatgpt-bg-secondary);
+    color: var(--chatgpt-text-secondary);
+    border-radius: var(--chatgpt-radius-md);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.settings-tab:hover {
+    background: var(--chatgpt-bg-hover);
+    border-color: var(--chatgpt-border-hover);
+}
+
+.settings-tab.active {
+    background: var(--chatgpt-primary);
+    color: white;
+    border-color: var(--chatgpt-primary);
+}
+
+.settings-tab-content {
+    display: none;
+}
+
+.settings-tab-content.active {
+    display: block;
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('open');
+}
+
+function startNewSettings() {
+    // Refresh the settings page
+    location.reload();
+}
+
+function showSettingsTab(tabId) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.settings-tab-content');
+    tabContents.forEach(content => content.classList.remove('active'));
+    
+    // Remove active class from all tabs
+    const tabs = document.querySelectorAll('.settings-tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.add('active');
+    
+    // Add active class to clicked tab
+    event.target.classList.add('active');
+    
+    // Load data when switching to data management tab
+    if (tabId === 'data-management') {
+        setTimeout(loadKnowledgeBase, 100); // Small delay to ensure tab is visible
+    }
+}
+
+function updateModelOptions() {
+    var provider = document.getElementById('model_provider').value;
+    document.getElementById('ollama_models').style.display = provider === 'ollama' ? '' : 'none';
+    document.getElementById('openai_models').style.display = provider === 'openai' ? '' : 'none';
+    // Optionally, auto-select a model when switching provider
+    var modelSelect = document.getElementById('current_model');
+    if (provider === 'ollama') {
+        modelSelect.value = 'llama3:8b';
+    } else {
+        modelSelect.value = 'gpt-4o';
+    }
+}
+
+// Profile Management Functions
+function updateProfile(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('profile-form');
+    const formData = new FormData(form);
+    
+    // Convert FormData to JSON
+    const profileData = {};
+    for (let [key, value] of formData.entries()) {
+        profileData[key] = value;
+    }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ {{ t("saving") if t else "Saving..." }}';
+    submitBtn.disabled = true;
+    
+    fetch('/api/user/profile/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('{{ t("profile_updated_successfully") if t else "Profile updated successfully!" }}');
+            // Update greeting name in session if first/last name changed
+            if (profileData.first_name || profileData.last_name) {
+                updateGreetingName(profileData.first_name, profileData.last_name);
+            }
+        } else {
+            alert('{{ t("error_updating_profile") if t else "Error updating profile" }}: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error updating profile:', error);
+        alert('{{ t("error_updating_profile") if t else "Error updating profile" }}');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function resetProfileForm() {
+    if (confirm('{{ t("confirm_reset_profile") if t else "Are you sure you want to reset all changes?" }}')) {
+        // Reload the page to reset form to original values
+        location.reload();
+    }
+}
+
+function updateGreetingName(firstName, lastName) {
+    // Update the greeting name in the session
+    fetch('/api/user/greeting/update', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the greeting display on the page
+            const greetingElement = document.querySelector('.chatgpt-user-name');
+            if (greetingElement && data.greeting_name) {
+                greetingElement.textContent = data.greeting_name;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating greeting name:', error);
+    });
+}
+
+function toggleTheme() {
+    // Toggle between light and dark theme
+    document.body.classList.toggle('light-theme');
+    alert('Theme toggled!');
+}
+
+function toggleLanguage() {
+    // Toggle language
+    fetch('/api/language/toggle', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function notificationSettings() {
+    alert('Notification settings functionality will be implemented soon!');
+}
+
+// Password Change Functions
+function changePassword() {
+    document.getElementById('password-change-modal').style.display = 'flex';
+}
+
+function closePasswordModal() {
+    document.getElementById('password-change-modal').style.display = 'none';
+    document.getElementById('password-change-form').reset();
+}
+
+function changePasswordSubmit(event) {
+    event.preventDefault();
+    
+    const form = document.getElementById('password-change-form');
+    const formData = new FormData(form);
+    
+    const currentPassword = formData.get('current_password');
+    const newPassword = formData.get('new_password');
+    const confirmPassword = formData.get('confirm_password');
+    
+    // Validate passwords
+    if (newPassword !== confirmPassword) {
+        alert('{{ t("passwords_do_not_match") if t else "New passwords do not match" }}');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        alert('{{ t("password_too_short") if t else "Password must be at least 6 characters long" }}');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '⏳ {{ t("changing_password") if t else "Changing Password..." }}';
+    submitBtn.disabled = true;
+    
+    fetch('/api/user/password/change', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('{{ t("password_changed_successfully") if t else "Password changed successfully!" }}');
+            closePasswordModal();
+        } else {
+            alert('{{ t("error_changing_password") if t else "Error changing password" }}: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error changing password:', error);
+        alert('{{ t("error_changing_password") if t else "Error changing password" }}');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function sessionManagement() {
+    alert('Session management functionality will be implemented soon!');
+}
+
+function deleteAccount() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        if (confirm('This will permanently delete all your data. Are you absolutely sure?')) {
+            alert('Account deletion functionality will be implemented soon!');
+        }
+    }
+}
+
+// Knowledge Base Management Functions
+function loadKnowledgeBase() {
+    fetch('/api/knowledge-base/my-documents')
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('knowledge-base-table-body');
+            tbody.innerHTML = '';
+            
+            if (data.documents && data.documents.length > 0) {
+                data.documents.forEach(doc => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${doc.title || 'Untitled Document'}</td>
+                        <td>${doc.document_type || 'Unknown'}</td>
+                        <td>${new Date(doc.created_at).toLocaleDateString()}</td>
+                        <td>${formatFileSize(doc.content ? doc.content.length : 0)}</td>
+                        <td>
+                            <button class="file-action-btn primary" onclick="viewDocument(${doc.id})">
+                                👁️ View
+                            </button>
+                            <button class="file-action-btn secondary" onclick="shareDocument(${doc.id})">
+                                📤 Share
+                            </button>
+                            <button class="file-action-btn secondary" onclick="downloadPDF(${doc.id})">
+                                📄 PDF
+                            </button>
+                            <button class="file-action-btn error" onclick="deleteDocument(${doc.id})">
+                                🗑️ Delete
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--chatgpt-text-secondary);">No documents found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading knowledge base:', error);
+            const tbody = document.getElementById('knowledge-base-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--chatgpt-error-color);">Error loading documents</td></tr>';
+        });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function refreshKnowledgeBase() {
+    loadKnowledgeBase();
+}
+
+function exportKnowledgeBase() {
+    fetch('/api/knowledge-base/export')
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'knowledge-base-export.json';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error exporting knowledge base:', error);
+            alert('Error exporting knowledge base');
+        });
+}
+
+function viewDocument(docId) {
+    // Open document in a new tab
+    window.open(`/document/${docId}`, '_blank');
+}
+
+let currentDocumentToShare = null;
+
+function shareDocument(docId) {
+    currentDocumentToShare = docId;
+    document.getElementById('sharing-modal').style.display = 'flex';
+    loadUsersForSharing();
+}
+
+function closeSharingModal() {
+    document.getElementById('sharing-modal').style.display = 'none';
+    currentDocumentToShare = null;
+    document.getElementById('user-select').innerHTML = '<option value="">{{ t("loading_users") if t else "Loading users..." }}</option>';
+}
+
+function loadUsersForSharing() {
+    fetch('/api/users/all')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('user-select');
+            select.innerHTML = '<option value="">{{ t("select_user") if t else "Select a user..." }}</option>';
+            
+            if (data.users && data.users.length > 0) {
+                data.users.forEach(user => {
+                    if (user.username !== window.CURRENT_USER) { // Don't show current user
+                        const option = document.createElement('option');
+                        option.value = user.id; // Use user ID instead of username
+                        option.textContent = `${user.username} (${user.email})`;
+                        select.appendChild(option);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading users:', error);
+            document.getElementById('user-select').innerHTML = '<option value="">{{ t("error_loading_users") if t else "Error loading users" }}</option>';
+        });
+}
+
+function confirmShare() {
+    const selectedUser = document.getElementById('user-select').value;
+    if (!selectedUser) {
+        alert('{{ t("please_select_user") if t else "Please select a user to share with" }}');
+        return;
+    }
+    
+    if (!currentDocumentToShare) {
+        alert('{{ t("no_document_selected") if t else "No document selected" }}');
+        return;
+    }
+    
+    fetch('/api/knowledge-base/share', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            doc_id: currentDocumentToShare,
+            receiver_id: selectedUser
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('{{ t("document_shared_successfully") if t else "Document shared successfully!" }}');
+            closeSharingModal();
+        } else {
+            alert('{{ t("error_sharing_document") if t else "Error sharing document" }}: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error sharing document:', error);
+        alert('{{ t("error_sharing_document") if t else "Error sharing document" }}');
+    });
+}
+
+function downloadPDF(docId) {
+    fetch(`/api/knowledge-base/document/${docId}/pdf`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `document-${docId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        })
+        .catch(error => {
+            console.error('Error downloading PDF:', error);
+            alert('Error downloading PDF');
+        });
+}
+
+function deleteDocument(docId) {
+    if (confirm('Are you sure you want to delete this document?')) {
+        fetch(`/api/knowledge-base/document/${docId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Document deleted successfully!');
+                loadKnowledgeBase(); // Refresh the table
+            } else {
+                alert('Error deleting document: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting document:', error);
+            alert('Error deleting document');
+        });
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    updateModelOptions();
+    
+    // Load knowledge base when data management tab is shown
+    const dataManagementTab = document.querySelector('[onclick="showSettingsTab(\'data-management\')"]');
+    if (dataManagementTab) {
+        dataManagementTab.addEventListener('click', function() {
+            setTimeout(loadKnowledgeBase, 100); // Small delay to ensure tab is visible
+        });
+    }
+    
+    // Close sidebar on mobile when clicking outside
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(event.target) && 
+            !mobileMenu.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+});
+
+// Navigation Functions
+function goBack() {
+    // Check if there's a previous page in history
+    if (window.history.length > 1) {
+        window.history.back();
+    } else {
+        // Default to dashboard if no history
+        window.location.href = '/dashboard';
+    }
+}
+</script>
+{% endblock %}

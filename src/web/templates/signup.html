@@ -1,13 +1,651 @@
-{% extends "base.html" %}
-{% block title %}Signup - DALI Legal AI{% endblock %}
+{% extends "chatgpt_base.html" %}
+
+{% block title %}{{ t('create_account') if t else 'Create Account' }} - DALI Legal AI{% endblock %}
+
 {% block content %}
-<h1>Sign Up</h1>
-{% if error %}<div style="color:red;">{{ error }}</div>{% endif %}
-<form method="post" action="/signup">
-    <label>Username:<br><input type="text" name="username" required></label><br><br>
-    <label>Email:<br><input type="email" name="email" required></label><br><br>
-    <label>Password:<br><input type="password" name="password" required></label><br><br>
-    <button type="submit">Sign Up</button>
+<style>
+/* Modern Legal Platform Style with Dark Mode - Signup Page */
+.chatgpt-body {
+    background: #1a1a1a;
+    color: #ffffff;
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+}
+
+.modern-signup-container {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d30 100%);
+}
+
+.left-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #2a2a3a 0%, #3a3a4a 100%);
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow-y: auto;
+}
+
+.left-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.03"/><circle cx="50" cy="10" r="0.5" fill="%23ffffff" opacity="0.04"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    pointer-events: none;
+}
+
+.right-panel {
+    flex: 1;
+    background: #1a1a1a;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow-y: auto;
+}
+
+.main-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.features-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 1;
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.feature-icon {
+    width: 24px;
+    height: 24px;
+    background: #10a37f;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+}
+
+.feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.feature-description {
+    background: rgba(16, 163, 127, 0.1);
+    border: 1px solid rgba(16, 163, 127, 0.2);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #e0e0e0;
+}
+
+.feature-highlight {
+    margin-bottom: 2rem;
+}
+
+.highlight-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+.highlight-description {
+    font-size: 1rem;
+    color: #b0b0b0;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.pagination-dots {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.dot.active {
+    background: #10a37f;
+    transform: scale(1.2);
+}
+
+.view-all-button {
+    background: transparent;
+    color: #10a37f;
+    border: 2px solid #10a37f;
+    border-radius: 0.75rem;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.view-all-button:hover {
+    background: #10a37f;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.signup-section {
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.brand-logo {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.logo-text {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #10a37f;
+    margin-bottom: 0.5rem;
+}
+
+.logo-subtitle {
+    font-size: 1rem;
+    color: #b0b0b0;
+}
+
+.signup-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.signup-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.signup-btn.primary {
+    background: #10a37f;
+    color: white;
+}
+
+.signup-btn.secondary {
+    background: transparent;
+    color: #10a37f;
+    border: 2px solid #10a37f;
+}
+
+.signup-btn:hover {
+    transform: translateY(-2px);
+}
+
+.signup-form {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #10a37f;
+    box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+}
+
+.form-input::placeholder {
+    color: #666;
+}
+
+.form-select {
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.75rem;
+    color: #ffffff;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: #10a37f;
+    box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+}
+
+.form-select option {
+    background: #2a2a3a;
+    color: #ffffff;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 1rem;
+    background: #10a37f;
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+}
+
+.submit-button:hover {
+    background: #0d8a6b;
+    transform: translateY(-2px);
+}
+
+.submit-button:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.language-toggle {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.language-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.error-message {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    color: #fca5a5;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .modern-signup-container {
+        flex-direction: column;
+    }
+    
+    .left-panel, .right-panel {
+        padding: 2rem;
+    }
+    
+    .main-title {
+        font-size: 2rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .signup-buttons {
+        flex-direction: column;
+    }
+    
+    .language-toggle {
+        position: static;
+        margin-bottom: 2rem;
+        align-self: flex-end;
+    }
+}
+</style>
+
+<div class="modern-signup-container">
+    <!-- Language Toggle -->
+    <button id="language-toggle" class="language-toggle">
+        <span id="language-toggle-text">العربية</span>
+    </button>
+    
+    <!-- Left Panel - Features -->
+    <div class="left-panel">
+        <h1 class="main-title">{{ t('join_dali_family') if t else 'Join the DALI Family' }}</h1>
+        
+        <div class="features-section">
+            <div class="feature-header">
+                <div class="feature-icon">⚖️</div>
+                <h3 class="feature-title">{{ t('legal_research') if t else 'Legal Research' }}</h3>
+            </div>
+            
+            <div class="feature-description">
+                {{ t('legal_research_description') if t else 'Access AI-powered legal research tools with comprehensive database of Saudi legal documents, regulations, and case law.' }}
+            </div>
+        </div>
+        
+        <div class="features-section">
+            <div class="feature-header">
+                <div class="feature-icon">📄</div>
+                <h3 class="feature-title">{{ t('document_analysis') if t else 'Document Analysis' }}</h3>
+            </div>
+            
+            <div class="feature-description">
+                {{ t('document_analysis_description') if t else 'Upload and analyze legal documents with AI-powered insights, contract review, and compliance checking.' }}
+            </div>
+        </div>
+        
+        <div class="feature-highlight">
+            <h3 class="highlight-title">{{ t('why_choose_dali') if t else 'Why Choose DALI?' }}</h3>
+            <p class="highlight-description">
+                {{ t('why_choose_description') if t else 'DALI Legal AI provides comprehensive legal research tools specifically designed for Saudi Arabian law, helping legal professionals work more efficiently and accurately.' }}
+            </p>
+            
+            <div class="pagination-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            
+            <button class="view-all-button">
+                {{ t('learn_more') if t else 'Learn More' }}
+            </button>
+        </div>
+    </div>
+    
+    <!-- Right Panel - Signup Form -->
+    <div class="right-panel">
+        <div class="signup-section">
+            <div class="brand-logo">
+                <div class="logo-text">DALI</div>
+                <div class="logo-subtitle">{{ t('legal_ai') if t else 'Legal AI' }}</div>
+            </div>
+            
+            <div class="signup-buttons">
+                <a href="/login" class="signup-btn secondary">{{ t('already_have_account') if t else 'Already have account?' }}</a>
+                <button class="signup-btn primary">{{ t('create_account') if t else 'Create Account' }}</button>
+            </div>
+            
+            {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+            {% endif %}
+            
+            <form method="post" action="/signup" class="signup-form" id="signupForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ t('first_name') if t else 'First Name' }}</label>
+                        <input type="text" name="first_name" class="form-input" required 
+                               placeholder="{{ t('enter_first_name') if t else 'Enter your first name' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ t('last_name') if t else 'Last Name' }}</label>
+                        <input type="text" name="last_name" class="form-input" required 
+                               placeholder="{{ t('enter_last_name') if t else 'Enter your last name' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('username') if t else 'Username' }}</label>
+                    <input type="text" name="username" class="form-input" required 
+                           placeholder="{{ t('enter_username') if t else 'Enter your username' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('email') if t else 'Email' }}</label>
+                    <input type="email" name="email" class="form-input" required 
+                           placeholder="{{ t('enter_email') if t else 'Enter your email' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('password') if t else 'Password' }}</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" name="password" class="form-input" required 
+                               placeholder="{{ t('enter_password') if t else 'Enter your password' }}">
+                        <button type="button" class="password-toggle">👁️</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('company_name') if t else 'Company Name' }}</label>
+                    <input type="text" name="company_name" class="form-input" required 
+                           placeholder="{{ t('enter_company_name') if t else 'Enter your company name' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('job_title') if t else 'Job Title' }}</label>
+                    <input type="text" name="job_title" class="form-input" required 
+                           placeholder="{{ t('enter_job_title') if t else 'Enter your job title' }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ t('employee_id') if t else 'Employee ID' }}</label>
+                        <input type="text" name="employee_id" class="form-input" 
+                               placeholder="{{ t('enter_employee_id') if t else 'Enter employee ID (optional)' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ t('phone') if t else 'Phone Number' }}</label>
+                        <input type="tel" name="phone" class="form-input" 
+                               placeholder="{{ t('enter_phone') if t else 'Enter phone number (optional)' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('department') if t else 'Department' }}</label>
+                    <input type="text" name="department" class="form-input" 
+                           placeholder="{{ t('enter_department') if t else 'Enter your department (optional)' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">{{ t('role') if t else 'Role' }}</label>
+                    <select name="role" class="form-select">
+                        <option value="user">{{ t('user') if t else 'User' }}</option>
+                        <option value="admin">{{ t('admin') if t else 'Admin' }}</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="submit-button">
+                    ✨ {{ t('create_account') if t else 'Create Account' }}
+                </button>
 </form>
-<p>Already have an account? <a href="/login">Login</a></p>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="color: #b0b0b0; font-size: 0.9rem;">
+                    {{ t('already_have_account') if t else 'Already have an account?' }} 
+                    <a href="/login" style="color: #10a37f; text-decoration: none; font-weight: 500;">
+                        {{ t('login_here') if t else 'Login here' }}
+                    </a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Language toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const languageToggle = document.getElementById('language-toggle');
+    const languageToggleText = document.getElementById('language-toggle-text');
+    
+    if (languageToggle && languageToggleText) {
+        let currentLanguage = 'en';
+        languageToggleText.textContent = currentLanguage === 'en' ? 'العربية' : 'English';
+        
+        languageToggle.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/language/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentLanguage = data.language;
+                    languageToggleText.textContent = currentLanguage === 'en' ? 'العربية' : 'English';
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Error toggling language:', error);
+            }
+        });
+    }
+    
+    // Password toggle functionality
+    const passwordToggle = document.querySelector('.password-toggle');
+    const passwordInput = document.querySelector('input[name="password"]');
+    
+    if (passwordToggle && passwordInput) {
+        passwordToggle.addEventListener('click', function() {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                passwordToggle.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                passwordToggle.textContent = '👁️';
+            }
+        });
+    }
+    
+    // Form validation and loading state
+    const signupForm = document.getElementById('signupForm');
+    if (signupForm) {
+        signupForm.addEventListener('submit', function(e) {
+            const requiredFields = ['first_name', 'last_name', 'username', 'email', 'password', 'company_name', 'job_title'];
+            let isValid = true;
+            
+            requiredFields.forEach(fieldName => {
+                const field = document.querySelector(`input[name="${fieldName}"]`);
+                if (!field.value.trim()) {
+                    isValid = false;
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('{{ t("please_fill_required_fields") if t else "Please fill in all required fields" }}');
+                return;
+            }
+            
+            const submitButton = signupForm.querySelector('.submit-button');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '⏳ {{ t("creating_account") if t else "Creating account..." }}';
+            submitButton.disabled = true;
+            
+            setTimeout(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            }, 3000);
+        });
+    }
+    
+    // Pagination dots functionality
+    const dots = document.querySelectorAll('.dot');
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', function() {
+            dots.forEach(d => d.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+});
+</script>
 {% endblock %}
