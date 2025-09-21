@@ -190,7 +190,7 @@ class DALILegalAI:
             print(f"Search error: {e}")
             return []
     
-    def generate_response(self, prompt: str, model: str = "llama3") -> str:
+    def generate_response(self, prompt: str, model: str = "llama3.2:1b") -> str:
         """
         Generate response using Ollama LLM
         
@@ -219,7 +219,7 @@ class DALILegalAI:
         except Exception as e:
             return f"Error: {str(e)}"
     
-    def legal_rag_query(self, question: str, model: str = "llama3") -> Dict[str, Any]:
+    def legal_rag_query(self, question: str, model: str = "llama3.2:1b") -> Dict[str, Any]:
         """
         Perform RAG-based legal query
         

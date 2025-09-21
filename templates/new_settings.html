@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .settings-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin: 2rem auto;
+            max-width: 1200px;
+            overflow: hidden;
+        }
+        
+        .settings-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .settings-nav {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-pills .nav-link {
+            color: #667eea;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            margin: 0 0.5rem;
+        }
+        
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .settings-content {
+            padding: 2rem;
+        }
+        
+        .settings-section {
+            display: none;
+        }
+        
+        .settings-section.active {
+            display: block;
+        }
+        
+        .form-section {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-section h5 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .alert-custom {
+            border-radius: 0.75rem;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        
+        .status-online {
+            background-color: #28a745;
+        }
+        
+        .status-offline {
+            background-color: #dc3545;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="settings-container">
+        <div class="settings-header">
+            <a href="/user-dashboard" class="back-btn">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+            <h2><i class="fas fa-cog me-2"></i>Settings</h2>
+            <p class="mb-0">Manage your account and AI preferences</p>
+        </div>
+        
+        <div class="settings-nav">
+            <div class="container">
+                <ul class="nav nav-pills justify-content-center">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" onclick="showSection('profile')">
+                            <i class="fas fa-user me-2"></i>Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('ai-settings')">
+                            <i class="fas fa-robot me-2"></i>AI Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('security')">
+                            <i class="fas fa-shield-alt me-2"></i>Security
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="showSection('system')">
+                            <i class="fas fa-info-circle me-2"></i>System Info
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="settings-content">
+            <!-- Profile Section -->
+            <div id="profile-section" class="settings-section active">
+                <div class="form-section">
+                    <h5><i class="fas fa-user me-2"></i>Personal Information</h5>
+                    <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" name="first_name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" name="last_name">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Phone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="company" class="form-label">Company</label>
+                                <input type="text" class="form-control" id="company" name="company_name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="jobTitle" class="form-label">Job Title</label>
+                                <input type="text" class="form-control" id="jobTitle" name="job_title">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" name="department">
+                        </div>
+                        <button type="submit" class="btn btn-save">
+                            <i class="fas fa-save me-2"></i>Save Profile
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- AI Settings Section -->
+            <div id="ai-settings-section" class="settings-section">
+                <div class="form-section">
+                    <h5><i class="fas fa-robot me-2"></i>AI Configuration</h5>
+                    <form id="aiSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="llmProvider" class="form-label">LLM Provider</label>
+                                <select class="form-control" id="llmProvider" name="llm_provider">
+                                    <option value="openai">OpenAI (Cloud)</option>
+                                    <option value="ollama">Ollama (Local)</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    <span class="status-indicator status-online" id="openaiStatus"></span> OpenAI: Cloud-based AI
+                                    <br>
+                                    <span class="status-indicator status-offline" id="ollamaStatus"></span> Ollama: Local AI server
+                                </small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="llmModel" class="form-label">Model</label>
+                                <select class="form-control" id="llmModel" name="llm_model">
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="gpt-4">GPT-4</option>
+                                    <option value="llama3.2:1b">Llama 3.2 1B</option>
+                                    <option value="llama3.2:3b">Llama 3.2 3B</option>
+                                </select>
+                                <small class="form-text text-muted" id="modelDescription">
+                                    Select your preferred AI model for analysis
+                                </small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="temperature" class="form-label">Temperature: <span id="tempValue">0.7</span></label>
+                                <input type="range" class="form-range" id="temperature" name="temperature" 
+                                       min="0" max="2" step="0.1" value="0.7">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="maxTokens" class="form-label">Max Tokens</label>
+                                <input type="number" class="form-control" id="maxTokens" name="max_tokens" 
+                                       min="100" max="4000" value="2000">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="chunkSize" class="form-label">Chunk Size</label>
+                                <input type="number" class="form-control" id="chunkSize" name="chunk_size" 
+                                       min="100" max="2000" value="1000">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="chunkOverlap" class="form-label">Chunk Overlap</label>
+                                <input type="number" class="form-control" id="chunkOverlap" name="chunk_overlap" 
+                                       min="50" max="500" value="200">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-save">
+                            <i class="fas fa-save me-2"></i>Save AI Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Security Section -->
+            <div id="security-section" class="settings-section">
+                <div class="form-section">
+                    <h5><i class="fas fa-shield-alt me-2"></i>Change Password</h5>
+                    <form id="passwordForm">
+                        <div class="mb-3">
+                            <label for="currentPassword" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPassword" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-save">
+                            <i class="fas fa-key me-2"></i>Change Password
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- System Info Section -->
+            <div id="system-section" class="settings-section">
+                <div class="form-section">
+                    <h5><i class="fas fa-info-circle me-2"></i>System Status</h5>
+                    <div id="systemStatus">
+                        <div class="d-flex justify-content-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h5><i class="fas fa-database me-2"></i>Account Information</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Role:</strong> <span class="badge bg-primary">{{ user.role }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Account Status:</strong> 
+                                <span class="badge bg-success">Active</span>
+                            </p>
+                            <p><strong>Member Since:</strong> <span id="memberSince">Loading...</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize settings
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserProfile();
+            loadAISettings();
+            loadSystemStatus();
+            
+            // Temperature slider
+            document.getElementById('temperature').addEventListener('input', function() {
+                document.getElementById('tempValue').textContent = this.value;
+            });
+        });
+
+        // Show section
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.settings-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName + '-section').classList.add('active');
+            
+            // Add active class to clicked nav link
+            event.target.classList.add('active');
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('/api/user/profile');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const profile = data.profile;
+                    document.getElementById('firstName').value = profile.first_name || '';
+                    document.getElementById('lastName').value = profile.last_name || '';
+                    document.getElementById('email').value = profile.email || '';
+                    document.getElementById('phone').value = profile.phone || '';
+                    document.getElementById('company').value = profile.company_name || '';
+                    document.getElementById('jobTitle').value = profile.job_title || '';
+                    document.getElementById('department').value = profile.department || '';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Load AI settings
+        async function loadAISettings() {
+            try {
+                const response = await fetch('/api/user/settings');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const settings = data.settings;
+                    document.getElementById('llmProvider').value = settings.llm_provider || 'openai';
+                    document.getElementById('llmModel').value = settings.llm_model || 'gpt-3.5-turbo';
+                    document.getElementById('temperature').value = settings.temperature || 0.7;
+                    document.getElementById('tempValue').textContent = settings.temperature || 0.7;
+                    document.getElementById('maxTokens').value = settings.max_tokens || 2000;
+                    document.getElementById('chunkSize').value = settings.chunk_size || 1000;
+                    document.getElementById('chunkOverlap').value = settings.chunk_overlap || 200;
+                }
+            } catch (error) {
+                console.error('Error loading AI settings:', error);
+            }
+        }
+
+        // Load system status
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const statusHtml = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><span class="status-indicator ${data.database === 'connected' ? 'status-online' : 'status-offline'}"></span>
+                               <strong>Database:</strong> ${data.database}</p>
+                            <p><span class="status-indicator ${data.firecrawl === 'configured' ? 'status-online' : 'status-offline'}"></span>
+                               <strong>Firecrawl:</strong> ${data.firecrawl}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>System Status:</strong> 
+                               <span class="badge ${data.status === 'healthy' ? 'bg-success' : 'bg-danger'}">${data.status}</span>
+                            </p>
+                            <p><strong>Last Check:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('systemStatus').innerHTML = statusHtml;
+            } catch (error) {
+                document.getElementById('systemStatus').innerHTML = 
+                    '<div class="alert alert-danger">Error loading system status</div>';
+            }
+        }
+
+        // Save profile
+        document.getElementById('profileForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/user/profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('Profile updated successfully!', 'success');
+                } else {
+                    showAlert('Error updating profile: ' + result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error updating profile', 'danger');
+            }
+        });
+
+        // Save AI settings
+        document.getElementById('aiSettingsForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/user/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('AI settings updated successfully!', 'success');
+                } else {
+                    showAlert('Error updating AI settings: ' + result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error updating AI settings', 'danger');
+            }
+        });
+
+        // Change password
+        document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showAlert('New passwords do not match', 'danger');
+                return;
+            }
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/user/password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showAlert('Password changed successfully!', 'success');
+                    this.reset();
+                } else {
+                    showAlert('Error changing password: ' + result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error changing password', 'danger');
+            }
+        });
+
+        // Check provider status
+        async function checkProviderStatus() {
+            try {
+                // Check OpenAI status
+                const openaiResponse = await fetch('/api/test-openai');
+                const openaiData = await openaiResponse.json();
+                const openaiStatus = document.getElementById('openaiStatus');
+                openaiStatus.className = `status-indicator ${openaiData.success ? 'status-online' : 'status-offline'}`;
+                
+                // Check Ollama status
+                const ollamaResponse = await fetch('/api/test-ollama');
+                const ollamaData = await ollamaResponse.json();
+                const ollamaStatus = document.getElementById('ollamaStatus');
+                ollamaStatus.className = `status-indicator ${ollamaData.success ? 'status-online' : 'status-offline'}`;
+                
+            } catch (error) {
+                console.error('Error checking provider status:', error);
+            }
+        }
+
+        // Handle LLM provider change
+        document.getElementById('llmProvider').addEventListener('change', function() {
+            const provider = this.value;
+            const modelSelect = document.getElementById('llmModel');
+            const modelDescription = document.getElementById('modelDescription');
+            
+            // Clear existing options
+            modelSelect.innerHTML = '';
+            
+            if (provider === 'openai') {
+                // OpenAI models
+                const openaiModels = [
+                    { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo (Fast & Cost-effective)' },
+                    { value: 'gpt-4', text: 'GPT-4 (High Quality)' },
+                    { value: 'gpt-4-turbo', text: 'GPT-4 Turbo (Latest)' },
+                    { value: 'gpt-4o', text: 'GPT-4o (Multimodal)' }
+                ];
+                
+                openaiModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.text;
+                    modelSelect.appendChild(option);
+                });
+                
+                modelDescription.textContent = 'Cloud-based AI models with high accuracy and speed';
+            } else if (provider === 'ollama') {
+                // Ollama models
+                const ollamaModels = [
+                    { value: 'llama3.2:1b', text: 'Llama 3.2 1B (Fast & Lightweight)' },
+                    { value: 'llama3.2:3b', text: 'Llama 3.2 3B (Balanced)' },
+                    { value: 'llama3.2:8b', text: 'Llama 3.2 8B (High Quality)' },
+                    { value: 'llama3.1:8b', text: 'Llama 3.1 8B (Stable)' },
+                    { value: 'mistral:7b', text: 'Mistral 7B (Efficient)' },
+                    { value: 'codellama:7b', text: 'Code Llama 7B (Code-focused)' }
+                ];
+                
+                ollamaModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.text;
+                    modelSelect.appendChild(option);
+                });
+                
+                modelDescription.textContent = 'Local AI models running on your machine (privacy-focused)';
+            }
+        });
+
+        // Load current settings
+        async function loadCurrentSettings() {
+            try {
+                const response = await fetch('/api/user/settings');
+                const data = await response.json();
+                
+                if (data.success && data.settings) {
+                    const settings = data.settings;
+                    
+                    // Set LLM provider and trigger model update
+                    const providerSelect = document.getElementById('llmProvider');
+                    providerSelect.value = settings.llm_provider || 'openai';
+                    providerSelect.dispatchEvent(new Event('change'));
+                    
+                    // Set model after provider is updated
+                    setTimeout(() => {
+                        const modelSelect = document.getElementById('llmModel');
+                        modelSelect.value = settings.llm_model || 'gpt-3.5-turbo';
+                    }, 100);
+                    
+                    // Set other AI settings
+                    document.getElementById('temperature').value = settings.temperature || 0.7;
+                    document.getElementById('tempValue').textContent = settings.temperature || 0.7;
+                    document.getElementById('maxTokens').value = settings.max_tokens || 2000;
+                    document.getElementById('chunkSize').value = settings.chunk_size || 1000;
+                    document.getElementById('chunkOverlap').value = settings.chunk_overlap || 200;
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        // Update temperature display
+        document.getElementById('temperature').addEventListener('input', function() {
+            document.getElementById('tempValue').textContent = this.value;
+        });
+
+        // Show alert
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-custom alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            // Insert at the top of the settings content
+            const content = document.querySelector('.settings-content');
+            content.insertBefore(alertDiv, content.firstChild);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Initialize settings on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCurrentSettings();
+            checkProviderStatus();
+        });
+    </script>
+</body>
+</html>

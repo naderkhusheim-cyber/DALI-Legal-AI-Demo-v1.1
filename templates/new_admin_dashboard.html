@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            --admin-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #374151;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: var(--admin-gradient);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white !important;
+            text-decoration: none;
+        }
+        
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .welcome-section {
+            background: var(--admin-gradient);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        
+        .welcome-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .welcome-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+        
+        .welcome-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-admin {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-admin:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 1px solid #f1f5f9;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-icon.primary { background: var(--primary-gradient); }
+        .stat-icon.secondary { background: var(--secondary-gradient); }
+        .stat-icon.accent { background: var(--accent-gradient); }
+        .stat-icon.danger { background: var(--danger-gradient); }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .stat-change {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        
+        .stat-change.positive { color: #10b981; }
+        .stat-change.negative { color: #ef4444; }
+        
+        /* Management Cards */
+        .management-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 2rem;
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #374151;
+            background: #f8fafc;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .badge {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+        }
+        
+        .badge.active {
+            background: var(--secondary-gradient);
+            color: white;
+        }
+        
+        .badge.inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .badge.admin {
+            background: var(--admin-gradient);
+            color: white;
+        }
+        
+        .badge.user {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            margin: 0 0.25rem;
+        }
+        
+        .btn-edit {
+            background: var(--accent-gradient);
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete {
+            background: var(--danger-gradient);
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .btn-view {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .btn-view:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* System Status */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .status-item {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #10b981; }
+        .status-offline { background: #ef4444; }
+        .status-warning { background: #f59e0b; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 2rem;
+            }
+            
+            .admin-actions {
+                flex-direction: column;
+            }
+            
+            .btn-admin {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shield-alt me-2"></i>DALI Legal AI Admin
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/legal-research">
+                            <i class="fas fa-search me-1"></i>Legal Research
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/document-analysis">
+                            <i class="fas fa-file-alt me-1"></i>Document Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/knowledge-base">
+                            <i class="fas fa-database me-1"></i>Knowledge Base
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/web-research">
+                            <i class="fas fa-globe me-1"></i>Web Research
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/web-scraping">
+                            <i class="fas fa-download me-1"></i>Web Scraping
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/user-chat">
+                            <i class="fas fa-comments me-1"></i>AI Chat
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/all-documents">
+                            <i class="fas fa-folder me-1"></i>Documents
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/analytics">
+                            <i class="fas fa-chart-line me-1"></i>Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                    <li class="nav-item">
+                        <div class="user-info">
+                            <div class="user-avatar">
+                                {{ user.first_name[0] if user.first_name else 'A' }}
+                            </div>
+                            <span>{{ user.first_name }} {{ user.last_name }}</span>
+                            <a href="/logout" class="btn btn-sm btn-outline-light">Logout</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Welcome Section -->
+            <div class="welcome-section">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">Admin Dashboard</h1>
+                    <p class="welcome-subtitle">
+                        Manage users, monitor system performance, and oversee all DALI Legal AI operations.
+                    </p>
+                    <div class="admin-actions">
+                        <a href="#users" class="btn-admin">
+                            <i class="fas fa-users me-2"></i>Manage Users
+                        </a>
+                        <a href="#analytics" class="btn-admin">
+                            <i class="fas fa-chart-line me-2"></i>View Analytics
+                        </a>
+                        <a href="#system" class="btn-admin">
+                            <i class="fas fa-cog me-2"></i>System Settings
+                        </a>
+                        <a href="/web-scraping" class="btn-admin">
+                            <i class="fas fa-download me-2"></i>Web Scraping
+                        </a>
+                        <a href="/user-chat" class="btn-admin">
+                            <i class="fas fa-comments me-2"></i>AI Chat
+                        </a>
+                        <a href="/all-documents" class="btn-admin">
+                            <i class="fas fa-folder-open me-2"></i>Documents
+                        </a>
+                        <a href="/settings" class="btn-admin">
+                            <i class="fas fa-cog me-2"></i>Settings
+                        </a>
+                        <a href="/analytics" class="btn-admin">
+                            <i class="fas fa-chart-line me-2"></i>Analytics
+                        </a>
+                        <a href="/user-dashboard" class="btn-admin">
+                            <i class="fas fa-arrow-left me-2"></i>User Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="status-indicator status-online" id="database-status"></div>
+                        <span>Database</span>
+                    </div>
+                    <div class="text-muted">Connected</div>
+                </div>
+                <div class="status-item">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="status-indicator status-online" id="api-status"></div>
+                        <span>API Services</span>
+                    </div>
+                    <div class="text-muted">Online</div>
+                </div>
+                <div class="status-item">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="status-indicator status-warning" id="ai-status"></div>
+                        <span>AI Models</span>
+                    </div>
+                    <div class="text-muted">Loading</div>
+                </div>
+                <div class="status-item">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <div class="status-indicator status-online" id="scraping-status"></div>
+                        <span>Web Scraping</span>
+                    </div>
+                    <div class="text-muted">Active</div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid" id="overview">
+                <div class="stat-card">
+                    <div class="stat-icon primary">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-number" id="totalUsers">-</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-change positive">+12 this week</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon secondary">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-number" id="activeUsers">-</div>
+                    <div class="stat-label">Active Users</div>
+                    <div class="stat-change positive">+8 this week</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon accent">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="stat-number" id="totalDocuments">-</div>
+                    <div class="stat-label">Documents Processed</div>
+                    <div class="stat-change positive">+24 this week</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon danger">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="stat-number" id="totalQueries">-</div>
+                    <div class="stat-label">Research Queries</div>
+                    <div class="stat-change positive">+156 this week</div>
+                </div>
+            </div>
+
+            <!-- User Management -->
+            <div class="management-card" id="users">
+                <h3 class="card-title">
+                    <i class="fas fa-users text-primary"></i>
+                    User Management
+                </h3>
+                
+                <!-- Bulk Operations -->
+                <div class="mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-success btn-sm" onclick="bulkActivateUsers()">
+                            <i class="fas fa-check me-1"></i>Activate Selected
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="bulkDeactivateUsers()">
+                            <i class="fas fa-pause me-1"></i>Deactivate Selected
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="bulkDeleteUsers()">
+                            <i class="fas fa-trash me-1"></i>Delete Selected
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="exportUsers()">
+                            <i class="fas fa-download me-1"></i>Export All
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAllUsers" onchange="toggleAllUsers()">
+                                </th>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics -->
+            <div class="management-card" id="analytics">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-line text-success"></i>
+                    System Analytics
+                </h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Usage Trends</h5>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Analytics data will be displayed here
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Performance Metrics</h5>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            System performance is optimal
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            <div class="management-card" id="system">
+                <h3 class="card-title">
+                    <i class="fas fa-cog text-warning"></i>
+                    System Information
+                </h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Database</h6>
+                        <p class="text-muted">MySQL 8.0</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>API Version</h6>
+                        <p class="text-muted">v2.0.0</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Uptime</h6>
+                        <p class="text-muted" id="systemUptime">Calculating...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load users data
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayUsers(data.users);
+                } else {
+                    console.error('Failed to load users:', data.message);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function displayUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <input type="checkbox" name="user_ids" value="${user.id}">
+                    </td>
+                    <td>${user.id}</td>
+                    <td>${user.first_name} ${user.last_name}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge ${user.role}">${user.role}</span></td>
+                    <td><span class="badge ${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <a href="#" class="btn-action btn-view" onclick="viewUser(${user.id})">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="#" class="btn-action btn-edit" onclick="editUser(${user.id})">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="#" class="btn-action btn-delete" onclick="deleteUser(${user.id})">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load analytics data
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/admin/analytics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateAnalytics(data.analytics);
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        function updateAnalytics(analytics) {
+            document.getElementById('totalUsers').textContent = analytics.total_users || 0;
+            document.getElementById('activeUsers').textContent = analytics.active_users || 0;
+            document.getElementById('totalDocuments').textContent = analytics.total_documents || 0;
+            document.getElementById('totalQueries').textContent = analytics.total_queries || 0;
+        }
+
+        // Update system status
+        async function updateSystemStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                document.getElementById('database-status').className = 
+                    'status-indicator ' + (data.database === 'connected' ? 'status-online' : 'status-offline');
+                document.getElementById('api-status').className = 
+                    'status-indicator ' + (data.status === 'healthy' ? 'status-online' : 'status-offline');
+            } catch (error) {
+                console.error('Failed to update system status:', error);
+            }
+        }
+
+        // User management functions
+        function viewUser(userId) {
+            alert(`View user ${userId} details`);
+        }
+
+        function editUser(userId) {
+            alert(`Edit user ${userId}`);
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                alert(`Delete user ${userId}`);
+            }
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+            loadAnalytics();
+            updateSystemStatus();
+            
+            // Update uptime
+            document.getElementById('systemUptime').textContent = '24h 15m 30s';
+        });
+    </script>
+
+
+    <script>
+
+        // User Management Functions
+        function viewUser(userId) {
+            alert(`View user ${userId} - This would open a user details modal`);
+            // TODO: Implement user view modal
+        }
+
+        function editUser(userId) {
+            alert(`Edit user ${userId} - This would open an edit user modal`);
+            // TODO: Implement user edit modal
+        }
+
+        async function deleteUser(userId) {
+            if (confirm(`Are you sure you want to delete user ${userId}?`)) {
+                try {
+                    const response = await fetch(`/api/admin/users/${userId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('User deleted successfully');
+                        loadUsers(); // Reload the user list
+                    } else {
+                        alert('Error deleting user: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('Error deleting user: ' + error.message);
+                }
+            }
+        }
+
+        function toggleUserStatus(userId) {
+            if (confirm('Are you sure you want to toggle this user\'s status?')) {
+                fetch(`/api/admin/users/${userId}/toggle-status`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User status updated successfully');
+                        loadUsers(); // Reload the user list
+                    } else {
+                        alert('Error updating user status: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error updating user status: ' + error.message);
+                });
+            }
+        }
+
+        function bulkDeleteUsers() {
+            const selectedUsers = Array.from(document.querySelectorAll('input[name="user_ids"]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select users to delete');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to delete ${selectedUsers.length} users?`)) {
+                fetch('/api/admin/users/bulk-delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_ids: selectedUsers })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`${data.deleted_count} users deleted successfully`);
+                        loadUsers(); // Reload the user list
+                    } else {
+                        alert('Error deleting users: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error deleting users: ' + error.message);
+                });
+            }
+        }
+
+        function bulkActivateUsers() {
+            const selectedUsers = Array.from(document.querySelectorAll('input[name="user_ids"]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select users to activate');
+                return;
+            }
+
+            fetch('/api/admin/users/bulk-activate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_ids: selectedUsers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${data.activated_count} users activated successfully`);
+                    loadUsers(); // Reload the user list
+                } else {
+                    alert('Error activating users: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error activating users: ' + error.message);
+            });
+        }
+
+        function bulkDeactivateUsers() {
+            const selectedUsers = Array.from(document.querySelectorAll('input[name="user_ids"]:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedUsers.length === 0) {
+                alert('Please select users to deactivate');
+                return;
+            }
+
+            fetch('/api/admin/users/bulk-deactivate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_ids: selectedUsers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`${data.deactivated_count} users deactivated successfully`);
+                    loadUsers(); // Reload the user list
+                } else {
+                    alert('Error deactivating users: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error deactivating users: ' + error.message);
+            });
+        }
+
+        function exportUsers() {
+            fetch('/api/admin/users/export')
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'users_export.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert('Error exporting users: ' + error.message);
+            });
+        }
+
+        function openModal(modalId) {
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+        }
+
+        function toggleAllUsers() {
+            const selectAllCheckbox = document.getElementById('selectAllUsers');
+            const userCheckboxes = document.querySelectorAll('input[name="user_ids"]');
+            
+            userCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+    </script>
+</body>
+</html>

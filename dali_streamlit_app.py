@@ -313,7 +313,7 @@ def chat_interface():
     if ask_button and user_question:
         with st.spinner("Searching legal documents and generating response..."):
             # Get selected model
-            selected_model = st.session_state.get("selected_model", "llama3")
+            selected_model = st.session_state.get("selected_model", "llama3.2:1b")
             
             # Perform RAG query
             result = st.session_state.dali_system.legal_rag_query(user_question, selected_model)

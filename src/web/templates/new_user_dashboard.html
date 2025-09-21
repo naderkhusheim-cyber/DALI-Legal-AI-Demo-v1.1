@@ -1,0 +1,246 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}User Dashboard - DALI Legal AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/chatgpt-ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="chatgpt-layout">
+    <!-- ChatGPT-Style Sidebar -->
+    <aside class="chatgpt-sidebar" id="sidebar">
+        <div class="chatgpt-sidebar-header">
+            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
+            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
+        </div>
+        
+        <button class="chatgpt-new-chat-btn" onclick="startNewChat()">
+            <span>+</span>
+            {{ t('new_chat') if t else 'New Chat' }}
+        </button>
+        
+        <nav class="chatgpt-nav">
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('enhanced_features') if t else 'Enhanced Features' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/enhanced-dashboard" class="chatgpt-nav-link {% if active_page=='enhanced-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⭐</span>
+                        {{ t('enhanced_dashboard') if t else 'Enhanced Dashboard' }}
+                        <span class="feature-badge">v1.2.0</span>
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/api/docs" target="_blank" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">📖</span>
+                        {{ t('api_documentation') if t else 'API Documentation' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/legal-research" class="chatgpt-nav-link {% if active_page=='legal-research' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">🔍</span>
+                        {{ t('legal_research') if t else 'Legal Research' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/document-analysis" class="chatgpt-nav-link {% if active_page=='document-analysis' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📄</span>
+                        {{ t('document_analysis') if t else 'Document Analysis' }}
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/enhanced-knowledge-base" class="chatgpt-nav-link {% if active_page=='enhanced-knowledge-base' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📚</span>
+                        {{ t('enhanced_knowledge_base') if t else 'Enhanced Knowledge Base' }}
+                        <span class="feature-badge" style="margin-left: 8px;">NEW</span>
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/knowledge-base" class="chatgpt-nav-link {% if active_page=='knowledge-base' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📖</span>
+                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
+                        <span style="font-size: 0.7rem; color: #6b7280;">(Legacy)</span>
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/web-research" class="chatgpt-nav-link {% if active_page=='web-research' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">🌐</span>
+                        {{ t('web_research') if t else 'Web Research' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/settings" class="chatgpt-nav-link {% if active_page=='settings' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⚙️</span>
+                        {{ t('settings') if t else 'Settings' }}
+                    </a>
+                </div>
+                {% if user and user.role == 'admin' %}
+                <div class="chatgpt-nav-item">
+                    <a href="/admin/dashboard" class="chatgpt-nav-link {% if active_page=='admin-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">👑</span>
+                        {{ t('admin_panel') if t else 'Admin Panel' }}
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </nav>
+        
+        {% if user %}
+        <div class="chatgpt-user-info">
+            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
+            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
+            <form method="get" action="/logout">
+                <button type="submit" class="chatgpt-logout-btn">
+                    <span class="chatgpt-nav-icon">🚪</span>
+                    {{ t('logout') if t else 'Logout' }}
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="chatgpt-main">
+        <div class="chatgpt-main-header">
+            <div class="chatgpt-main-title">{{ t('dashboard') if t else 'Dashboard' }}</div>
+            <div class="chatgpt-main-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal research and document analysis assistant' }}</div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="chatgpt-stats-grid">
+            <div class="chatgpt-stat-card">
+                <div class="chatgpt-stat-icon">📄</div>
+                <div class="chatgpt-stat-content">
+                    <div class="chatgpt-stat-number">{{ stats.total_documents or 0 }}</div>
+                    <div class="chatgpt-stat-label">{{ t('total_documents') if t else 'Total Documents' }}</div>
+                </div>
+            </div>
+            
+            <div class="chatgpt-stat-card">
+                <div class="chatgpt-stat-icon">💬</div>
+                <div class="chatgpt-stat-content">
+                    <div class="chatgpt-stat-number">{{ stats.conversations or 0 }}</div>
+                    <div class="chatgpt-stat-label">{{ t('conversations') if t else 'Conversations' }}</div>
+                </div>
+            </div>
+            
+            <div class="chatgpt-stat-card">
+                <div class="chatgpt-stat-icon">🔍</div>
+                <div class="chatgpt-stat-content">
+                    <div class="chatgpt-stat-number">{{ stats.research_queries or 0 }}</div>
+                    <div class="chatgpt-stat-label">{{ t('research_queries') if t else 'Research Queries' }}</div>
+                </div>
+            </div>
+            
+            <div class="chatgpt-stat-card">
+                <div class="chatgpt-stat-icon">📚</div>
+                <div class="chatgpt-stat-content">
+                    <div class="chatgpt-stat-number">{{ stats.knowledge_base_items or 0 }}</div>
+                    <div class="chatgpt-stat-label">{{ t('knowledge_items') if t else 'Knowledge Items' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="chatgpt-card">
+            <div class="chatgpt-card-header">
+                <div class="chatgpt-card-title">{{ t('recent_activity') if t else 'Recent Activity' }}</div>
+                <div class="chatgpt-card-subtitle">{{ t('recent_activity_subtitle') if t else 'Your latest actions and interactions' }}</div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: var(--chatgpt-spacing-md);">
+                {% if stats.recent_activity and stats.recent_activity|length > 0 %}
+                    {% for activity in stats.recent_activity %}
+                    <div style="display: flex; align-items: center; gap: var(--chatgpt-spacing-md); padding: var(--chatgpt-spacing-md); background-color: var(--chatgpt-bg-primary); border-radius: var(--chatgpt-radius-md);">
+                        <div style="width: 32px; height: 32px; background-color: var(--chatgpt-bg-active); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: var(--chatgpt-font-size-sm); font-weight: 600;">
+                            {{ activity.type[0].upper() if activity.type else 'A' }}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: var(--chatgpt-text-primary); margin-bottom: 2px;">
+                                {{ activity.title or activity.type.title() }}
+                            </div>
+                            <div style="font-size: var(--chatgpt-font-size-sm); color: var(--chatgpt-text-secondary);">
+                                {{ activity.timestamp or activity.created_at }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: var(--chatgpt-spacing-lg); color: var(--chatgpt-text-secondary);">
+                        <div style="font-size: var(--chatgpt-font-size-lg); margin-bottom: var(--chatgpt-spacing-sm);">📝</div>
+                        <div>{{ t('no_recent_activity') if t else 'No recent activity. Start by asking a legal question or uploading a document.' }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="chatgpt-card">
+            <div class="chatgpt-card-header">
+                <div class="chatgpt-card-title">{{ t('quick_actions') if t else 'Quick Actions' }}</div>
+                <div class="chatgpt-card-subtitle">{{ t('quick_actions_subtitle') if t else 'Get started with these common tasks' }}</div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--chatgpt-spacing-md);">
+                <a href="/legal-research" class="chatgpt-action-card">
+                    <div class="chatgpt-action-icon">🔍</div>
+                    <div class="chatgpt-action-title">{{ t('start_legal_research') if t else 'Start Legal Research' }}</div>
+                    <div class="chatgpt-action-description">{{ t('research_description') if t else 'Ask questions about legal matters' }}</div>
+                </a>
+                
+                <a href="/document-analysis" class="chatgpt-action-card">
+                    <div class="chatgpt-action-icon">📄</div>
+                    <div class="chatgpt-action-title">{{ t('analyze_document') if t else 'Analyze Document' }}</div>
+                    <div class="chatgpt-action-description">{{ t('analysis_description') if t else 'Upload and analyze legal documents' }}</div>
+                </a>
+                
+                <a href="/enhanced-knowledge-base" class="chatgpt-action-card">
+                    <div class="chatgpt-action-icon">📚</div>
+                    <div class="chatgpt-action-title">{{ t('enhanced_knowledge_base') if t else 'Knowledge Base' }}</div>
+                    <div class="chatgpt-action-description">{{ t('knowledge_description') if t else 'Search your legal knowledge base' }}</div>
+                </a>
+                
+                <a href="/web-research" class="chatgpt-action-card">
+                    <div class="chatgpt-action-icon">🌐</div>
+                    <div class="chatgpt-action-title">{{ t('web_research') if t else 'Web Research' }}</div>
+                    <div class="chatgpt-action-description">{{ t('web_description') if t else 'Research legal information online' }}</div>
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function startNewChat() {
+    // Redirect to legal research for new chat
+    window.location.href = '/legal-research';
+}
+
+// Update activity every 30 seconds
+setInterval(async () => {
+    try {
+        const response = await fetch('/api/user/update_activity', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            // Optionally refresh the page to show updated activity
+            // window.location.reload();
+        }
+    } catch (error) {
+        console.log('Activity update failed:', error);
+    }
+}, 30000);
+</script>
+{% endblock %}

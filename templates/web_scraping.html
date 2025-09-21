@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #374151;
+        }
+        
+        /* Navigation */
+        .navbar {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: white !important;
+            text-decoration: none;
+        }
+        
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .navbar-nav .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+        }
+        
+        .page-header {
+            background: var(--accent-gradient);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 3rem;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            pointer-events: none;
+        }
+        
+        .page-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .page-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-icon.accent {
+            background: var(--accent-gradient);
+        }
+        
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-description {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .results-container {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            margin-top: 2rem;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #065f46;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #991b1b;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+        }
+        
+        .content-preview {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Include Sidebar -->
+    
+    <!-- Main Content with Sidebar -->
+    <div class="main-content-with-sidebar">
+        <!-- Navigation -->
+        <nav class="navbar navbar-expand-lg">
+            <div class="container">
+                <div class="navbar-left">
+                    <button class="sidebar-toggle-mobile" id="sidebarToggleMobile">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <a class="navbar-brand" href="/user-dashboard">
+                        <i class="fas fa-balance-scale me-2"></i>DALI Legal AI
+                    </a>
+                </div>
+                
+                <div class="navbar-right">
+                    <div class="navbar-nav">
+                        <div class="nav-item">
+                            <a class="nav-link" href="/logout">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8">
+                            <h1 class="page-title">
+                                <i class="fas fa-globe me-3"></i>Web Scraping
+                            </h1>
+                            <p class="page-subtitle">
+                                Extract content and documents from websites using AI-powered scraping technology.
+                            </p>
+                        </div>
+                        <div class="col-lg-4 text-end">
+                            <a href="/user-dashboard" class="back-btn">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Overview -->
+            <div class="row mb-5">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="feature-icon accent">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <h3 class="feature-title">Firecrawl Integration</h3>
+                        <p class="feature-description">
+                            Advanced AI-powered web scraping with Firecrawl API for high-quality content extraction.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="feature-icon accent">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="feature-title">Fallback Support</h3>
+                        <p class="feature-description">
+                            BeautifulSoup fallback ensures reliable scraping even when Firecrawl is unavailable.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="feature-icon accent">
+                            <i class="fas fa-file-download"></i>
+                        </div>
+                        <h3 class="feature-title">Document Extraction</h3>
+                        <p class="feature-description">
+                            Extract text content, titles, descriptions, and metadata from web pages.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scraping Form -->
+            <div class="form-container">
+                <h3 class="mb-4">
+                    <i class="fas fa-globe me-2 text-primary"></i>Scrape Website
+                </h3>
+                
+                <form id="scrapingForm">
+                    <div class="mb-3">
+                        <label for="scrapingUrl" class="form-label">Website URL</label>
+                        <input type="url" class="form-control" id="scrapingUrl" 
+                               placeholder="https://example.com" required>
+                        <div class="form-text">Enter the URL of the website you want to scrape</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="downloadDocuments">
+                            <label class="form-check-label" for="downloadDocuments">
+                                <i class="fas fa-download me-2"></i>Download Documents
+                                <small class="text-muted d-block">Automatically download PDF, DOCX, TXT and other documents found on the page</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-globe me-2"></i>Start Scraping
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Scraping...</span>
+                    </div>
+                    <p class="mt-2">Scraping website content...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="resultsSection" class="results-container" style="display: none;">
+                    <h4 class="mb-3">
+                        <i class="fas fa-check-circle me-2 text-success"></i>Scraping Results
+                    </h4>
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form submission
+        document.getElementById('scrapingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('scrapingUrl').value;
+            
+            // Validate URL
+            try {
+                new URL(url);
+            } catch {
+                alert('Please enter a valid URL');
+                return;
+            }
+            
+            // Show loading spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            try {
+                const downloadDocuments = document.getElementById('downloadDocuments').checked;
+                const response = await fetch(`/api/web-scraping?url=${encodeURIComponent(url)}&download_documents=${downloadDocuments}`);
+                const data = await response.json();
+                
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // Display results
+                displayResults(data);
+                
+            } catch (error) {
+                // Hide loading spinner
+                document.getElementById('loadingSpinner').style.display = 'none';
+                
+                // Show error
+                document.getElementById('resultsSection').style.display = 'block';
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        });
+        
+        function displayResults(data) {
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            
+            resultsSection.style.display = 'block';
+            
+            // Debug logging
+            console.log('Display results data:', data);
+            
+            if (data.success) {
+                let resultHtml = `
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle me-2"></i>Scraping Successful!</h6>
+                        <p><strong>URL:</strong> ${data.url}</p>
+                        <p><strong>Method:</strong> ${data.method}</p>
+                        <p><strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}</p>
+                    </div>
+                `;
+                
+                // Show status of both methods
+                if (data.firecrawl_status || data.beautifulsoup_status) {
+                    resultHtml += `
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6><i class="fas fa-cloud me-2"></i>Firecrawl</h6>
+                                        <span class="badge ${data.firecrawl_status === 'success' ? 'bg-success' : 'bg-danger'}">
+                                            ${data.firecrawl_status === 'success' ? 'Success' : 'Failed'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6><i class="fas fa-code me-2"></i>BeautifulSoup</h6>
+                                        <span class="badge ${data.beautifulsoup_status === 'success' ? 'bg-success' : 'bg-danger'}">
+                                            ${data.beautifulsoup_status === 'success' ? 'Success' : 'Failed'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Display combined content
+                if (data.data && data.data.combined_content) {
+                    const contentLength = data.data.combined_content.length;
+                    resultHtml += `
+                        <div class="mt-3">
+                            <h6><i class="fas fa-file-alt me-2"></i>Combined Content - ${contentLength} characters:</h6>
+                            <div class="content-preview" style="max-height: 600px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6;">
+                                <pre style="white-space: pre-wrap; font-size: 0.9rem; margin: 0;">${data.data.combined_content}</pre>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Display metadata
+                if (data.data && data.data.metadata && Object.keys(data.data.metadata).length > 0) {
+                    resultHtml += `
+                        <div class="mt-3">
+                            <h6><i class="fas fa-info-circle me-2"></i>Metadata:</h6>
+                            <div class="row">
+                    `;
+                    
+                    for (const [key, value] of Object.entries(data.data.metadata)) {
+                        resultHtml += `
+                            <div class="col-md-6 mb-2">
+                                <strong>${key}:</strong> ${value || 'N/A'}
+                            </div>
+                        `;
+                    }
+                    
+                    resultHtml += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Display links
+                if (data.data && data.data.links && data.data.links.length > 0) {
+                    resultHtml += `
+                        <div class="mt-3">
+                            <h6><i class="fas fa-link me-2"></i>Links Found (${data.data.links.length}):</h6>
+                            <div class="content-preview" style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6;">
+                    `;
+                    
+                    data.data.links.slice(0, 10).forEach(link => {
+                        resultHtml += `<div><a href="${link}" target="_blank" class="text-decoration-none">${link}</a></div>`;
+                    });
+                    
+                    if (data.data.links.length > 10) {
+                        resultHtml += `<div class="text-muted">... and ${data.data.links.length - 10} more links</div>`;
+                    }
+                    
+                    resultHtml += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Show document download results if available
+                if (data.document_download) {
+                    const downloadData = data.document_download;
+                    resultHtml += `
+                        <div class="mt-3">
+                            <h6><i class="fas fa-download me-2"></i>Document Downloads:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-check-circle me-2 text-success"></i>Successful</h6>
+                                            <span class="badge bg-success fs-6">${downloadData.downloaded_count}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h6><i class="fas fa-times-circle me-2 text-danger"></i>Failed</h6>
+                                            <span class="badge bg-danger fs-6">${downloadData.failed_count}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                    `;
+                    
+                    // Show downloaded documents
+                    if (downloadData.downloaded_documents && downloadData.downloaded_documents.length > 0) {
+                        resultHtml += `
+                            <div class="mt-3">
+                                <h6><i class="fas fa-file-alt me-2"></i>Downloaded Documents:</h6>
+                                <div class="list-group">
+                        `;
+                        
+                        downloadData.downloaded_documents.forEach(doc => {
+                            resultHtml += `
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">${doc.filename}</h6>
+                                            <small class="text-muted">${doc.file_type} • ${Math.round(doc.file_size / 1024)}KB • ${doc.content_length} characters</small>
+                                        </div>
+                                        <span class="badge bg-success">Downloaded</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        resultHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show failed downloads
+                    if (downloadData.failed_downloads && downloadData.failed_downloads.length > 0) {
+                        resultHtml += `
+                            <div class="mt-3">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Failed Downloads:</h6>
+                                <div class="list-group">
+                        `;
+                        
+                        downloadData.failed_downloads.forEach(failed => {
+                            resultHtml += `
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">${failed.filename}</h6>
+                                            <small class="text-muted">${failed.url}</small>
+                                            <br><small class="text-danger">${failed.error}</small>
+                                        </div>
+                                        <span class="badge bg-danger">Failed</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        resultHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    resultHtml += `</div>`;
+                }
+                
+                // Show errors if any
+                if (data.firecrawl_error) {
+                    resultHtml += `
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Firecrawl Error:</h6>
+                            <p>${data.firecrawl_error}</p>
+                        </div>
+                    `;
+                }
+                
+                if (data.beautifulsoup_error) {
+                    resultHtml += `
+                        <div class="alert alert-warning mt-3">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>BeautifulSoup Error:</h6>
+                            <p>${data.beautifulsoup_error}</p>
+                        </div>
+                    `;
+                }
+                
+                resultsContent.innerHTML = resultHtml;
+            } else {
+                resultsContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Scraping Failed:</strong> ${data.error}
+                    </div>
+                `;
+            }
+        }
+    </script>
+    </div>
+</body>
+</html>

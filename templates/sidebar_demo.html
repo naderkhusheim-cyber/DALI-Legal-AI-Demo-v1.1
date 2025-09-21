@@ -1,0 +1,119 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Sidebar Demo - DALI Legal AI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="chatgpt-card">
+                <div class="chatgpt-card-header">
+                    <div class="chatgpt-card-icon">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                    <h1 class="chatgpt-card-title">Sidebar Menu Demo</h1>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Sidebar Features:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Collapsible sidebar with smooth animations</li>
+                        <li>Organized sections for different feature categories</li>
+                        <li>Active page highlighting</li>
+                        <li>Unread message badges</li>
+                        <li>Admin section for admin users</li>
+                        <li>User info and logout in footer</li>
+                        <li>Mobile responsive with overlay</li>
+                        <li>Dark theme with gradient background</li>
+                    </ul>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chatgpt-card">
+                            <h5><i class="fas fa-list"></i> Sidebar Sections</h5>
+                            <ul>
+                                <li><strong>Dashboard:</strong> Main Dashboard, Analytics</li>
+                                <li><strong>Research & Analysis:</strong> Legal Research, Document Analysis, Web Research, Web Scraping</li>
+                                <li><strong>Data & Intelligence:</strong> Knowledge Base, Database Intelligence, All Documents</li>
+                                <li><strong>Communication:</strong> AI Chat, User Chat</li>
+                                <li><strong>Settings & Tools:</strong> Settings, Permissions</li>
+                                <li><strong>Admin Panel:</strong> Admin Dashboard, User Management, Activity Logs</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="chatgpt-card">
+                            <h5><i class="fas fa-mobile-alt"></i> Mobile Features</h5>
+                            <ul>
+                                <li>Hamburger menu button in header</li>
+                                <li>Overlay for mobile navigation</li>
+                                <li>Touch-friendly interface</li>
+                                <li>Responsive design</li>
+                                <li>Auto-collapse on mobile</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chatgpt-card">
+                    <h5><i class="fas fa-palette"></i> Design Features</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Colors</h6>
+                            <ul>
+                                <li>Dark gradient background</li>
+                                <li>Blue accent colors</li>
+                                <li>White text with good contrast</li>
+                                <li>Hover effects</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Animations</h6>
+                            <ul>
+                                <li>Smooth slide transitions</li>
+                                <li>Hover animations</li>
+                                <li>Loading states</li>
+                                <li>Badge animations</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Functionality</h6>
+                            <ul>
+                                <li>Auto-active page detection</li>
+                                <li>Unread count badges</li>
+                                <li>Role-based sections</li>
+                                <li>Keyboard navigation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <button class="chatgpt-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i> Toggle Sidebar
+                    </button>
+                    <button class="chatgpt-btn chatgpt-btn-secondary ms-2" onclick="window.location.href='/user-dashboard'">
+                        <i class="fas fa-home"></i> Go to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('collapsed');
+        overlay.classList.toggle('active');
+    }
+}
+</script>
+{% endblock %}

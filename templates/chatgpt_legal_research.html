@@ -1,0 +1,362 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Legal Research - DALI Legal AI{% endblock %}
+
+{% block head %}
+<style>
+/* Legal Research Specific Styles */
+.legal-research-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.research-form {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.research-input-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.research-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.research-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.research-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.research-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.research-option:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-color: var(--primary-color);
+}
+
+.research-option input[type="checkbox"] {
+    margin: 0;
+}
+
+.research-results {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 400px;
+}
+
+.research-result-item {
+    padding: 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+}
+
+.research-result-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.5rem;
+}
+
+.research-result-content {
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+}
+
+.research-result-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.research-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.research-loading .spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.research-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger-color);
+    color: #991b1b;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.research-suggestions {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+}
+
+.research-suggestions h6 {
+    color: #1e40af;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.suggestion-item {
+    display: inline-block;
+    background: white;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.suggestion-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+@media (max-width: 768px) {
+    .research-input-group {
+        flex-direction: column;
+    }
+    
+    .research-options {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="legal-research-container">
+    <div class="chatgpt-card-header">
+        <div class="chatgpt-card-icon">
+            <i class="fas fa-search"></i>
+        </div>
+        <h1 class="chatgpt-card-title">Legal Research</h1>
+    </div>
+    
+    <div class="research-form">
+        <form id="researchForm">
+            <div class="research-input-group">
+                <input type="text" id="researchQuery" class="research-input" 
+                       placeholder="Enter your legal research question..." required>
+                <button type="submit" class="chatgpt-btn">
+                    <i class="fas fa-search"></i> Research
+                </button>
+            </div>
+            
+            <div class="research-options">
+                <div class="research-option">
+                    <input type="checkbox" id="includeWebSearch">
+                    <label for="includeWebSearch">Include Web Search</label>
+                </div>
+                
+                <div class="research-option">
+                    <select id="jurisdiction" class="research-input">
+                        <option value="">Select Jurisdiction</option>
+                        <option value="saudi_arabia">Saudi Arabia</option>
+                        <option value="uae">United Arab Emirates</option>
+                        <option value="kuwait">Kuwait</option>
+                        <option value="qatar">Qatar</option>
+                        <option value="bahrain">Bahrain</option>
+                        <option value="oman">Oman</option>
+                        <option value="international">International</option>
+                    </select>
+                </div>
+                
+                <div class="research-option">
+                    <select id="documentType" class="research-input">
+                        <option value="">Document Type</option>
+                        <option value="contracts">Contracts</option>
+                        <option value="legislation">Legislation</option>
+                        <option value="case_law">Case Law</option>
+                        <option value="regulations">Regulations</option>
+                        <option value="all">All Types</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="research-results" id="researchResults">
+        <div class="text-center text-muted">
+            <i class="fas fa-search fa-3x mb-3"></i>
+            <h5>Start Your Legal Research</h5>
+            <p>Enter a question above to begin your legal research</p>
+        </div>
+    </div>
+    
+    <div class="research-suggestions">
+        <h6><i class="fas fa-lightbulb"></i> Research Suggestions</h6>
+        <div class="suggestion-item" onclick="setQuery('What are the labor law requirements in Saudi Arabia?')">
+            Labor Law Requirements
+        </div>
+        <div class="suggestion-item" onclick="setQuery('Contract termination clauses in UAE')">
+            Contract Termination
+        </div>
+        <div class="suggestion-item" onclick="setQuery('Intellectual property protection laws')">
+            IP Protection
+        </div>
+        <div class="suggestion-item" onclick="setQuery('Commercial dispute resolution procedures')">
+            Dispute Resolution
+        </div>
+        <div class="suggestion-item" onclick="setQuery('Corporate governance requirements')">
+            Corporate Governance
+        </div>
+        <div class="suggestion-item" onclick="setQuery('Data protection and privacy laws')">
+            Data Protection
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setQuery(query) {
+    document.getElementById('researchQuery').value = query;
+}
+
+document.getElementById('researchForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const query = document.getElementById('researchQuery').value;
+    const includeWebSearch = document.getElementById('includeWebSearch').checked;
+    const jurisdiction = document.getElementById('jurisdiction').value;
+    const documentType = document.getElementById('documentType').value;
+    
+    if (!query.trim()) {
+        alert('Please enter a research question');
+        return;
+    }
+    
+    // Show loading state
+    const resultsDiv = document.getElementById('researchResults');
+    resultsDiv.innerHTML = `
+        <div class="research-loading">
+            <div class="spinner"></div>
+            <span>Conducting legal research...</span>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('/api/legal-research', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: query,
+                include_web_search: includeWebSearch,
+                jurisdiction: jurisdiction,
+                document_type: documentType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayResults(data.results);
+        } else {
+            displayError(data.error || 'Research failed');
+        }
+        
+    } catch (error) {
+        displayError('Network error: ' + error.message);
+    }
+});
+
+function displayResults(results) {
+    const resultsDiv = document.getElementById('researchResults');
+    
+    if (!results || results.length === 0) {
+        resultsDiv.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h5>No Results Found</h5>
+                <p>Try adjusting your search terms or including web search</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '<h5 class="mb-3"><i class="fas fa-list"></i> Research Results</h5>';
+    
+    results.forEach((result, index) => {
+        html += `
+            <div class="research-result-item">
+                <div class="research-result-title">
+                    ${result.title || `Result ${index + 1}`}
+                </div>
+                <div class="research-result-content">
+                    ${result.content || result.summary || 'No content available'}
+                </div>
+                <div class="research-result-meta">
+                    <span><i class="fas fa-calendar"></i> ${result.date || 'Recent'}</span>
+                    <span><i class="fas fa-tag"></i> ${result.type || 'Legal Document'}</span>
+                    ${result.source ? `<span><i class="fas fa-link"></i> ${result.source}</span>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    resultsDiv.innerHTML = html;
+}
+
+function displayError(error) {
+    const resultsDiv = document.getElementById('researchResults');
+    resultsDiv.innerHTML = `
+        <div class="research-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Research Error:</strong> ${error}
+        </div>
+    `;
+}
+</script>
+{% endblock %}

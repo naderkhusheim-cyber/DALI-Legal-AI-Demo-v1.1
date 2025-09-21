@@ -1,0 +1,625 @@
+{% extends "src/web/templates/chatgpt_base.html" %}
+{% block title %}Enhanced Knowledge Base - DALI Legal AI{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/chatgpt-ui.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Enhanced Knowledge Base Styles */
+.knowledge-base-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 15px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.feature-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 24px;
+    color: white;
+}
+
+.feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.feature-description {
+    color: #6b7280;
+    margin: 0 0 15px 0;
+    line-height: 1.6;
+}
+
+.feature-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.feature-tag {
+    background: #f3f4f6;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #374151;
+}
+
+.query-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.query-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 20px 0;
+}
+
+.query-form {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.query-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.query-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.query-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.query-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.results-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.results-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 20px 0;
+}
+
+.results-content {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.status-online { background-color: #10b981; }
+.status-offline { background-color: #ef4444; }
+.status-warning { background-color: #f59e0b; }
+
+.table-responsive {
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.chart-container {
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+@media (max-width: 768px) {
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .query-form {
+        flex-direction: column;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="knowledge-base-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">Enhanced Knowledge Base</h1>
+        <p class="page-subtitle">AI-powered database intelligence with natural language queries, SQL generation, and interactive charts</p>
+        
+        <!-- System Status -->
+        <div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-weight: 600; color: #374151;">System Status</span>
+                <button onclick="checkSystemHealth()" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div id="system-status-indicators" style="display: flex; gap: 20px; font-size: 14px; flex-wrap: wrap;">
+                <div><span class="status-indicator status-offline" id="ollama-status"></span>Ollama AI</div>
+                <div><span class="status-indicator status-offline" id="database-status"></span>MySQL DB</div>
+                <div><span class="status-indicator status-offline" id="sample-db-status"></span>Sample Data</div>
+                <div><span class="status-indicator status-offline" id="api-status"></span>API Services</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Grid -->
+    <div class="feature-grid">
+        <!-- Natural Language Queries -->
+        <div class="feature-card" onclick="focusQueryInput()">
+            <div class="feature-header">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3 class="feature-title">Natural Language Queries</h3>
+            </div>
+            <p class="feature-description">Ask questions in plain English and get SQL queries generated automatically. No technical knowledge required.</p>
+            <div class="feature-tags">
+                <span class="feature-tag">AI-Powered</span>
+                <span class="feature-tag">User-Friendly</span>
+                <span class="feature-tag">Smart Translation</span>
+            </div>
+        </div>
+
+        <!-- Interactive Charts -->
+        <div class="feature-card" onclick="showChartExample()">
+            <div class="feature-header">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3 class="feature-title">Interactive Charts</h3>
+            </div>
+            <p class="feature-description">Visualize your data with beautiful, interactive charts generated automatically from query results.</p>
+            <div class="feature-tags">
+                <span class="feature-tag">Visualization</span>
+                <span class="feature-tag">Interactive</span>
+                <span class="feature-tag">Auto-Generated</span>
+            </div>
+        </div>
+
+        <!-- Query History -->
+        <div class="feature-card" onclick="showQueryHistory()">
+            <div class="feature-header">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3 class="feature-title">Query History</h3>
+            </div>
+            <p class="feature-description">Track all your queries and results. Save, reuse, and share your most useful database queries.</p>
+            <div class="feature-tags">
+                <span class="feature-tag">Tracking</span>
+                <span class="feature-tag">Reusable</span>
+                <span class="feature-tag">Shareable</span>
+            </div>
+        </div>
+
+        <!-- Database Management -->
+        <div class="feature-card" onclick="showDatabaseInfo()">
+            <div class="feature-header">
+                <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="feature-title">Database Management</h3>
+            </div>
+            <p class="feature-description">Connect to multiple databases, manage schemas, and explore your data structure with AI assistance.</p>
+            <div class="feature-tags">
+                <span class="feature-tag">Multi-DB</span>
+                <span class="feature-tag">Schema Explorer</span>
+                <span class="feature-tag">AI Assistant</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Query Section -->
+    <div class="query-section">
+        <h2 class="query-title">
+            <i class="fas fa-search me-2"></i>
+            Ask Your Database
+        </h2>
+        <div class="query-form">
+            <input type="text" id="queryInput" class="query-input" placeholder="e.g., Show me all clients with total value over $200,000" />
+            <button onclick="executeQuery()" class="query-btn">
+                <i class="fas fa-play me-1"></i>
+                Execute Query
+            </button>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="setSampleQuery('clients')" style="padding: 6px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Sample: Clients</button>
+            <button onclick="setSampleQuery('cases')" style="padding: 6px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Sample: Cases</button>
+            <button onclick="setSampleQuery('revenue')" style="padding: 6px 12px; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Sample: Revenue</button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection" style="display: none;">
+        <h2 class="results-title">
+            <i class="fas fa-table me-2"></i>
+            Query Results
+        </h2>
+        <div id="resultsContent" class="results-content">
+            <!-- Results will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="results-section" id="chartSection" style="display: none;">
+        <h2 class="results-title">
+            <i class="fas fa-chart-line me-2"></i>
+            Data Visualization
+        </h2>
+        <div id="chartContent" class="chart-container">
+            <!-- Charts will be displayed here -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Sample queries
+const sampleQueries = {
+    clients: "Show me all clients with total value over $200,000",
+    cases: "List all cases by status and their assigned lawyers",
+    revenue: "Show monthly revenue trends for the last 12 months"
+};
+
+// Set sample query
+function setSampleQuery(type) {
+    document.getElementById('queryInput').value = sampleQueries[type];
+}
+
+// Focus query input
+function focusQueryInput() {
+    document.getElementById('queryInput').focus();
+}
+
+// Execute query
+async function executeQuery() {
+    const query = document.getElementById('queryInput').value.trim();
+    if (!query) {
+        alert('Please enter a query');
+        return;
+    }
+
+    const resultsSection = document.getElementById('resultsSection');
+    const resultsContent = document.getElementById('resultsContent');
+    const chartSection = document.getElementById('chartSection');
+    const chartContent = document.getElementById('chartContent');
+
+    // Show loading
+    resultsSection.style.display = 'block';
+    resultsContent.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Processing your query...</div>';
+    chartSection.style.display = 'none';
+
+    try {
+        // Step 1: Connect to sample database
+        const connectResponse = await fetch('/api/knowledge-base/connect', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                db_type: 'sqlite',
+                db_path: 'data/sample_databases/legal_practice.db'
+            })
+        });
+
+        if (!connectResponse.ok) {
+            throw new Error('Database connection failed');
+        }
+
+        // Step 2: Generate SQL
+        const sqlResponse = await fetch('/api/knowledge-base/generate-sql', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                natural_language: query
+            })
+        });
+
+        const sqlResult = await sqlResponse.json();
+
+        if (!sqlResult.success) {
+            throw new Error(sqlResult.error || 'SQL generation failed');
+        }
+
+        // Step 3: Execute query
+        const executeResponse = await fetch('/api/knowledge-base/execute-query', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                query: sqlResult.sql_query,
+                natural_language: query
+            })
+        });
+
+        const executeResult = await executeResponse.json();
+
+        if (!executeResult.success) {
+            throw new Error(executeResult.error || 'Query execution failed');
+        }
+
+        // Display results
+        displayResults(executeResult, sqlResult.sql_query);
+
+        // Generate chart if data is suitable
+        if (executeResult.data && executeResult.data.length > 0) {
+            await generateChart(executeResult);
+        }
+
+    } catch (error) {
+        resultsContent.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+    }
+}
+
+// Display query results
+function displayResults(result, sqlQuery) {
+    const resultsContent = document.getElementById('resultsContent');
+    
+    let html = `
+        <div class="success">
+            <i class="fas fa-check-circle me-2"></i>
+            Query executed successfully! Found ${result.row_count} rows.
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <h4>Generated SQL:</h4>
+            <pre style="background: #f3f4f6; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem;"><code>${sqlQuery}</code></pre>
+        </div>
+    `;
+
+    if (result.data && result.data.length > 0) {
+        html += `
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            ${result.columns.map(col => `<th>${col}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${result.data.slice(0, 20).map(row => 
+                            `<tr>${result.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}</tr>`
+                        ).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        if (result.data.length > 20) {
+            html += `<p style="color: #6b7280; font-size: 0.9rem; margin-top: 10px;">Showing first 20 rows of ${result.data.length} total results.</p>`;
+        }
+    }
+
+    resultsContent.innerHTML = html;
+}
+
+// Generate chart
+async function generateChart(result) {
+    try {
+        const chartResponse = await fetch('/api/knowledge-base/generate-chart', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                data: result.data,
+                columns: result.columns,
+                natural_language: document.getElementById('queryInput').value
+            })
+        });
+
+        const chartResult = await chartResponse.json();
+
+        if (chartResult.success && chartResult.chart_html) {
+            const chartSection = document.getElementById('chartSection');
+            const chartContent = document.getElementById('chartContent');
+            
+            chartSection.style.display = 'block';
+            chartContent.innerHTML = chartResult.chart_html;
+        }
+    } catch (error) {
+        console.error('Chart generation failed:', error);
+    }
+}
+
+// System health check
+async function checkSystemHealth() {
+    try {
+        const response = await fetch('/api/health');
+        const health = await response.json();
+        
+        // Update status indicators
+        document.getElementById('ollama-status').className = 
+            'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('database-status').className = 
+            'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('sample-db-status').className = 
+            'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('api-status').className = 
+            'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-warning');
+        
+    } catch (error) {
+        console.error('Health check failed:', error);
+    }
+}
+
+// Show chart example
+function showChartExample() {
+    alert('Chart visualization will be generated automatically when you run queries with suitable data!');
+}
+
+// Show query history
+function showQueryHistory() {
+    alert('Query history feature coming soon! Your queries will be saved and accessible here.');
+}
+
+// Show database info
+function showDatabaseInfo() {
+    alert('Database management features coming soon! You will be able to connect to multiple databases and explore schemas.');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    checkSystemHealth();
+    document.getElementById('queryInput').focus();
+    
+    // Handle Enter key
+    document.getElementById('queryInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            executeQuery();
+        }
+    });
+});
+</script>
+{% endblock %}

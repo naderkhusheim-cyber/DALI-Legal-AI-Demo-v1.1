@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .feature-card {
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-warning { background-color: #ffc107; }
+        .enhanced-badge {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .system-status-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        .quick-action-btn {
+            transition: all 0.3s ease;
+        }
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-balance-scale me-2"></i>
+                {{ title }}
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/api/docs" target="_blank">
+                    <i class="fas fa-book me-1"></i>API Docs
+                </a>
+                <a class="nav-link" href="/api/health" target="_blank">
+                    <i class="fas fa-heartbeat me-1"></i>Health
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- System Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card system-status-card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-heartbeat me-2"></i>System Status
+                        </h5>
+                        <div id="system-status" class="row">
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator status-offline" id="ollama-status"></div>
+                                    <span>Ollama AI Models</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator status-offline" id="database-status"></div>
+                                    <span>MySQL Database</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator status-offline" id="firecrawl-status"></div>
+                                    <span>Firecrawl API</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="status-indicator status-offline" id="sample-db-status"></div>
+                                    <span>Sample Database</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Features -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="mb-3">
+                    <i class="fas fa-star me-2 text-warning"></i>
+                    Enhanced Features
+                    <span class="enhanced-badge">v1.2.0</span>
+                </h2>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Database Intelligence -->
+            <div class="col-md-6 mb-4">
+                <div class="card feature-card h-100" onclick="window.open('/api/docs#/knowledge-base', '_blank')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title">
+                                <i class="fas fa-database me-2 text-primary"></i>
+                                Database Intelligence
+                            </h5>
+                            <span class="badge bg-primary">NEW</span>
+                        </div>
+                        <p class="card-text">
+                            Query your legal databases with natural language. Generate SQL, create charts, 
+                            and analyze your practice data with AI-powered intelligence.
+                        </p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-check me-1"></i>Natural Language to SQL<br>
+                                <i class="fas fa-check me-1"></i>Interactive Charts<br>
+                                <i class="fas fa-check me-1"></i>Query History
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Scraping & Analysis -->
+            <div class="col-md-6 mb-4">
+                <div class="card feature-card h-100" onclick="window.open('/api/docs#/web-scraping', '_blank')">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title">
+                                <i class="fas fa-globe me-2 text-success"></i>
+                                Web Scraping & Analysis
+                            </h5>
+                            <span class="badge bg-success">NEW</span>
+                        </div>
+                        <p class="card-text">
+                            Extract and analyze legal content from any website. Monitor regulatory changes,
+                            research case law, and gather legal intelligence automatically.
+                        </p>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-check me-1"></i>Firecrawl Integration<br>
+                                <i class="fas fa-check me-1"></i>Document Extraction<br>
+                                <i class="fas fa-check me-1"></i>Content Analysis
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Your Existing Features -->
+            <div class="col-md-6 mb-4">
+                <div class="card feature-card h-100" onclick="window.location.href='/document-analysis'">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-file-alt me-2 text-info"></i>
+                            Document Analysis
+                        </h5>
+                        <p class="card-text">
+                            Upload and analyze legal documents with AI. Extract key insights,
+                            identify risks, and generate summaries automatically.
+                        </p>
+                        <div class="mt-3">
+                            <small class="text-muted">Your existing DALI feature</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card feature-card h-100" onclick="window.location.href='/legal-research'">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-search me-2 text-warning"></i>
+                            Legal Research
+                        </h5>
+                        <p class="card-text">
+                            Research legal topics using AI and your document collection. 
+                            Get comprehensive answers with citations and sources.
+                        </p>
+                        <div class="mt-3">
+                            <small class="text-muted">Your existing DALI feature</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-bolt me-2"></i>Quick Actions
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-outline-primary w-100 quick-action-btn" onclick="testDatabaseQuery()">
+                                    <i class="fas fa-database me-1"></i>Test Database Query
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-outline-success w-100 quick-action-btn" onclick="testWebScraping()">
+                                    <i class="fas fa-globe me-1"></i>Test Web Scraping
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-outline-info w-100 quick-action-btn" onclick="checkSystemHealth()">
+                                    <i class="fas fa-heartbeat me-1"></i>System Health
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="btn btn-outline-secondary w-100 quick-action-btn" onclick="window.open('/api/docs', '_blank')">
+                                    <i class="fas fa-book me-1"></i>View API Docs
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Area -->
+        <div class="row mt-4" id="results-area" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Results</h5>
+                        <div id="results-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load system status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemHealth();
+        });
+
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+                
+                // Update status indicators
+                document.getElementById('ollama-status').className = 
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('database-status').className = 
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('sample-db-status').className = 
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+                
+                // Check Firecrawl
+                try {
+                    const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+                    const firecrawlStatus = await firecrawlResponse.json();
+                    
+                    document.getElementById('firecrawl-status').className = 
+                        'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+                } catch (e) {
+                    document.getElementById('firecrawl-status').className = 'status-indicator status-warning';
+                }
+                
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        async function testDatabaseQuery() {
+            showResults('Testing database connection and query generation...');
+            
+            try {
+                // Connect to sample database
+                const connectResponse = await fetch('/api/knowledge-base/connect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        db_type: 'sqlite',
+                        db_path: 'data/sample_databases/legal_practice.db'
+                    })
+                });
+                
+                if (!connectResponse.ok) {
+                    throw new Error('Database connection failed');
+                }
+                
+                // Generate SQL
+                const sqlResponse = await fetch('/api/knowledge-base/generate-sql', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        natural_language: 'Show me all clients with total value over $200,000'
+                    })
+                });
+                
+                const sqlResult = await sqlResponse.json();
+                
+                if (sqlResult.success) {
+                    // Execute query
+                    const executeResponse = await fetch('/api/knowledge-base/execute-query', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            query: sqlResult.sql_query,
+                            natural_language: 'Show me all clients with total value over $200,000'
+                        })
+                    });
+                    
+                    const executeResult = await executeResponse.json();
+                    
+                    showResults(`
+                        <h6>✅ Database Query Test Successful!</h6>
+                        <p><strong>Generated SQL:</strong></p>
+                        <pre><code>${sqlResult.sql_query}</code></pre>
+                        <p><strong>Results:</strong> ${executeResult.row_count} rows returned</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>${executeResult.columns.map(col => `<th>${col}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    ${executeResult.data.slice(0, 5).map(row => 
+                                        `<tr>${executeResult.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}</tr>`
+                                    ).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `);
+                } else {
+                    showResults(`❌ SQL Generation Failed: ${sqlResult.error || 'Unknown error'}`);
+                }
+                
+            } catch (error) {
+                showResults(`❌ Database test failed: ${error.message}`);
+            }
+        }
+
+        async function testWebScraping() {
+            showResults('Testing web scraping functionality...');
+            
+            try {
+                const response = await fetch('/api/web-scraping/scrape', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        url: 'https://example.com',
+                        method: 'beautifulsoup'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showResults(`
+                        <h6>✅ Web Scraping Test Successful!</h6>
+                        <p><strong>URL:</strong> ${result.url}</p>
+                        <p><strong>Method:</strong> ${result.method}</p>
+                        <p><strong>Content Length:</strong> ${result.content.length} characters</p>
+                        <p><strong>Analysis:</strong> ${result.analysis.legal_relevance || 'N/A'} legal relevance</p>
+                        <p><strong>Content Preview:</strong></p>
+                        <pre class="bg-light p-2" style="max-height: 200px; overflow-y: auto;">
+${result.content.substring(0, 500)}...</pre>
+                    `);
+                } else {
+                    showResults(`❌ Web scraping failed: ${result.error}`);
+                }
+                
+            } catch (error) {
+                showResults(`❌ Web scraping test failed: ${error.message}`);
+            }
+        }
+
+        function showResults(content) {
+            document.getElementById('results-content').innerHTML = content;
+            document.getElementById('results-area').style.display = 'block';
+            document.getElementById('results-area').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

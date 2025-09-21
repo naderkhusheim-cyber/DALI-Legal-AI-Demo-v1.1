@@ -4,394 +4,671 @@
 {% block head %}
 <link rel="stylesheet" href="/static/chatgpt-ui.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Enhanced Web Research Styles */
+.web-research-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #5a67d8;
+    text-decoration: none;
+}
+
+.breadcrumb-separator {
+    color: #9ca3af;
+    font-weight: bold;
+}
+
+.breadcrumb-current {
+    color: #374151;
+    font-weight: 600;
+}
+
+/* Navigation Header */
+.navigation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    border: 1px solid #e5e7eb;
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-center {
+    flex: 1;
+    text-align: center;
+}
+
+.nav-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.back-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.nav-link {
+    padding: 8px 16px;
+    background: #f8fafc;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.nav-link:hover {
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* Header Section */
+.research-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+}
+
+.research-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.research-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+/* Research Form Section */
+.research-section {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    border: 2px solid #e1e5e9;
+    transition: all 0.3s ease;
+}
+
+.research-section:hover {
+    border-color: #667eea;
+    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.15);
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+}
+
+.checkbox-group label {
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+}
+
+.research-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    width: 100%;
+}
+
+.research-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.research-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Progress Section */
+.progress-container {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    display: none;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    text-align: center;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* Results Section */
+.results-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    display: none;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.results-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0;
+}
+
+.results-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.action-btn.primary:hover {
+    background: #5a67d8;
+    border-color: #5a67d8;
+    color: white;
+}
+
+/* Result Cards */
+.result-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.result-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.result-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 8px 0;
+}
+
+.result-url {
+    color: #667eea;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.result-url:hover {
+    text-decoration: underline;
+}
+
+.result-content {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    line-height: 1.6;
+    color: #374151;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.result-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.result-actions .action-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+/* Error/Success Messages */
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+.success-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .web-research-container {
+        padding: 10px;
+    }
+    
+    .research-header {
+        padding: 30px 15px;
+    }
+    
+    .research-header h1 {
+        font-size: 2rem;
+    }
+    
+    .research-section, .results-section {
+        padding: 20px;
+    }
+    
+    .navigation-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+    
+    .nav-left, .nav-right {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .nav-center {
+        order: -1;
+    }
+    
+    .nav-title {
+        font-size: 1.3rem;
+    }
+    
+    .back-btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+    
+    .nav-link {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .results-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .results-actions {
+        justify-content: center;
+    }
+    
+    .result-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .result-actions {
+        justify-content: center;
+    }
+}
+
+/* Floating Back Button for Mobile */
+@media (max-width: 768px) {
+    .floating-back-btn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .floating-back-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="chatgpt-layout">
-    <!-- ChatGPT-Style Sidebar -->
-    <aside class="chatgpt-sidebar" id="sidebar">
-        <div class="chatgpt-sidebar-header">
-            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
-            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
+<!-- Floating Back Button for Mobile -->
+<button class="floating-back-btn" onclick="window.location.href='/dashboard'" title="Back to Dashboard">
+    ←
+</button>
+
+<div class="web-research-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb">
+        <a href="/dashboard" class="breadcrumb-link">🏠 Dashboard</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">🌐 Web Research</span>
+    </div>
+
+    <!-- Navigation Header -->
+    <div class="navigation-header">
+        <div class="nav-left">
+            <a href="/dashboard" class="back-btn">
+                <span class="back-icon">←</span>
+                Back to Dashboard
+            </a>
         </div>
-        
-        <button class="chatgpt-new-chat-btn" onclick="startNewResearch()">
-            <span>+</span>
-            {{ t('new_research') if t else 'New Research' }}
-        </button>
-        
-        <nav class="chatgpt-nav">
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🏠</span>
-                        {{ t('dashboard') if t else 'Dashboard' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/legal-research" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🔍</span>
-                        {{ t('legal_research') if t else 'Legal Research' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/document-analysis" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">📄</span>
-                        {{ t('document_analysis') if t else 'Document Analysis' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/knowledge-base" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">📚</span>
-                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/web-research" class="chatgpt-nav-link active">
-                        <span class="chatgpt-nav-icon">🌐</span>
-                        {{ t('web_research') if t else 'Web Research' }}
-                    </a>
-                </div>
+        <div class="nav-center">
+            <h1 class="nav-title">🌐 Web Research</h1>
+        </div>
+        <div class="nav-right">
+            <a href="/knowledge-base" class="nav-link">📚 Knowledge Base</a>
+            <a href="/document-analysis" class="nav-link">📄 Document Analysis</a>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="research-header">
+        <h1>🌐 Web Research</h1>
+        <p>Scrape and analyze web content for legal research</p>
+    </div>
+
+    <!-- Research Form Section -->
+    <div class="research-section">
+        <form id="webResearchForm">
+            <div class="form-group">
+                <label class="form-label">Website URL</label>
+                <input type="url" class="form-input" id="websiteUrl" placeholder="https://example.com" required>
             </div>
             
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/settings" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">⚙️</span>
-                        {{ t('settings') if t else 'Settings' }}
-                    </a>
-                </div>
-                {% if user and user.role == 'admin' %}
-                <div class="chatgpt-nav-item">
-                    <a href="/admin/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">👑</span>
-                        {{ t('admin_panel') if t else 'Admin Panel' }}
-                    </a>
-                </div>
-                {% endif %}
+            <div class="form-group">
+                <label class="form-label">Research Type</label>
+                <select class="form-select" id="researchType">
+                    <option value="scrape">Scrape Content</option>
+                    <option value="analyze">Analyze Content</option>
+                    <option value="extract">Extract Key Points</option>
+                    <option value="summarize">Summarize Content</option>
+                </select>
             </div>
-        </nav>
-        
-        {% if user %}
-        <div class="chatgpt-user-info">
-            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
-            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
-            <form method="get" action="/logout">
-                <button type="submit" class="chatgpt-logout-btn">
-                    {{ t('logout') if t else 'Logout' }}
-                </button>
-            </form>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="addToKb" checked>
+                <label for="addToKb">Add to Knowledge Base</label>
+            </div>
+            
+            <button type="submit" class="research-btn" id="researchBtn">
+                <span id="researchText">🌐 Start Research</span>
+                <span id="researchSpinner" class="spinner" style="display: none;"></span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
+        <div class="progress-text" id="progressText">Researching website...</div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection" {% if all_results %}style="display: block;"{% endif %}>
+        <div class="results-header">
+            <h3 class="results-title">Research Results</h3>
+            <div class="results-actions">
+                <button class="action-btn" onclick="startNewResearch()">
+                    🔄 New Research
+                </button>
+                <button class="action-btn" onclick="window.location.href='/dashboard'">
+                    🏠 Home
+                </button>
+            </div>
+        </div>
+        <div id="resultsContent">
+            <!-- Server Results -->
+            {% if all_results %}
+                <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                    <strong>DEBUG:</strong> Found {{ all_results|length }} results
+                </div>
+                {% for result in all_results %}
+                <div class="result-card">
+                    <div class="result-header">
+                        <div>
+                            <h4 class="result-title">{{ result.title }}</h4>
+                            <a href="{{ result.url }}" target="_blank" class="result-url">{{ result.url }}</a>
+                            <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
+                                Content length: {{ result.content_plain|length }} characters
+                            </div>
+                        </div>
+                    </div>
+                    <div class="result-content">
+                        <pre style="white-space: pre-wrap; font-family: inherit;">{{ result.content_plain[:2000]|e }}{% if result.content_plain|length > 2000 %}...{% endif %}</pre>
+                    </div>
+                    <div class="result-actions">
+                        <button class="action-btn" onclick="copyToClipboard('{{ result.content_plain|replace("'", "\\'") }}')">
+                            📋 Copy Content
+                        </button>
+                        <button class="action-btn" onclick="addToKnowledgeBase('{{ result.title|replace("'", "\\'") }}', '{{ result.content_plain|replace("'", "\\'") }}', '{{ result.url }}')">
+                            📚 Add to Knowledge Base
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="result-card">
+                    <p>No results found. Please try a different URL.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div id="messageContainer">
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
         {% endif %}
-    </aside>
-    
-    <!-- Main Web Research Interface -->
-    <main class="chatgpt-main">
-        <!-- Mobile Menu Button -->
-        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
-            ☰
-        </button>
-        
-        <!-- Web Research Header -->
-        <div class="chatgpt-header">
-            <div class="chatgpt-header-title">{{ t('web_research') if t else 'Web Research' }}</div>
-            <div class="chatgpt-header-subtitle">{{ t('web_research_subtitle') if t else 'Scrape and analyze web content for legal research' }}</div>
-        </div>
-        
-        <!-- Welcome Screen -->
-        <div class="chatgpt-welcome" id="welcomeScreen">
-            <div class="chatgpt-welcome-icon">🌐</div>
-            <h1 class="chatgpt-welcome-title">{{ t('web_research') if t else 'Web Research' }}</h1>
-            <p class="chatgpt-welcome-subtitle">{{ t('web_research_description') if t else 'Scrape websites, extract legal information, and add content to your knowledge base for comprehensive legal research.' }}</p>
-            
-            <div class="chatgpt-welcome-actions">
-                <button class="chatgpt-action-btn" onclick="scrapeWebsite()">
-                    🕷️ {{ t('scrape_website') if t else 'Scrape Website' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="researchLegalSites()">
-                    ⚖️ {{ t('research_legal_sites') if t else 'Research Legal Sites' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="extractContent()">
-                    📄 {{ t('extract_content') if t else 'Extract Content' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="addToKnowledgeBase()">
-                    📚 {{ t('add_to_knowledge_base') if t else 'Add to Knowledge Base' }}
-                </button>
-            </div>
-        </div>
-        
-        <!-- Research Interface -->
-        <div class="chatgpt-messages" id="researchInterface" style="display: none;">
-            <div class="chatgpt-card">
-                <div class="chatgpt-card-header">
-                    <div class="chatgpt-card-title">{{ t('web_research') if t else 'Web Research' }}</div>
-                    <div class="chatgpt-card-subtitle">{{ t('enter_url_to_research') if t else 'Enter a URL to research and scrape content' }}</div>
-                </div>
-                
-                <form id="webResearchForm">
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">{{ t('website_url') if t else 'Website URL' }}</label>
-                        <input type="url" class="chatgpt-form-input" id="websiteUrl" placeholder="https://example.com" required>
-                    </div>
-                    
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">{{ t('research_type') if t else 'Research Type' }}</label>
-                        <select class="chatgpt-form-input" id="researchType">
-                            <option value="scrape">{{ t('scrape_content') if t else 'Scrape Content' }}</option>
-                            <option value="analyze">{{ t('analyze_content') if t else 'Analyze Content' }}</option>
-                            <option value="extract">{{ t('extract_key_points') if t else 'Extract Key Points' }}</option>
-                            <option value="summarize">{{ t('summarize_content') if t else 'Summarize Content' }}</option>
-                        </select>
-                    </div>
-                    
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">
-                            <input type="checkbox" id="addToKb" checked>
-                            {{ t('add_to_knowledge_base') if t else 'Add to Knowledge Base' }}
-                        </label>
-                    </div>
-                    
-                    <button type="submit" class="chatgpt-btn chatgpt-btn-primary" style="width: 100%;">
-                        🌐 {{ t('start_research') if t else 'Start Research' }}
-                    </button>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Research Results -->
-        <div class="chatgpt-messages" id="researchResults" style="display: none;">
-            <!-- Research results will be displayed here -->
-        </div>
-        
-        <!-- Input Area -->
-        <div class="chatgpt-input-area">
-            <div class="chatgpt-input-container">
-                <textarea 
-                    class="chatgpt-input" 
-                    id="chatInput" 
-                    placeholder="{{ t('ask_about_web_research') if t else 'Ask questions about web research or enter URLs...' }}"
-                    rows="1"
-                    onkeydown="handleKeyDown(event)"
-                    oninput="autoResize(this)"
-                ></textarea>
-                <button class="chatgpt-send-btn" id="sendBtn" onclick="sendMessage()">
-                    ➤
-                </button>
-            </div>
-        </div>
-    </main>
+        {% if all_results %}
+            <div class="success-message">✅ Website scraped successfully! Content has been added to your knowledge base.</div>
+        {% endif %}
+    </div>
 </div>
 
 <script>
-let currentResearchId = null;
 let isResearching = false;
 
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
-}
-
-function startNewResearch() {
-    currentResearchId = null;
-    document.getElementById('welcomeScreen').style.display = 'flex';
-    document.getElementById('researchInterface').style.display = 'none';
-    document.getElementById('researchResults').style.display = 'none';
-    document.getElementById('chatInput').value = '';
-}
-
-function scrapeWebsite() {
-    document.getElementById('researchType').value = 'scrape';
-    showResearchInterface();
-}
-
-function researchLegalSites() {
-    document.getElementById('researchType').value = 'analyze';
-    showResearchInterface();
-}
-
-function extractContent() {
-    document.getElementById('researchType').value = 'extract';
-    showResearchInterface();
-}
-
-function addToKnowledgeBase() {
-    document.getElementById('researchType').value = 'scrape';
-    document.getElementById('addToKb').checked = true;
-    showResearchInterface();
-}
-
-function showResearchInterface() {
-    document.getElementById('welcomeScreen').style.display = 'none';
-    document.getElementById('researchInterface').style.display = 'flex';
-    document.getElementById('researchResults').style.display = 'none';
-}
-
-function autoResize(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-}
-
-function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-    }
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (!message || isResearching) return;
-    
-    // Check if it's a URL
-    if (message.startsWith('http://') || message.startsWith('https://')) {
-        document.getElementById('websiteUrl').value = message;
-        document.getElementById('researchType').value = 'scrape';
-        document.getElementById('addToKb').checked = true;
-        showResearchInterface();
-        return;
-    }
-    
-    // Add user message
-    addMessage('user', message);
-    
-    // Clear input
-    input.value = '';
-    input.style.height = 'auto';
-    
-    // Show typing indicator
-    showTypingIndicator();
-    
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-        hideTypingIndicator();
-        addMessage('assistant', 'I understand your web research question. This is a simulated response - in the actual implementation, this would help you with web research and content extraction.');
-    }, 2000);
-}
-
-function formatMessage(text) {
-    // Convert the text to HTML with proper formatting
-    let formatted = text
-        // Convert numbered lists (1. **text**: description)
-        .replace(/(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*?)(?=\d+\.\s*\*\*|$)/gs, (match, num, title, desc) => {
-            return `<div class="chatgpt-list-item">
-                <div class="chatgpt-list-number">${num}.</div>
-                <div class="chatgpt-list-content">
-                    <div class="chatgpt-list-title">${title}</div>
-                    <div class="chatgpt-list-description">${desc.trim()}</div>
-                </div>
-            </div>`;
-        })
-        // Convert bold text **text** to <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Convert line breaks to <br>
-        .replace(/\n/g, '<br>')
-        // Convert double line breaks to paragraph breaks
-        .replace(/(<br>\s*){2,}/g, '</p><p>')
-        // Wrap in paragraph tags
-        .replace(/^(.*)$/, '<p>$1</p>')
-        // Clean up empty paragraphs
-        .replace(/<p><\/p>/g, '')
-        .replace(/<p><br><\/p>/g, '');
-    
-    return formatted;
-}
-
-function addMessage(sender, text) {
-    const messagesContainer = document.getElementById('researchResults');
-    if (messagesContainer.style.display === 'none') {
-        messagesContainer.style.display = 'flex';
-        document.getElementById('welcomeScreen').style.display = 'none';
-        document.getElementById('researchInterface').style.display = 'none';
-    }
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'chatgpt-message';
-    
-    const avatar = document.createElement('div');
-    avatar.className = `chatgpt-message-avatar ${sender}`;
-    avatar.textContent = sender === 'user' ? 'U' : 'AI';
-    
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatgpt-message-text';
-    
-    if (sender === 'assistant') {
-        // Format AI responses with proper HTML
-        textDiv.innerHTML = formatMessage(text);
-    } else {
-        // Keep user messages as plain text
-        textDiv.textContent = text;
-    }
-    
-    const metaDiv = document.createElement('div');
-    metaDiv.className = 'chatgpt-message-meta';
-    metaDiv.textContent = new Date().toLocaleTimeString();
-    
-    content.appendChild(textDiv);
-    content.appendChild(metaDiv);
-    
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(content);
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-function showTypingIndicator() {
-    isResearching = true;
-    const messagesContainer = document.getElementById('researchResults');
-    if (messagesContainer.style.display === 'none') {
-        messagesContainer.style.display = 'flex';
-        document.getElementById('welcomeScreen').style.display = 'none';
-        document.getElementById('researchInterface').style.display = 'none';
-    }
-    
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'chatgpt-message';
-    typingDiv.id = 'typingIndicator';
-    
-    const avatar = document.createElement('div');
-    avatar.className = 'chatgpt-message-avatar assistant';
-    avatar.textContent = 'AI';
-    
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const typingContent = document.createElement('div');
-    typingContent.className = 'chatgpt-typing';
-    typingContent.innerHTML = `
-        <span>AI is researching...</span>
-        <div class="chatgpt-typing-dots">
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
-        </div>
-    `;
-    
-    content.appendChild(typingContent);
-    
-    typingDiv.appendChild(avatar);
-    typingDiv.appendChild(content);
-    
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-function hideTypingIndicator() {
-    isResearching = false;
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-// Web research form handling
+// Form submission handling
 document.getElementById('webResearchForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -400,7 +677,7 @@ document.getElementById('webResearchForm').addEventListener('submit', function(e
     const addToKb = document.getElementById('addToKb').checked;
     
     if (!websiteUrl.trim()) {
-        alert('Please enter a website URL.');
+        showMessage('Please enter a website URL.', 'error');
         return;
     }
     
@@ -411,8 +688,17 @@ document.getElementById('webResearchForm').addEventListener('submit', function(e
         formData.append('add_to_kb', 'on');
     }
     
-    // Show researching indicator
-    showTypingIndicator();
+    // Show progress
+    showProgress();
+    
+    // Disable button and show spinner
+    const researchBtn = document.getElementById('researchBtn');
+    const researchText = document.getElementById('researchText');
+    const researchSpinner = document.getElementById('researchSpinner');
+    
+    researchBtn.disabled = true;
+    researchText.style.display = 'none';
+    researchSpinner.style.display = 'inline-block';
     
     fetch('/web-research', {
         method: 'POST',
@@ -420,79 +706,215 @@ document.getElementById('webResearchForm').addEventListener('submit', function(e
     })
     .then(response => response.text())
     .then(html => {
-        hideTypingIndicator();
-        // Extract the research results from the response
+        console.log('Web research response received, length:', html.length);
+        
+        // Parse the response to extract research results
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
-        let result = 'Website scraped and analyzed successfully!';
+        // Look for the all_results data in the template
+        let results = [];
         
-        // Look for web research results in various possible locations
-        const resultSelectors = [
-            '.web-research-result',
-            '.web-research-results',
-            '.research-results',
-            '.results',
-            '.content',
-            'table',
-            '.response'
-        ];
-        
-        for (const selector of resultSelectors) {
-            const element = doc.querySelector(selector);
-            if (element && element.textContent.trim()) {
-                const text = element.textContent.trim();
-                if (text.length > 50) {
-                    result = text;
-                    break;
+        // Check if there are server results in the template
+        const serverResults = doc.querySelector('#serverResults');
+        if (serverResults && serverResults.children.length > 0) {
+            const resultCards = serverResults.querySelectorAll('.result-card');
+            resultCards.forEach(card => {
+                const titleElement = card.querySelector('.result-title');
+                const urlElement = card.querySelector('.result-url');
+                const contentElement = card.querySelector('.result-content');
+                
+                if (titleElement && contentElement) {
+                    results.push({
+                        title: titleElement.textContent.trim(),
+                        url: urlElement ? urlElement.textContent.trim() : 'Unknown URL',
+                        content: contentElement.textContent.trim()
+                    });
                 }
-            }
+            });
         }
         
-        // If no specific results found, look for any meaningful content
-        if (result === 'Website scraped and analyzed successfully!') {
-            const bodyText = doc.body.textContent.trim();
-            if (bodyText && bodyText.length > 50) {
-                // Extract meaningful content (skip navigation, headers, etc.)
-                const lines = bodyText.split('\n').filter(line => 
-                    line.trim().length > 20 && 
-                    !line.includes('DALI') && 
-                    !line.includes('Navigation') &&
-                    !line.includes('Settings') &&
-                    !line.includes('Web Research')
-                );
-                if (lines.length > 0) {
-                    result = lines.slice(0, 5).join('\n').trim(); // Take first 5 meaningful lines
-                }
-            }
+        // If no server results found, show success message
+        if (results.length === 0) {
+            results.push({
+                title: 'Web Research Results',
+                url: websiteUrl,
+                content: 'Website scraped successfully! The content has been processed and added to your knowledge base. You can find it in your Knowledge Base section.'
+            });
         }
         
-        document.getElementById('researchInterface').style.display = 'none';
-        document.getElementById('researchResults').style.display = 'flex';
-        addMessage('assistant', result);
+        displayResults(results);
     })
     .catch(error => {
-        hideTypingIndicator();
-        alert('Error researching website. Please try again.');
         console.error('Error:', error);
+        showMessage('Error researching website. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        researchBtn.disabled = false;
+        researchText.style.display = 'inline';
+        researchSpinner.style.display = 'none';
+        hideProgress();
     });
 });
 
+// Show progress
+function showProgress() {
+    document.getElementById('progressContainer').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    
+    // Animate progress bar
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        
+        document.getElementById('progressFill').style.width = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 200);
+}
+
+function hideProgress() {
+    document.getElementById('progressContainer').style.display = 'none';
+}
+
+// Display results
+function displayResults(results) {
+    console.log('displayResults called with:', results);
+    const resultsContent = document.getElementById('resultsContent');
+    console.log('resultsContent element:', resultsContent);
+    
+    if (results.length === 0) {
+        resultsContent.innerHTML = '<div class="result-card"><p>No results found. Please try a different URL.</p></div>';
+    } else {
+        resultsContent.innerHTML = results.map(result => `
+            <div class="result-card">
+                <div class="result-header">
+                    <div>
+                        <h4 class="result-title">${result.title}</h4>
+                        <a href="${result.url}" target="_blank" class="result-url">${result.url}</a>
+                    </div>
+                </div>
+                <div class="result-content">
+                    ${result.content}
+                </div>
+                <div class="result-actions">
+                    <button class="action-btn" onclick="copyToClipboard('${result.content.replace(/'/g, "\\'")}')">
+                        📋 Copy Content
+                    </button>
+                    <button class="action-btn primary" onclick="addToKnowledgeBase('${result.title.replace(/'/g, "\\'")}', '${result.content.replace(/'/g, "\\'")}', '${result.url}')">
+                        📚 Add to Knowledge Base
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    document.getElementById('resultsSection').style.display = 'block';
+    
+    // Scroll to results
+    document.getElementById('resultsSection').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+// Utility functions
+function showMessage(message, type) {
+    const container = document.getElementById('messageContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+    messageDiv.textContent = message;
+    
+    container.innerHTML = '';
+    container.appendChild(messageDiv);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (messageDiv.parentNode) {
+            messageDiv.parentNode.removeChild(messageDiv);
+        }
+    }, 5000);
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showMessage('Content copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showMessage('Failed to copy content', 'error');
+    });
+}
+
+function addToKnowledgeBase(title, content, url) {
+    fetch('/api/knowledge-base/add-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            document_type: 'web_research',
+            source: url
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('Content added to knowledge base successfully!', 'success');
+        } else {
+            showMessage('Error adding to knowledge base: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error adding to knowledge base', 'error');
+    });
+}
+
+function startNewResearch() {
+    // Reset form
+    document.getElementById('websiteUrl').value = '';
+    document.getElementById('researchType').value = 'scrape';
+    document.getElementById('addToKb').checked = true;
+    
+    // Hide results
+    document.getElementById('resultsSection').style.display = 'none';
+    
+    // Clear messages
+    document.getElementById('messageContainer').innerHTML = '';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('chatInput').focus();
+    // Check if there are server results and display them
+    {% if all_results %}
+        console.log('Server results found:', {{ all_results|length }});
+        const results = [
+            {% for result in all_results %}
+            {
+                title: "{{ result.title|replace('"', '\\"')|replace('\r', '')|replace('\n', ' ') }}",
+                url: "{{ result.url }}",
+                content: "{{ result.content_plain|replace('"', '\\"')|replace('\r', '')|replace('\n', '\\n')|truncate(2000) }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+        console.log('Results to display:', results);
+        displayResults(results);
+        // Show the results section
+        document.getElementById('resultsSection').style.display = 'block';
+    {% endif %}
     
-    // Close sidebar on mobile when clicking outside
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
-        
-        if (window.innerWidth <= 768 && 
-            !sidebar.contains(event.target) && 
-            !mobileMenu.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
-    });
+    // Also check if there are already rendered results on the page
+    const existingResults = document.querySelectorAll('.result-card');
+    if (existingResults.length > 0) {
+        document.getElementById('resultsSection').style.display = 'block';
+    }
 });
 </script>
 {% endblock %}

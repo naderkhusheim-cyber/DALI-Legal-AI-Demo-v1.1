@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALI Legal AI - Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --admin-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--admin-gradient);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+
+        .hero-section {
+            background: var(--admin-gradient);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border-color: #dc2626;
+        }
+
+        .admin-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .admin-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .admin-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .admin-badge {
+            background: var(--admin-gradient);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #dc2626;
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .system-status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .quick-action-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            border-color: #dc2626;
+            color: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.2);
+            text-decoration: none;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .floating-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--admin-gradient);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(220, 38, 38, 0.6);
+        }
+
+        .quick-actions {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quick-actions.show {
+            display: flex;
+        }
+
+        .quick-action-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quick-action-item:hover {
+            transform: translateX(5px);
+            color: #dc2626;
+            text-decoration: none;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .welcome-title {
+            color: #dc2626;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .welcome-text {
+            color: #991b1b;
+            margin: 0;
+        }
+
+        .user-table {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            border: none;
+            padding: 15px;
+        }
+
+        .table td {
+            padding: 15px;
+            border-color: #f3f4f6;
+        }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .role-user {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .btn-admin {
+            background: var(--admin-gradient);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .admin-card {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="fas fa-crown me-2"></i>
+                DALI Admin Panel
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users me-1"></i>User Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/users">
+                                <i class="fas fa-users me-2"></i>All Users
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/users?role=admin">
+                                <i class="fas fa-crown me-2"></i>Administrators
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/users?role=user">
+                                <i class="fas fa-user me-2"></i>Regular Users
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog me-1"></i>System
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/analytics">
+                                <i class="fas fa-chart-line me-2"></i>Analytics
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/logs">
+                                <i class="fas fa-file-alt me-2"></i>System Logs
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/system">
+                                <i class="fas fa-cog me-2"></i>System Settings
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-arrow-left me-1"></i>User View
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/health" target="_blank">
+                            <i class="fas fa-heartbeat me-1"></i>System Status
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title">Admin Dashboard</h1>
+                    <p class="hero-subtitle">Comprehensive system management and monitoring for DALI Legal AI administrators</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/admin/users" class="btn btn-light btn-lg">
+                            <i class="fas fa-users me-2"></i>Manage Users
+                        </a>
+                        <a href="/admin/analytics" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-chart-line me-2"></i>View Analytics
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="system-status-card">
+                        <h5 class="mb-3">System Status</h5>
+                        <div class="status-item">
+                            <span class="status-label">Ollama AI</span>
+                            <span class="status-indicator status-offline" id="ollama-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">MySQL Database</span>
+                            <span class="status-indicator status-offline" id="database-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Firecrawl API</span>
+                            <span class="status-indicator status-offline" id="firecrawl-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Sample Data</span>
+                            <span class="status-indicator status-offline" id="sample-db-status"></span>
+                        </div>
+                        <button onclick="checkSystemHealth()" class="btn btn-sm btn-outline-danger mt-3 w-100">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+            <h4 class="welcome-title">
+                <i class="fas fa-shield-alt me-2"></i>
+                Administrator Access Granted
+            </h4>
+            <p class="welcome-text">
+                You have full administrative access to the DALI Legal AI system. Monitor system health, manage users, 
+                view analytics, and configure system settings.
+            </p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="total-users">0</div>
+                    <div class="stats-label">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="active-users">0</div>
+                    <div class="stats-label">Active Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="total-documents">0</div>
+                    <div class="stats-label">Documents Processed</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="system-uptime">100%</div>
+                    <div class="stats-label">System Uptime</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-crown me-2" style="color: #dc2626;"></i>
+                    Administrative Features
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- User Management -->
+            <div class="col-lg-6">
+                <div class="admin-card" onclick="window.location.href='/admin/users'">
+                    <div class="admin-icon" style="background: var(--admin-gradient);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="admin-title">User Management</h3>
+                        <span class="admin-badge">ADMIN</span>
+                    </div>
+                    <p class="admin-description">
+                        Manage all system users, roles, and permissions. Create, edit, and delete user accounts. 
+                        Monitor user activity and manage access controls.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">User Accounts</span>
+                        <span class="badge bg-light text-dark">Role Management</span>
+                        <span class="badge bg-light text-dark">Access Control</span>
+                    </div>
+                    <div class="d-flex align-items-center text-danger">
+                        <span>Manage users</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Analytics -->
+            <div class="col-lg-6">
+                <div class="admin-card" onclick="window.location.href='/admin/analytics'">
+                    <div class="admin-icon" style="background: var(--info-gradient);">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="admin-title">System Analytics</h3>
+                        <span class="admin-badge" style="background: var(--info-gradient);">ANALYTICS</span>
+                    </div>
+                    <p class="admin-description">
+                        View comprehensive system analytics, usage statistics, and performance metrics. 
+                        Monitor system health and user engagement patterns.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">Usage Statistics</span>
+                        <span class="badge bg-light text-dark">Performance Metrics</span>
+                        <span class="badge bg-light text-dark">User Engagement</span>
+                    </div>
+                    <div class="d-flex align-items-center text-info">
+                        <span>View analytics</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Settings -->
+            <div class="col-lg-6">
+                <div class="admin-card" onclick="window.location.href='/admin/system'">
+                    <div class="admin-icon" style="background: var(--warning-gradient);">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="admin-title">System Settings</h3>
+                        <span class="admin-badge" style="background: var(--warning-gradient);">SETTINGS</span>
+                    </div>
+                    <p class="admin-description">
+                        Configure system settings, manage integrations, and control system behavior. 
+                        Update configurations and manage system-wide preferences.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">Configuration</span>
+                        <span class="badge bg-light text-dark">Integrations</span>
+                        <span class="badge bg-light text-dark">Preferences</span>
+                    </div>
+                    <div class="d-flex align-items-center text-warning">
+                        <span>Configure system</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="col-lg-6">
+                <div class="admin-card" onclick="window.location.href='/admin/logs'">
+                    <div class="admin-icon" style="background: var(--success-gradient);">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="admin-title">System Logs</h3>
+                        <span class="admin-badge" style="background: var(--success-gradient);">LOGS</span>
+                    </div>
+                    <p class="admin-description">
+                        Monitor system logs, activity logs, and error reports. Track system events, 
+                        user actions, and troubleshoot issues.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">Activity Logs</span>
+                        <span class="badge bg-light text-dark">Error Reports</span>
+                        <span class="badge bg-light text-dark">System Events</span>
+                    </div>
+                    <div class="d-flex align-items-center text-success">
+                        <span>View logs</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-bolt me-2" style="color: #f59e0b;"></i>
+                    Quick Actions
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-5">
+            <div class="col-md-3">
+                <a href="/admin/users" class="quick-action-btn">
+                    <i class="fas fa-users" style="color: #dc2626;"></i>
+                    <div>
+                        <div class="fw-bold">Manage Users</div>
+                        <small class="text-muted">User accounts & roles</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/admin/analytics" class="quick-action-btn">
+                    <i class="fas fa-chart-line" style="color: #3b82f6;"></i>
+                    <div>
+                        <div class="fw-bold">View Analytics</div>
+                        <small class="text-muted">System metrics</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/admin/logs" class="quick-action-btn">
+                    <i class="fas fa-file-alt" style="color: #10b981;"></i>
+                    <div>
+                        <div class="fw-bold">System Logs</div>
+                        <small class="text-muted">Activity & errors</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/api/docs" target="_blank" class="quick-action-btn">
+                    <i class="fas fa-book" style="color: #8b5cf6;"></i>
+                    <div>
+                        <div class="fw-bold">API Docs</div>
+                        <small class="text-muted">Developer resources</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Users Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="admin-card">
+                    <h3 class="admin-title mb-4">
+                        <i class="fas fa-users me-2"></i>
+                        Recent Users
+                    </h3>
+                    <div class="user-table">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Last Active</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-users">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Loading users...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-action">
+        <div class="quick-actions" id="quick-actions">
+            <a href="/admin/users" class="quick-action-item">
+                <i class="fas fa-users"></i>
+                <span>Manage Users</span>
+            </a>
+            <a href="/admin/analytics" class="quick-action-item">
+                <i class="fas fa-chart-line"></i>
+                <span>View Analytics</span>
+            </a>
+            <a href="/admin/logs" class="quick-action-item">
+                <i class="fas fa-file-alt"></i>
+                <span>System Logs</span>
+            </a>
+            <a href="/api/health" target="_blank" class="quick-action-item">
+                <i class="fas fa-heartbeat"></i>
+                <span>System Health</span>
+            </a>
+        </div>
+        <button class="floating-btn" onclick="toggleQuickActions()">
+            <i class="fas fa-bolt"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // System health check
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+                
+                // Update status indicators
+                document.getElementById('ollama-status').className = 
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('database-status').className = 
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('sample-db-status').className = 
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+                
+                // Check Firecrawl
+                try {
+                    const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+                    const firecrawlStatus = await firecrawlResponse.json();
+                    
+                    document.getElementById('firecrawl-status').className = 
+                        'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+                } catch (e) {
+                    document.getElementById('firecrawl-status').className = 'status-indicator status-warning';
+                }
+                
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Toggle quick actions
+        function toggleQuickActions() {
+            const quickActions = document.getElementById('quick-actions');
+            const btn = document.querySelector('.floating-btn');
+            
+            if (quickActions.classList.contains('show')) {
+                quickActions.classList.remove('show');
+                btn.style.transform = 'rotate(0deg)';
+            } else {
+                quickActions.classList.add('show');
+                btn.style.transform = 'rotate(45deg)';
+            }
+        }
+
+        // Load statistics
+        function loadStatistics() {
+            // Simulate loading statistics
+            document.getElementById('total-users').textContent = '47';
+            document.getElementById('active-users').textContent = '23';
+            document.getElementById('total-documents').textContent = '1,247';
+            document.getElementById('system-uptime').textContent = '99.9%';
+        }
+
+        // Load recent users
+        async function loadRecentUsers() {
+            try {
+                // This would typically fetch from an admin API endpoint
+                const users = [
+                    { name: 'John Doe', role: 'admin', lastActive: '2 hours ago', status: 'online' },
+                    { name: 'Jane Smith', role: 'user', lastActive: '1 day ago', status: 'offline' },
+                    { name: 'Bob Johnson', role: 'user', lastActive: '3 hours ago', status: 'online' },
+                    { name: 'Alice Brown', role: 'admin', lastActive: '5 minutes ago', status: 'online' }
+                ];
+
+                const tbody = document.getElementById('recent-users');
+                tbody.innerHTML = '';
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; color: white; font-weight: 600;">
+                                    ${user.name.split(' ').map(n => n[0]).join('')}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">${user.name}</div>
+                                    <small class="text-muted">${user.name.toLowerCase().replace(' ', '.')}@example.com</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                        </td>
+                        <td>${user.lastActive}</td>
+                        <td>
+                            <span class="status-indicator ${user.status === 'online' ? 'status-online' : 'status-offline'}"></span>
+                            ${user.status}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-admin">Manage</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Failed to load users:', error);
+                document.getElementById('recent-users').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Failed to load users
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemHealth();
+            loadStatistics();
+            loadRecentUsers();
+        });
+    </script>
+</body>
+</html>

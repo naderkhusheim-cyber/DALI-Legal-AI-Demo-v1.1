@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            color: #374151;
+        }
+
+        .navbar {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: white !important;
+            transform: translateY(-1px);
+        }
+
+        .hero-section {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid #e5e7eb;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .feature-icon.legal { background: var(--primary-gradient); }
+        .feature-icon.document { background: var(--success-gradient); }
+        .feature-icon.web { background: var(--warning-gradient); }
+        .feature-icon.knowledge { background: var(--info-gradient); }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+
+        .quick-action-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .floating-action-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--success-gradient);
+            color: white;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            border: none;
+        }
+
+        .floating-action-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+            color: white;
+        }
+
+        .activity-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+
+        .activity-icon.legal { background: var(--primary-gradient); }
+        .activity-icon.document { background: var(--success-gradient); }
+        .activity-icon.web { background: var(--warning-gradient); }
+        .activity-icon.knowledge { background: var(--info-gradient); }
+
+        .system-status {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/unified-user-dashboard">
+                <i class="fas fa-balance-scale me-2"></i>
+                DALI Legal AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/unified-user-dashboard">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openFeature('legal-research')">
+                            <i class="fas fa-search me-1"></i>Legal Research
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openFeature('document-analysis')">
+                            <i class="fas fa-file-alt me-1"></i>Document Analysis
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openFeature('web-research')">
+                            <i class="fas fa-globe me-1"></i>Web Research
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openFeature('knowledge-base')">
+                            <i class="fas fa-database me-1"></i>Knowledge Base
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/docs" target="_blank">
+                            <i class="fas fa-book me-1"></i>API Docs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/signup">
+                            <i class="fas fa-user-plus me-1"></i>Sign Up
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <h1 class="hero-title">Welcome to DALI Legal AI</h1>
+            <p class="hero-subtitle">Your comprehensive legal research and document analysis platform with AI-powered intelligence</p>
+            <a href="#" class="quick-action-btn" onclick="openFeature('legal-research')">
+                <i class="fas fa-rocket me-2"></i>Start Legal Research
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- System Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="system-status">
+                    <h5 class="mb-3"><i class="fas fa-heartbeat me-2 text-danger"></i>System Status</h5>
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="ollama-status"></div>
+                                <span>Ollama AI Models</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="database-status"></div>
+                                <span>MySQL Database</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="firecrawl-status"></div>
+                                <span>Firecrawl API</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="sample-db-status"></div>
+                                <span>Sample Data</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-5">
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-users fa-2x text-primary mb-3"></i>
+                    <div class="stats-number" id="total-users">0</div>
+                    <div class="stats-label">Active Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-file-alt fa-2x text-success mb-3"></i>
+                    <div class="stats-number" id="total-documents">0</div>
+                    <div class="stats-label">Documents Analyzed</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-globe fa-2x text-warning mb-3"></i>
+                    <div class="stats-number" id="web-scrapes">0</div>
+                    <div class="stats-label">Web Pages Scraped</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-database fa-2x text-info mb-3"></i>
+                    <div class="stats-number" id="knowledge-items">0</div>
+                    <div class="stats-label">Knowledge Items</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-4 text-center">Core Features</h3>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon legal">
+                        <i class="fas fa-gavel"></i>
+                    </div>
+                    <h5>Legal Research</h5>
+                    <p>Conduct comprehensive legal research with AI-powered insights and citations.</p>
+                    <a href="#" class="quick-action-btn w-100 text-center" onclick="openFeature('legal-research')">
+                        <i class="fas fa-search me-1"></i>Start Research
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon document">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h5>Document Analysis</h5>
+                    <p>Upload and analyze legal documents with AI. Extract key insights and risks.</p>
+                    <a href="#" class="quick-action-btn w-100 text-center" onclick="openFeature('document-analysis')">
+                        <i class="fas fa-upload me-1"></i>Analyze Document
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon web">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h5>Web Research</h5>
+                    <p>Extract and analyze legal content from any website with AI-powered scraping.</p>
+                    <a href="#" class="quick-action-btn w-100 text-center" onclick="openFeature('web-research')">
+                        <i class="fas fa-link me-1"></i>Scrape Website
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="feature-card">
+                    <div class="feature-icon knowledge">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h5>Knowledge Base</h5>
+                    <p>Query your legal databases with natural language and generate insights.</p>
+                    <a href="#" class="quick-action-btn w-100 text-center" onclick="openFeature('knowledge-base')">
+                        <i class="fas fa-chart-bar me-1"></i>Query Database
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-4">Recent Activity</h3>
+                <div id="recent-activity">
+                    <div class="activity-item">
+                        <div class="activity-icon legal">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Legal Research: "Contract Law in California"</strong>
+                            <small class="text-muted d-block">2 hours ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon document">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Document Analysis: "Merger Agreement Draft v2"</strong>
+                            <small class="text-muted d-block">Yesterday</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon web">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Web Research: "SEC Enforcement Actions 2023"</strong>
+                            <small class="text-muted d-block">3 days ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="floating-action-btn" onclick="toggleQuickActions()" title="Quick Actions">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <!-- Feature Modals -->
+    <!-- Legal Research Modal -->
+    <div class="modal fade" id="legalResearchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-gavel me-2"></i>Legal Research</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="researchQuery" class="form-label">Research Query</label>
+                        <textarea class="form-control" id="researchQuery" rows="3" placeholder="Enter your legal research question..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="researchContext" class="form-label">Context (Optional)</label>
+                        <input type="text" class="form-control" id="researchContext" placeholder="e.g., California, Corporate Law, 2023">
+                    </div>
+                    <button class="btn btn-primary" onclick="performLegalResearch()">
+                        <i class="fas fa-search me-1"></i>Start Research
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Analysis Modal -->
+    <div class="modal fade" id="documentAnalysisModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-contract me-2"></i>Document Analysis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="documentUpload" class="form-label">Upload Document</label>
+                        <input type="file" class="form-control" id="documentUpload" accept=".pdf,.doc,.docx,.txt">
+                    </div>
+                    <div class="mb-3">
+                        <label for="analysisType" class="form-label">Analysis Type</label>
+                        <select class="form-select" id="analysisType">
+                            <option value="general">General Analysis</option>
+                            <option value="contract">Contract Review</option>
+                            <option value="compliance">Compliance Check</option>
+                            <option value="risk">Risk Assessment</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="analyzeDocument()">
+                        <i class="fas fa-upload me-1"></i>Analyze Document
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web Research Modal -->
+    <div class="modal fade" id="webResearchModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-globe me-2"></i>Web Research</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="websiteUrl" class="form-label">Website URL</label>
+                        <input type="url" class="form-control" id="websiteUrl" placeholder="https://example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="scrapingMethod" class="form-label">Scraping Method</label>
+                        <select class="form-select" id="scrapingMethod">
+                            <option value="firecrawl">Firecrawl (AI-powered)</option>
+                            <option value="beautifulsoup">BeautifulSoup (Basic)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-warning" onclick="performWebResearch()">
+                        <i class="fas fa-link me-1"></i>Scrape Website
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Knowledge Base Modal -->
+    <div class="modal fade" id="knowledgeBaseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-database me-2"></i>Knowledge Base</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="naturalQuery" class="form-label">Natural Language Query</label>
+                        <textarea class="form-control" id="naturalQuery" rows="3" placeholder="Ask a question about your legal data..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="queryType" class="form-label">Query Type</label>
+                        <select class="form-select" id="queryType">
+                            <option value="sql">Generate SQL Query</option>
+                            <option value="chart">Generate Chart</option>
+                            <option value="analysis">Data Analysis</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-info" onclick="queryKnowledgeBase()">
+                        <i class="fas fa-chart-bar me-1"></i>Query Database
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // System Health Check
+        async function updateSystemStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+
+                document.getElementById('ollama-status').className =
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                document.getElementById('database-status').className =
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                document.getElementById('sample-db-status').className =
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+
+                const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+                const firecrawlStatus = await firecrawlResponse.json();
+                document.getElementById('firecrawl-status').className =
+                    'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+
+            } catch (error) {
+                console.error('Failed to fetch system health:', error);
+            }
+        }
+
+        // Load Statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/system-info');
+                const data = await response.json();
+                
+                // Update statistics (these would come from actual data)
+                document.getElementById('total-users').textContent = '1,234';
+                document.getElementById('total-documents').textContent = '5,678';
+                document.getElementById('web-scrapes').textContent = '9,012';
+                document.getElementById('knowledge-items').textContent = '2,456';
+            } catch (error) {
+                console.error('Failed to load statistics:', error);
+            }
+        }
+
+        // Feature Functions
+        function openFeature(feature) {
+            const modalMap = {
+                'legal-research': 'legalResearchModal',
+                'document-analysis': 'documentAnalysisModal',
+                'web-research': 'webResearchModal',
+                'knowledge-base': 'knowledgeBaseModal'
+            };
+            
+            const modal = new bootstrap.Modal(document.getElementById(modalMap[feature]));
+            modal.show();
+        }
+
+        function toggleQuickActions() {
+            // Toggle quick actions menu
+            alert('Quick actions menu would open here');
+        }
+
+        // Feature Implementation Functions
+        async function performLegalResearch() {
+            const query = document.getElementById('researchQuery').value;
+            const context = document.getElementById('researchContext').value;
+            
+            if (!query.trim()) {
+                alert('Please enter a research query');
+                return;
+            }
+
+            try {
+                // Redirect to legal research page with parameters
+                window.location.href = `/legal-research?query=${encodeURIComponent(query)}&context=${encodeURIComponent(context)}`;
+            } catch (error) {
+                console.error('Legal research error:', error);
+                alert('Error starting legal research');
+            }
+        }
+
+        async function analyzeDocument() {
+            const fileInput = document.getElementById('documentUpload');
+            const analysisType = document.getElementById('analysisType').value;
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a document to analyze');
+                return;
+            }
+
+            try {
+                // Redirect to document analysis page
+                window.location.href = `/document-analysis?type=${analysisType}`;
+            } catch (error) {
+                console.error('Document analysis error:', error);
+                alert('Error starting document analysis');
+            }
+        }
+
+        async function performWebResearch() {
+            const url = document.getElementById('websiteUrl').value;
+            const method = document.getElementById('scrapingMethod').value;
+            
+            if (!url.trim()) {
+                alert('Please enter a website URL');
+                return;
+            }
+
+            try {
+                // Redirect to web research page
+                window.location.href = `/web-research?url=${encodeURIComponent(url)}&method=${method}`;
+            } catch (error) {
+                console.error('Web research error:', error);
+                alert('Error starting web research');
+            }
+        }
+
+        async function queryKnowledgeBase() {
+            const query = document.getElementById('naturalQuery').value;
+            const type = document.getElementById('queryType').value;
+            
+            if (!query.trim()) {
+                alert('Please enter a query');
+                return;
+            }
+
+            try {
+                // Redirect to knowledge base page
+                window.location.href = `/enhanced-knowledge-base?query=${encodeURIComponent(query)}&type=${type}`;
+            } catch (error) {
+                console.error('Knowledge base query error:', error);
+                alert('Error querying knowledge base');
+            }
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSystemStatus();
+            loadStatistics();
+            
+            // Update status every 30 seconds
+            setInterval(updateSystemStatus, 30000);
+        });
+    </script>
+</body>
+</html>

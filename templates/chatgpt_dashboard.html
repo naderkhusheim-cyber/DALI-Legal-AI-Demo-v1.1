@@ -1,0 +1,753 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Dashboard - DALI Legal AI{% endblock %}
+
+{% block head %}
+<style>
+/* Dashboard Specific Styles */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.welcome-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.welcome-subtitle {
+    font-size: 1.125rem;
+    opacity: 0.9;
+    margin-bottom: 1.5rem;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.quick-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.quick-action-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-icon {
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.stat-info h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.stat-info p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.stat-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.trend-up {
+    color: var(--success-color);
+}
+
+.trend-down {
+    color: var(--danger-color);
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: var(--primary-color);
+}
+
+.feature-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.feature-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.125rem;
+}
+
+.feature-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.feature-description {
+    color: var(--text-color);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.feature-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.feature-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: white;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    flex: 1;
+    text-align: center;
+}
+
+.feature-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    text-decoration: none;
+}
+
+.feature-btn.primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.feature-btn.primary:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.recent-activity {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+}
+
+.activity-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.activity-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.125rem;
+}
+
+.activity-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item-icon {
+    width: 2rem;
+    height: 2rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-text {
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.system-status {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    margin-top: 2rem;
+}
+
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+}
+
+.status-indicator {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+}
+
+.status-indicator.online {
+    background: var(--success-color);
+}
+
+.status-indicator.offline {
+    background: var(--danger-color);
+}
+
+.status-indicator.warning {
+    background: var(--warning-color);
+}
+
+.status-text {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+    .quick-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="welcome-section">
+        <h1 class="welcome-title">Welcome back, {{ user.username }}!</h1>
+        <p class="welcome-subtitle">Your intelligent legal assistant is ready to help</p>
+        <div class="quick-actions">
+            <a href="/legal-research" class="quick-action-btn">
+                <i class="fas fa-search"></i> Legal Research
+            </a>
+            <a href="/document-analysis" class="quick-action-btn">
+                <i class="fas fa-file-alt"></i> Analyze Document
+            </a>
+            <a href="/knowledge-base" class="quick-action-btn">
+                <i class="fas fa-database"></i> Knowledge Base
+            </a>
+            <a href="/web-research" class="quick-action-btn">
+                <i class="fas fa-globe"></i> Web Research
+            </a>
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalDocuments">-</h3>
+                    <p>Total Documents</p>
+                </div>
+            </div>
+            <div class="stat-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>+12% from last month</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalConversations">-</h3>
+                    <p>Conversations</p>
+                </div>
+            </div>
+            <div class="stat-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>+8% from last week</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="sharedDocuments">-</h3>
+                    <p>Shared Documents</p>
+                </div>
+            </div>
+            <div class="stat-trend trend-up">
+                <i class="fas fa-arrow-up"></i>
+                <span>+5% from last month</span>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-header">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="lastActivity">-</h3>
+                    <p>Last Activity</p>
+                </div>
+            </div>
+            <div class="stat-trend">
+                <i class="fas fa-info-circle"></i>
+                <span>Active today</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="features-grid">
+        <div class="feature-card" onclick="window.location.href='/legal-research'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3 class="feature-title">Legal Research</h3>
+            </div>
+            <p class="feature-description">
+                Conduct comprehensive legal research using AI-powered analysis of case law, legislation, and legal precedents.
+            </p>
+            <div class="feature-actions">
+                <a href="/legal-research" class="feature-btn primary">
+                    <i class="fas fa-play"></i> Start Research
+                </a>
+                <a href="/knowledge-base" class="feature-btn">
+                    <i class="fas fa-database"></i> Browse Sources
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/document-analysis'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 class="feature-title">Document Analysis</h3>
+            </div>
+            <p class="feature-description">
+                Upload and analyze legal documents with AI-powered insights, risk assessment, and compliance checking.
+            </p>
+            <div class="feature-actions">
+                <a href="/document-analysis" class="feature-btn primary">
+                    <i class="fas fa-upload"></i> Upload Document
+                </a>
+                <a href="/knowledge-base" class="feature-btn">
+                    <i class="fas fa-history"></i> View History
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/knowledge-base'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="feature-title">Knowledge Base</h3>
+            </div>
+            <p class="feature-description">
+                Manage your legal document library with advanced search, categorization, and sharing capabilities.
+            </p>
+            <div class="feature-actions">
+                <a href="/knowledge-base" class="feature-btn primary">
+                    <i class="fas fa-search"></i> Search Documents
+                </a>
+                <a href="/knowledge-base" class="feature-btn">
+                    <i class="fas fa-plus"></i> Add Documents
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/web-research'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h3 class="feature-title">Web Research</h3>
+            </div>
+            <p class="feature-description">
+                Scrape and analyze legal content from websites, news sources, and regulatory databases.
+            </p>
+            <div class="feature-actions">
+                <a href="/web-research" class="feature-btn primary">
+                    <i class="fas fa-globe"></i> Start Scraping
+                </a>
+                <a href="/web-scraping" class="feature-btn">
+                    <i class="fas fa-tools"></i> Advanced Tools
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/database-intelligence'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <h3 class="feature-title">Database Intelligence</h3>
+            </div>
+            <p class="feature-description">
+                Query your legal databases with natural language. Generate SQL, create charts, and analyze your practice data with AI-powered intelligence.
+            </p>
+            <div class="feature-actions">
+                <a href="/database-intelligence" class="feature-btn primary">
+                    <i class="fas fa-magic"></i> Start Querying
+                </a>
+                <a href="/database-intelligence" class="feature-btn">
+                    <i class="fas fa-chart-bar"></i> View Charts
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/chat'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3 class="feature-title">AI Chat</h3>
+            </div>
+            <p class="feature-description">
+                Chat with your AI legal assistant for quick questions, document insights, and legal guidance.
+            </p>
+            <div class="feature-actions">
+                <a href="/chat" class="feature-btn primary">
+                    <i class="fas fa-comment"></i> Start Chat
+                </a>
+                <a href="/chat" class="feature-btn">
+                    <i class="fas fa-history"></i> Chat History
+                </a>
+            </div>
+        </div>
+        
+        <div class="feature-card" onclick="window.location.href='/settings'">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <h3 class="feature-title">Settings</h3>
+            </div>
+            <p class="feature-description">
+                Customize your AI preferences, manage account settings, and configure system options.
+            </p>
+            <div class="feature-actions">
+                <a href="/settings" class="feature-btn primary">
+                    <i class="fas fa-cog"></i> Open Settings
+                </a>
+                <a href="/settings" class="feature-btn">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="recent-activity">
+        <div class="activity-header">
+            <div class="activity-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <h3 class="activity-title">Recent Activity</h3>
+        </div>
+        <div id="activityList">
+            <div class="activity-item">
+                <div class="activity-item-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-text">Uploaded contract analysis document</div>
+                    <div class="activity-time">2 hours ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-text">Conducted legal research on labor laws</div>
+                    <div class="activity-time">5 hours ago</div>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-item-icon">
+                    <i class="fas fa-share-alt"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-text">Shared document with team member</div>
+                    <div class="activity-time">1 day ago</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="system-status">
+        <div class="activity-header">
+            <div class="activity-icon">
+                <i class="fas fa-server"></i>
+            </div>
+            <h3 class="activity-title">System Status</h3>
+        </div>
+        <div class="status-grid">
+            <div class="status-item">
+                <div class="status-indicator online"></div>
+                <span class="status-text">AI Engine</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator online"></div>
+                <span class="status-text">Database</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator online"></div>
+                <span class="status-text">Web Scraper</span>
+            </div>
+            <div class="status-item">
+                <div class="status-indicator warning"></div>
+                <span class="status-text">Vector Store</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load dashboard statistics
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/api/user/stats');
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('totalDocuments').textContent = data.total_documents || 0;
+            document.getElementById('totalConversations').textContent = data.total_conversations || 0;
+            document.getElementById('sharedDocuments').textContent = data.shared_documents || 0;
+            document.getElementById('lastActivity').textContent = data.last_activity || 'Today';
+        }
+    } catch (error) {
+        console.error('Failed to load dashboard stats:', error);
+    }
+}
+
+// Load recent activity
+async function loadRecentActivity() {
+    try {
+        const response = await fetch('/api/user/activity');
+        const data = await response.json();
+        
+        if (data.success && data.activities) {
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = data.activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-item-icon">
+                        <i class="fas fa-${getActivityIcon(activity.action)}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-text">${activity.description}</div>
+                        <div class="activity-time">${formatTime(activity.created_at)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch (error) {
+        console.error('Failed to load recent activity:', error);
+    }
+}
+
+function getActivityIcon(action) {
+    const icons = {
+        'upload': 'file-alt',
+        'search': 'search',
+        'share': 'share-alt',
+        'analyze': 'microscope',
+        'chat': 'comments',
+        'login': 'sign-in-alt',
+        'logout': 'sign-out-alt'
+    };
+    return icons[action] || 'circle';
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
+    return `${Math.floor(diff / 86400000)} days ago`;
+}
+
+// Load system status
+async function loadSystemStatus() {
+    try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        
+        if (data.components) {
+            // Update status indicators based on component status
+            // This would be implemented based on the actual health check response
+        }
+    } catch (error) {
+        console.error('Failed to load system status:', error);
+    }
+}
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', () => {
+    loadDashboardStats();
+    loadRecentActivity();
+    loadSystemStatus();
+    
+    // Refresh stats every 30 seconds
+    setInterval(loadDashboardStats, 30000);
+});
+</script>
+{% endblock %}

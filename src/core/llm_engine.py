@@ -11,7 +11,7 @@ import ollama
 import openai
 from langchain.schema import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langchain.callbacks.base import BaseCallbackHandler
-from utils.config import load_config
+from src.utils.config import load_config
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +34,30 @@ class LLMEngine:
     """
     def __init__(self, model_name: str = None, host: str = None, port: int = None):
         self.config = load_config()
-        self.model_name = model_name or self.config.get('ollama', {}).get('model', 'llama3:8b')
+        self.model_name = model_name or self.config.get('ollama', {}).get('model', 'llama3.2:1b')
         self.host = host or self.config.get('ollama', {}).get('host', 'localhost')
         self.port = port or self.config.get('ollama', {}).get('port', 11434)
         self.openai_api_key = self.config.get('openai', {}).get('api_key', None)
         self.openai_model = self.config.get('openai', {}).get('model', 'gpt-4o')
-        self.client = ollama.Client(host=f"http://{self.host}:{self.port}")
+        
+        # Handle case where host already contains port
+        if ':' in self.host:
+            # Extract just the host part if port is included
+            self.host = self.host.split(':')[0]
+        
+        # Initialize Ollama client with error handling
+        try:
+            self.client = ollama.Client(host=f"http://{self.host}:{self.port}")
+            self.ollama_available = True
+        except Exception as e:
+            logger.warning(f"Failed to initialize Ollama client: {e}")
+            self.client = None
+            self.ollama_available = False
+        
         self.legal_system_prompt = self._get_legal_system_prompt()
-        # Verify model availability (only for Ollama models)
-        if self.model_name.startswith('llama') or self.model_name == 'mistral':
+        
+        # Verify model availability (only for Ollama models and if Ollama is available)
+        if self.ollama_available and (self.model_name.startswith('llama') or self.model_name == 'mistral'):
             self._ensure_model_available()
     
     def _extract_model_names(self, list_response: Dict) -> List[str]:
@@ -79,8 +94,9 @@ class LLMEngine:
                 logger.info(f"Successfully pulled {self.model_name}")
                 
         except Exception as e:
-            logger.error(f"Error checking model availability: {e}")
-            raise
+            logger.warning(f"Ollama not available: {e}")
+            logger.info("Falling back to OpenAI for LLM operations")
+            # Don't raise the exception, just log it and continue
     
     def _get_legal_system_prompt(self) -> str:
         """Get the legal-specific system prompt (very explicit about answer language)"""
@@ -362,8 +378,8 @@ class LLMEngine:
     def from_user_settings(user_settings, config=None):
         """Create an LLMEngine instance based on user settings (provider/model)."""
         config = config or load_config()
-        provider = user_settings.get('llm_provider', 'ollama') if user_settings else 'ollama'
-        model = user_settings.get('llm_model', 'llama3:8b') if user_settings else 'llama3:8b'
+        provider = user_settings.get('llm_provider', 'openai') if user_settings else 'openai'
+        model = user_settings.get('llm_model', 'gpt-3.5-turbo') if user_settings else 'gpt-3.5-turbo'
         if provider == 'openai':
             # OpenAI does not need host/port
             return LLMEngine(model_name=model)

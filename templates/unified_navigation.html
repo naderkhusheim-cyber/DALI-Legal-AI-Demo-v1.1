@@ -1,0 +1,280 @@
+<!-- Unified Navigation Component for Both User and Admin Roles -->
+<nav class="navbar navbar-expand-lg navbar-dark" id="main-navbar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);">
+    <div class="container-fluid">
+        <!-- Brand -->
+        <a class="navbar-brand d-flex align-items-center" href="/dashboard" id="navbar-brand">
+            <i class="fas fa-balance-scale me-2" style="font-size: 1.5rem;"></i>
+            <div>
+                <div style="font-size: 1.3rem; font-weight: 700;">DALI Legal AI</div>
+                <div style="font-size: 0.8rem; opacity: 0.9;" id="navbar-subtitle">Enhanced Edition v1.2.0</div>
+            </div>
+        </a>
+
+        <!-- Mobile Toggle -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navigation Menu -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/user-friendly-dashboard" id="dashboard-link">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+
+                <!-- Enhanced Features -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="enhancedDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-star me-1"></i>Enhanced Features
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/enhanced-dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Enhanced Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="/enhanced-knowledge-base">
+                            <i class="fas fa-database me-2"></i>Database Intelligence
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/api/docs" target="_blank">
+                            <i class="fas fa-book me-2"></i>API Documentation
+                        </a></li>
+                    </ul>
+                </li>
+
+                <!-- Legal Tools -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="legalDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-gavel me-1"></i>Legal Tools
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/legal-research">
+                            <i class="fas fa-search me-2"></i>Legal Research
+                        </a></li>
+                        <li><a class="dropdown-item" href="/document-analysis">
+                            <i class="fas fa-file-alt me-2"></i>Document Analysis
+                        </a></li>
+                        <li><a class="dropdown-item" href="/web-research">
+                            <i class="fas fa-globe me-2"></i>Web Research
+                        </a></li>
+                        <li><a class="dropdown-item" href="/knowledge-base">
+                            <i class="fas fa-book me-2"></i>Knowledge Base
+                        </a></li>
+                    </ul>
+                </li>
+
+                <!-- Admin Section (Only for Admin Users) -->
+                <li class="nav-item dropdown" id="admin-section" style="display: none;">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-crown me-1"></i>Admin Panel
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin-dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/users">
+                            <i class="fas fa-users me-2"></i>User Management
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/analytics">
+                            <i class="fas fa-chart-line me-2"></i>Analytics
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/logs">
+                            <i class="fas fa-file-alt me-2"></i>System Logs
+                        </a></li>
+                        <li><a class="dropdown-item" href="/admin/system">
+                            <i class="fas fa-cog me-2"></i>System Settings
+                        </a></li>
+                    </ul>
+                </li>
+
+                <!-- System Status -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/api/health" target="_blank">
+                        <i class="fas fa-heartbeat me-1"></i>System Status
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Right Side -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/settings">
+                        <i class="fas fa-cog me-1"></i>Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/logout">
+                        <i class="fas fa-sign-out-alt me-1"></i>Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- System Status Bar -->
+<div class="system-status-bar" style="background: #f8fafc; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="d-flex align-items-center">
+                        <span class="status-indicator status-offline" id="nav-ollama-status"></span>
+                        <small>Ollama AI</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="status-indicator status-offline" id="nav-database-status"></span>
+                        <small>MySQL DB</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="status-indicator status-offline" id="nav-firecrawl-status"></span>
+                        <small>Firecrawl</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="status-indicator status-offline" id="nav-sample-db-status"></span>
+                        <small>Sample Data</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <button onclick="checkSystemHealth()" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt me-1"></i>Refresh Status
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.status-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.status-online { background-color: #10b981; }
+.status-offline { background-color: #ef4444; }
+.status-warning { background-color: #f59e0b; }
+
+.navbar-brand:hover {
+    color: white !important;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border-radius: 8px;
+}
+
+.dropdown-item {
+    padding: 10px 20px;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background: #f8fafc;
+    color: #667eea;
+}
+
+.system-status-bar {
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .system-status-bar .d-flex {
+        flex-wrap: wrap;
+        gap: 10px !important;
+    }
+    
+    .system-status-bar .text-end {
+        text-align: left !important;
+        margin-top: 10px;
+    }
+}
+
+/* Admin-specific styling */
+.navbar.admin-mode {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+}
+
+.navbar.admin-mode .navbar-brand {
+    color: white !important;
+}
+
+.navbar.admin-mode .nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.navbar.admin-mode .nav-link:hover {
+    color: white !important;
+}
+</style>
+
+<script>
+// System health check for navigation
+async function checkSystemHealth() {
+    try {
+        const response = await fetch('/api/health');
+        const health = await response.json();
+        
+        // Update navigation status indicators
+        document.getElementById('nav-ollama-status').className = 
+            'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('nav-database-status').className = 
+            'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('nav-sample-db-status').className = 
+            'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+        
+        // Check Firecrawl
+        try {
+            const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+            const firecrawlStatus = await firecrawlResponse.json();
+            
+            document.getElementById('nav-firecrawl-status').className = 
+                'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+        } catch (e) {
+            document.getElementById('nav-firecrawl-status').className = 'status-indicator status-warning';
+        }
+        
+    } catch (error) {
+        console.error('Health check failed:', error);
+    }
+}
+
+// Check user role and adjust navigation
+function checkUserRole() {
+    // This would typically check the user's role from the session or API
+    // For now, we'll check the current URL to determine if we're in admin mode
+    const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.includes('/admin');
+    
+    if (isAdminPage) {
+        // Switch to admin mode
+        document.getElementById('main-navbar').classList.add('admin-mode');
+        document.getElementById('navbar-subtitle').textContent = 'Admin Panel v1.2.0';
+        document.getElementById('dashboard-link').href = '/admin-dashboard';
+        document.getElementById('dashboard-link').innerHTML = '<i class="fas fa-crown me-1"></i>Admin Dashboard';
+        document.getElementById('admin-section').style.display = 'block';
+    } else {
+        // User mode
+        document.getElementById('main-navbar').classList.remove('admin-mode');
+        document.getElementById('navbar-subtitle').textContent = 'Enhanced Edition v1.2.0';
+        document.getElementById('dashboard-link').href = '/user-friendly-dashboard';
+        document.getElementById('dashboard-link').innerHTML = '<i class="fas fa-tachometer-alt me-1"></i>Dashboard';
+        document.getElementById('admin-section').style.display = 'none';
+    }
+}
+
+// Load system status on page load
+document.addEventListener('DOMContentLoaded', function() {
+    checkSystemHealth();
+    checkUserRole();
+});
+</script>

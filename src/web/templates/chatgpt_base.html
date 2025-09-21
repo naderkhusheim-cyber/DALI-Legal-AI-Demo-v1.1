@@ -7,6 +7,90 @@
     <link rel="stylesheet" href="/static/chatbox.css">
     <link rel="stylesheet" href="/static/chatgpt-ui.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Enhanced Floating Actions */
+        #floating-toggle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #floating-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .floating-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #374151;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        
+        .floating-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+            color: #667eea;
+            transform: scale(1.1);
+            text-decoration: none;
+        }
+        
+        /* Enhanced Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        
+        /* Feature Cards */
+        .feature-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .feature-badge {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
     {% block head %}{% endblock %}
 </head>
 <body class="chatgpt-body">
@@ -19,8 +103,29 @@
     
     {% block content %}{% endblock %}
     
+    <!-- Enhanced Floating Action Menu -->
+    <div id="floating-actions" style="position:fixed;bottom:32px;right:32px;z-index:9999;">
+        <!-- Quick Access Buttons -->
+        <div id="quick-actions" style="display:none;margin-bottom:10px;">
+            <a href="/api/docs" target="_blank" class="floating-btn" title="API Documentation">
+                <i class="fas fa-book"></i>
+            </a>
+            <a href="/enhanced-dashboard" class="floating-btn" title="Enhanced Dashboard">
+                <i class="fas fa-star"></i>
+            </a>
+            <a href="/api/health" target="_blank" class="floating-btn" title="System Health">
+                <i class="fas fa-heartbeat"></i>
+            </a>
+        </div>
+        
+        <!-- Main Toggle Button -->
+        <button id="floating-toggle" onclick="toggleFloatingActions()" title="Quick Actions">
+            <i class="fas fa-bolt"></i>
+        </button>
+    </div>
+    
     <!-- Floating Chat Box UI -->
-    <div id="chatbox-toggle-wrapper" style="position:fixed;bottom:32px;right:32px;z-index:9999;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
+    <div id="chatbox-toggle-wrapper" style="position:fixed;bottom:32px;left:32px;z-index:9999;width:64px;height:64px;display:flex;align-items:center;justify-content:center;">
         <button id="chatbox-toggle" title="Open Chat">💬</button>
     </div>
     <div id="chatbox-container">
@@ -48,6 +153,22 @@
                     }
                 })
                 .catch(error => console.error('Error:', error));
+        }
+        
+        // Floating Actions Toggle
+        function toggleFloatingActions() {
+            const quickActions = document.getElementById('quick-actions');
+            const toggle = document.getElementById('floating-toggle');
+            
+            if (quickActions.style.display === 'none' || quickActions.style.display === '') {
+                quickActions.style.display = 'flex';
+                quickActions.style.flexDirection = 'column';
+                quickActions.style.gap = '10px';
+                toggle.style.transform = 'rotate(45deg)';
+            } else {
+                quickActions.style.display = 'none';
+                toggle.style.transform = 'rotate(0deg)';
+            }
         }
     </script>
     <script src="/static/chatbox.js"></script>

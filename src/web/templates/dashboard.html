@@ -4,6 +4,14 @@
 <div class="main-header">
     <h1>{{ t('welcome_title') if t else '⚖️ DALI Legal AI System' }}</h1>
     <p>{{ t('welcome_subtitle') if t else 'Your intelligent legal research and document analysis assistant' }}</p>
+    <div style="margin-top: 1rem;">
+        <a href="/enhanced-dashboard" class="btn btn-primary" style="background: linear-gradient(45deg, #667eea, #764ba2); border: none;">
+            <i class="fas fa-star me-1"></i>Enhanced Dashboard (v1.2.0)
+        </a>
+        <a href="/api/docs" target="_blank" class="btn btn-outline-secondary ms-2">
+            <i class="fas fa-book me-1"></i>API Documentation
+        </a>
+    </div>
 </div>
 <div style="display:flex;gap:2rem;margin-bottom:2rem;">
     <div class="metric-card" style="flex:1;background:#e3eaf2;">

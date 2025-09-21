@@ -10,7 +10,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
-import sqlite3
 import hashlib
 import uuid
 import requests
@@ -38,16 +37,13 @@ from scrapers.firecrawl_scraper import FirecrawlScraper
 app = FastAPI(debug=True)
 templates = Jinja2Templates(directory="src/web/templates")
 app.mount("/static", StaticFiles(directory="src/web/static"), name="static")
-app.add_middleware(SessionMiddleware, secret_key="super-secret-key")
+app.add_middleware(SessionMiddleware, secret_key="dali-legal-ai-super-secret-key-2024-very-secure", max_age=3600)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-try:
-    user_store = MySQLVectorStore(get_mysql_config())
-    MYSQL_AVAILABLE = True
-except Exception as e:
-    print(f"MySQL not available: {e}")
-    user_store = None
-    MYSQL_AVAILABLE = False
+
+# Initialize MySQL user store
+user_store = MySQLVectorStore(get_mysql_config())
+MYSQL_AVAILABLE = True
 doc_processor = DocumentProcessor()
 vector_store = VectorStore()
 
@@ -1281,7 +1277,7 @@ class DALIApp:
         """Initialize AI components"""
         try:
             # Use model from session state if set, else from config
-            model_name = "llama3:8b" # Default to a known model
+            model_name = "llama3.2:1b" # Default to a known model
             self.llm_engine = LLMEngine(
                 model_name=model_name,
                 host=self.config.get('ollama', {}).get('host', 'localhost'),
@@ -1304,7 +1300,12 @@ class DALIApp:
             # Initialize Document Processor
             self.doc_processor = DocumentProcessor()
             
-            self.mysql_vector_store = MySQLVectorStore(get_mysql_config())
+            # Initialize MySQL Vector Store with error handling
+            try:
+                self.mysql_vector_store = MySQLVectorStore(get_mysql_config())
+            except Exception as e:
+                logger.warning(f"MySQL Vector Store not available: {e}")
+                self.mysql_vector_store = None
             
             # st.session_state.components_initialized = True # Removed st.session_state
             
@@ -1939,13 +1940,13 @@ class DALIApp:
         with st.expander(f"🧠 {t('llm_engine_settings')}"):
             # Model selection dropdown
             available_models = [
-                "llama3:8b",
+                "llama3.2:1b",
                 "llama3:latest",
                 "mistral",
                 "gpt-4o",
                 "gpt-5"
             ]
-            current_model = st.session_state.get('selected_llm_model', self.config.get('ollama', {}).get('model', 'llama3:8b'))
+            current_model = st.session_state.get('selected_llm_model', self.config.get('ollama', {}).get('model', 'llama3.2:1b'))
             selected_model = st.selectbox(
                 "Select LLM Model",
                 available_models,
@@ -2200,7 +2201,7 @@ class DALIApp:
                             st.rerun()
             with col5:
                 # Allowed LLM models dropdown
-                allowed_models = ["llama3:8b", "mistral", "gpt-4o", "gpt-3.5-turbo"]
+                allowed_models = ["llama3.2:1b", "mistral", "gpt-4o", "gpt-3.5-turbo"]
                 # Load user settings
                 user_settings = {}
                 try:
@@ -2565,7 +2566,7 @@ class DALIApp:
 def root(request: Request):
     user = request.session.get("user")
     if user:
-        return RedirectResponse(url="/documents")
+        return RedirectResponse(url="/dashboard")
     else:
         return RedirectResponse(url="/login")
 
@@ -2714,7 +2715,7 @@ def settings(request: Request, user: dict = Depends(get_current_user)):
     # Load user settings if available
     settings_data = user.get("settings", {}) if user else {}
     current_provider = settings_data.get("llm_provider", "ollama")
-    current_model = settings_data.get("llm_model", "llama3:8b")
+    current_model = settings_data.get("llm_model", "llama3.2:1b")
     
     return templates.TemplateResponse(
         "chatgpt_settings.html",
@@ -2784,7 +2785,7 @@ def signup_post(
     # Hash password and add user with all fields
     password_hash = pwd_context.hash(password)
     
-    # Use raw SQL to insert with all fields
+    # Use MySQL to insert with all fields
     cursor = user_store.conn.cursor()
     cursor.execute('''
         INSERT INTO users (username, email, password_hash, first_name, last_name, 
@@ -2805,8 +2806,31 @@ def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/login", status_code=303)
 
+@app.get("/api/current-user", include_in_schema=False)
+def get_current_user_api(request: Request):
+    """API endpoint to check current user session"""
+    user = request.session.get("user")
+    session_data = dict(request.session)
+    return {
+        "authenticated": bool(user), 
+        "user": user,
+        "session_keys": list(session_data.keys()),
+        "session_data": session_data
+    }
+
 @app.post("/legal-research", response_class=HTMLResponse)
-def legal_research_post(request: Request, user: dict = Depends(get_current_user), query: str = Form(...), jurisdiction: str = Form(...), include_web_search: str = Form(None), conversation_id: int = Form(None)):
+def legal_research_post(request: Request, query: str = Form(...), jurisdiction: str = Form(...), include_web_search: str = Form(None), conversation_id: int = Form(None)):
+    print(f"DEBUG: Legal research endpoint called with query: {query}")
+    print(f"DEBUG: Session data: {dict(request.session)}")
+    
+    # Check authentication manually instead of using dependency
+    user = request.session.get("user")
+    if not user:
+        print("DEBUG: No user in session, redirecting to login")
+        print(f"DEBUG: Available session keys: {list(request.session.keys())}")
+        return RedirectResponse(url="/login", status_code=303)
+    
+    print(f"DEBUG: User authenticated: {user}")
     stats = {"total_documents": 0, "conversations": 0}
     error = None
     research_result = None
@@ -2824,7 +2848,16 @@ def legal_research_post(request: Request, user: dict = Depends(get_current_user)
         # Add user message to conversation
         user_store.add_message_to_conversation(current_conversation_id, "user", query)
         
-        llm_engine = LLMEngine.from_user_settings(user.get('settings'))
+        # Get user settings or use defaults
+        user_settings = user.get('settings', {})
+        if not user_settings:
+            # Set default settings if none exist
+            user_settings = {
+                'llm_provider': 'openai',
+                'llm_model': 'gpt-3.5-turbo'
+            }
+        
+        llm_engine = LLMEngine.from_user_settings(user_settings)
         
         # Get conversation history for context
         conversation_messages = user_store.get_conversation_messages(current_conversation_id)
@@ -2888,7 +2921,18 @@ def legal_research_post(request: Request, user: dict = Depends(get_current_user)
         print(f"DEBUG: Document context found: {bool(doc_context)}")
         if doc_context:
             print(f"DEBUG: Context preview: {doc_context[:200]}...")
-        research_result = llm_engine.generate_response(query, context=doc_context, conversation_history=conversation_history)
+        
+        print(f"DEBUG: Generating response for query: {query}")
+        try:
+            research_result = llm_engine.generate_response(query, context=doc_context, conversation_history=conversation_history)
+            print(f"DEBUG: Generated response length: {len(research_result) if research_result else 0}")
+            if research_result:
+                print(f"DEBUG: Response preview: {research_result[:200]}...")
+            else:
+                print("DEBUG: No response generated by LLM engine")
+        except Exception as llm_error:
+            print(f"DEBUG: LLM generation error: {llm_error}")
+            research_result = f"I apologize, but I encountered an error while generating a response: {str(llm_error)}"
         
         # Add AI response to conversation
         user_store.add_message_to_conversation(current_conversation_id, "assistant", research_result)
@@ -2939,7 +2983,13 @@ def document_analysis_post(request: Request, user: dict = Depends(get_current_us
         os.remove(temp_path)
         if document_text:
             # Analyze document
-            analysis_result = LLMEngine.from_user_settings(user.get('settings')).analyze_document(document_text, analysis_type)
+            user_settings = user.get('settings', {})
+            if not user_settings:
+                user_settings = {
+                    'llm_provider': 'openai',
+                    'llm_model': 'gpt-3.5-turbo'
+                }
+            analysis_result = LLMEngine.from_user_settings(user_settings).analyze_document(document_text, analysis_type)
             # Add to KB if requested
             if add_to_kb:
                 metadata = create_legal_document_metadata(title=filename, document_type=analysis_type, source="uploaded_document")
@@ -3050,10 +3100,8 @@ def knowledge_base_post(request: Request, user: dict = Depends(get_current_user)
         }
     )
 
-# Find the DALIApp instance or create one if not present
-if not hasattr(app, 'dali_app'):
-    from src.web.app import DALIApp
-    app.dali_app = DALIApp()
+# Initialize DALIApp instance
+dali_app = DALIApp()
 
 @app.post("/web-research", response_class=HTMLResponse)
 def web_research_post(request: Request, user: dict = Depends(get_current_user), research_urls: str = Form(...), max_pages: int = Form(...), add_to_kb: str = Form(None)):
@@ -3065,7 +3113,7 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
         urls = [url.strip() for url in research_urls.split('\n') if url.strip()]
         for url in urls:
             # Use the DALIApp's FirecrawlScraper instance
-            result = app.dali_app.scraper.scrape_url(url)
+            result = dali_app.scraper.scrape_url(url)
             # Clean content for plain text (remove markdown/images/links)
             content_plain = re.sub(r'!\[.*?\]\(.*?\)', '', result.content)  # Remove images
             content_plain = re.sub(r'\[.*?\]\(.*?\)', '', content_plain)    # Remove links
@@ -3116,6 +3164,11 @@ def web_research_post(request: Request, user: dict = Depends(get_current_user), 
                 })
     except Exception as e:
         error = str(e)
+    # Debug: Print results to console
+    print(f"DEBUG: all_results count: {len(all_results)}")
+    for i, result in enumerate(all_results):
+        print(f"DEBUG: Result {i}: title='{result.get('title', 'No title')}', content_length={len(result.get('content', ''))}")
+    
     return templates.TemplateResponse(
         "chatgpt_web_research.html",
         {
@@ -3159,7 +3212,7 @@ def settings_post(request: Request, user: dict = Depends(get_current_user), mode
             "stats": stats,
             "active_page": "settings",
             "current_provider": settings.get("llm_provider", "ollama"),
-            "current_model": settings.get("llm_model", "llama3:8b"),
+            "current_model": settings.get("llm_model", "llama3.2:1b"),
             "t": lambda key: t(key, request)
         }
     )
@@ -3231,8 +3284,22 @@ def api_chat_history(request: Request, with_user: int):
 
 def log_activity(user_id, event_type, event_data=None):
     try:
+        # Validate user_id exists
+        if not user_id or not isinstance(user_id, int):
+            logger.warning(f"Invalid user_id for activity logging: {user_id}")
+            return
+            
         conn = mysql.connector.connect(**get_mysql_config())
         cursor = conn.cursor()
+        
+        # Check if user exists
+        cursor.execute("SELECT id FROM users WHERE id = %s", (user_id,))
+        if not cursor.fetchone():
+            logger.warning(f"User {user_id} not found for activity logging")
+            cursor.close()
+            conn.close()
+            return
+            
         cursor.execute(
             'INSERT INTO activity_log (user_id, event_type, event_data) VALUES (%s, %s, %s)',
             (user_id, event_type, json.dumps(event_data) if event_data else None)

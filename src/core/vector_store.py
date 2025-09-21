@@ -695,13 +695,11 @@ class MySQLVectorStore:
     def list_documents(self, user_id):
         import json
         cursor = self.conn.cursor(dictionary=True)
-        cursor.execute('SELECT id, title, document_type, source, LEFT(content, 200) as content_preview, metadata, created_at FROM documents WHERE user_id=%s', (user_id,))
+        cursor.execute('SELECT id, title, document_type, source, LEFT(content, 200) as content_preview, created_at FROM documents WHERE user_id=%s', (user_id,))
         docs = cursor.fetchall()
         for doc in docs:
-            try:
-                doc['metadata'] = json.loads(doc['metadata']) if doc['metadata'] else {}
-            except Exception:
-                doc['metadata'] = {}
+            # Set empty metadata since column doesn't exist
+            doc['metadata'] = {}
         cursor.close()
         return docs
 
@@ -709,20 +707,38 @@ class MySQLVectorStore:
         import numpy as np
         import json
         cursor = self.conn.cursor(dictionary=True)
-        cursor.execute('SELECT id, title, document_type, source, content, embedding, metadata FROM documents WHERE user_id=%s', (user_id,))
+        # Only get documents that have embeddings (not NULL)
+        cursor.execute('SELECT id, title, document_type, source, content, embedding FROM documents WHERE user_id=%s AND embedding IS NOT NULL', (user_id,))
         docs = cursor.fetchall()
         for doc in docs:
-            try:
-                doc['metadata'] = json.loads(doc['metadata']) if doc['metadata'] else {}
-            except Exception:
-                doc['metadata'] = {}
+            # Set empty metadata since column doesn't exist
+            doc['metadata'] = {}
         cursor.close()
         scored = []
         for doc in docs:
-            emb = np.frombuffer(doc['embedding'], dtype=np.float32)
-            sim = np.dot(query_embedding, emb) / (np.linalg.norm(query_embedding) * np.linalg.norm(emb) + 1e-8)
-            doc['score'] = float(sim)  # Add score to document
-            scored.append((sim, doc))
+            try:
+                emb = np.frombuffer(doc['embedding'], dtype=np.float32)
+                
+                # Calculate cosine similarity with proper error handling
+                query_norm = np.linalg.norm(query_embedding)
+                emb_norm = np.linalg.norm(emb)
+                
+                if query_norm == 0 or emb_norm == 0:
+                    sim = 0.0
+                else:
+                    sim = np.dot(query_embedding, emb) / (query_norm * emb_norm)
+                
+                # Ensure similarity score is valid
+                if np.isnan(sim) or np.isinf(sim):
+                    sim = 0.0
+                
+                doc['similarity_score'] = float(sim)  # Add similarity score to document
+                scored.append((sim, doc))
+            except Exception as e:
+                logger.error(f"Error calculating similarity for document {doc.get('id', 'unknown')}: {str(e)}")
+                doc['similarity_score'] = 0.0
+                scored.append((0.0, doc))
+        
         scored.sort(reverse=True, key=lambda x: x[0])
         return [doc for sim, doc in scored[:top_k]]
 

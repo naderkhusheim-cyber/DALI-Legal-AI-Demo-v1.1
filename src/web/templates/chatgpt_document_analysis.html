@@ -4,250 +4,1005 @@
 {% block head %}
 <link rel="stylesheet" href="/static/chatgpt-ui.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Enhanced Document Analysis Styles */
+.document-analysis-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #5a67d8;
+    text-decoration: none;
+}
+
+.breadcrumb-separator {
+    color: #9ca3af;
+    font-weight: bold;
+}
+
+.breadcrumb-current {
+    color: #374151;
+    font-weight: 600;
+}
+
+/* Navigation Header */
+.navigation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+    border: 1px solid #e5e7eb;
+}
+
+.nav-left, .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.nav-center {
+    flex: 1;
+    text-align: center;
+}
+
+.nav-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+    text-decoration: none;
+}
+
+.back-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.nav-link {
+    padding: 8px 16px;
+    background: #f8fafc;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.nav-link:hover {
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+/* Mobile Navigation */
+@media (max-width: 768px) {
+    .breadcrumb {
+        padding: 10px 15px;
+        font-size: 0.8rem;
+    }
+    
+    .navigation-header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+    
+    .nav-left, .nav-right {
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .nav-center {
+        order: -1;
+    }
+    
+    .nav-title {
+        font-size: 1.3rem;
+    }
+    
+    .back-btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+    
+    .nav-link {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Floating Back Button for Mobile */
+@media (max-width: 768px) {
+    .floating-back-btn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .floating-back-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+}
+
+.analysis-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    color: white;
+}
+
+.analysis-header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.analysis-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.upload-section {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    border: 2px dashed #e1e5e9;
+    transition: all 0.3s ease;
+}
+
+.upload-section:hover {
+    border-color: #667eea;
+    box-shadow: 0 15px 50px rgba(102, 126, 234, 0.15);
+}
+
+.upload-area {
+    text-align: center;
+    padding: 60px 20px;
+    border: 3px dashed #d1d5db;
+    border-radius: 12px;
+    background: #f8fafc;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.upload-area.dragover {
+    border-color: #667eea;
+    background: #e0e7ff;
+    transform: scale(1.02);
+}
+
+.upload-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #667eea;
+}
+
+.upload-text {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.upload-subtext {
+    color: #6b7280;
+    font-size: 1rem;
+    margin-bottom: 30px;
+}
+
+.file-input {
+    display: none;
+}
+
+.upload-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.upload-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.analysis-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.analysis-option {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 25px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.analysis-option:hover {
+    border-color: #667eea;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.15);
+}
+
+.analysis-option.selected {
+    border-color: #667eea;
+    background: #f0f4ff;
+}
+
+.option-icon {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.option-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.option-description {
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.analysis-form {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-top: 30px;
+    display: none;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.form-input, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-input:focus, .form-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.analyze-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    width: 100%;
+}
+
+.analyze-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.analyze-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.progress-container {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-top: 30px;
+    display: none;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    text-align: center;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.results-section {
+    background: white;
+    border-radius: 16px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    margin-top: 30px;
+    display: none;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.results-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #374151;
+    margin: 0;
+}
+
+.results-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 8px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.action-btn.primary:hover {
+    background: #5a67d8;
+    border-color: #5a67d8;
+    color: white;
+}
+
+.results-content {
+    line-height: 1.6;
+    color: #374151;
+    font-size: 1rem;
+}
+
+.results-content h2, .results-content h3 {
+    color: #1f2937;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+.results-content h2 {
+    font-size: 1.3rem;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 8px;
+}
+
+.results-content h3 {
+    font-size: 1.1rem;
+}
+
+.results-content ul, .results-content ol {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.results-content li {
+    margin-bottom: 8px;
+}
+
+.results-content strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.file-info {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.file-icon {
+    font-size: 2rem;
+    color: #667eea;
+}
+
+.file-details h4 {
+    margin: 0 0 5px 0;
+    color: #374151;
+    font-weight: 600;
+}
+
+.file-details p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #dc2626;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+.success-message {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #16a34a;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+    font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .document-analysis-container {
+        padding: 10px;
+    }
+    
+    .analysis-header {
+        padding: 30px 15px;
+    }
+    
+    .analysis-header h1 {
+        font-size: 2rem;
+    }
+    
+    .upload-section, .analysis-form, .results-section {
+        padding: 20px;
+    }
+    
+    .analysis-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .results-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .results-actions {
+        justify-content: center;
+    }
+}
+
+/* Animation for file upload */
+@keyframes uploadPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.uploading {
+    animation: uploadPulse 1.5s infinite;
+}
+
+/* Loading spinner */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="chatgpt-layout">
-    <!-- ChatGPT-Style Sidebar -->
-    <aside class="chatgpt-sidebar" id="sidebar">
-        <div class="chatgpt-sidebar-header">
-            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
-            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
-        </div>
-        
-        <button class="chatgpt-new-chat-btn" onclick="startNewAnalysis()">
-            <span>+</span>
-            {{ t('new_analysis') if t else 'New Analysis' }}
-        </button>
-        
-        <nav class="chatgpt-nav">
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🏠</span>
-                        {{ t('dashboard') if t else 'Dashboard' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/legal-research" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🔍</span>
-                        {{ t('legal_research') if t else 'Legal Research' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/document-analysis" class="chatgpt-nav-link active">
-                        <span class="chatgpt-nav-icon">📄</span>
-                        {{ t('document_analysis') if t else 'Document Analysis' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/knowledge-base" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">📚</span>
-                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/web-research" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🌐</span>
-                        {{ t('web_research') if t else 'Web Research' }}
-                    </a>
-                </div>
-            </div>
-            
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/settings" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">⚙️</span>
-                        {{ t('settings') if t else 'Settings' }}
-                    </a>
-                </div>
-                {% if user and user.role == 'admin' %}
-                <div class="chatgpt-nav-item">
-                    <a href="/admin/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">👑</span>
-                        {{ t('admin_panel') if t else 'Admin Panel' }}
-                    </a>
-                </div>
-                {% endif %}
-            </div>
-        </nav>
-        
-        {% if user %}
-        <div class="chatgpt-user-info">
-            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
-            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
-            <form method="get" action="/logout">
-                <button type="submit" class="chatgpt-logout-btn">
-                    {{ t('logout') if t else 'Logout' }}
-                </button>
-            </form>
-        </div>
-        {% endif %}
-    </aside>
-    
-    <!-- Main Document Analysis Interface -->
-    <main class="chatgpt-main">
-        <!-- Mobile Menu Button -->
-        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
-            ☰
-        </button>
-        
-        <!-- Analysis Header -->
-        <div class="chatgpt-header">
-            <div class="chatgpt-header-title">{{ t('document_analysis') if t else 'Document Analysis' }}</div>
-            <div class="chatgpt-header-subtitle">{{ t('document_analysis_subtitle') if t else 'Upload and analyze legal documents with AI-powered insights' }}</div>
-        </div>
-        
-        <!-- Welcome Screen -->
-        <div class="chatgpt-welcome" id="welcomeScreen">
-            <div class="chatgpt-welcome-icon">📄</div>
-            <h1 class="chatgpt-welcome-title">{{ t('document_analysis') if t else 'Document Analysis' }}</h1>
-            <p class="chatgpt-welcome-subtitle">{{ t('document_analysis_description') if t else 'Upload legal documents, contracts, or agreements and get AI-powered analysis, summaries, and insights.' }}</p>
-            
-            <div class="chatgpt-welcome-actions">
-                <button class="chatgpt-action-btn" onclick="uploadDocument()">
-                    📤 {{ t('upload_document') if t else 'Upload Document' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="analyzeContract()">
-                    📋 {{ t('analyze_contract') if t else 'Analyze Contract' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="summarizeDocument()">
-                    📝 {{ t('summarize_document') if t else 'Summarize Document' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="extractClauses()">
-                    🔍 {{ t('extract_clauses') if t else 'Extract Clauses' }}
-                </button>
-            </div>
-        </div>
-        
-        <!-- Upload Area -->
-        <div class="chatgpt-messages" id="uploadArea" style="display: none;">
-            <div class="chatgpt-card">
-                <div class="chatgpt-card-header">
-                    <div class="chatgpt-card-title">{{ t('upload_document') if t else 'Upload Document' }}</div>
-                    <div class="chatgpt-card-subtitle">{{ t('upload_subtitle') if t else 'Select a legal document to analyze' }}</div>
-                </div>
-                
-                <form id="documentUploadForm" enctype="multipart/form-data">
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">{{ t('select_file') if t else 'Select File' }}</label>
-                        <input type="file" class="chatgpt-form-input" id="documentFile" accept=".pdf,.doc,.docx,.txt" required>
-                    </div>
-                    
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">{{ t('analysis_type') if t else 'Analysis Type' }}</label>
-                        <select class="chatgpt-form-input" id="analysisType">
-                            <option value="summary">{{ t('summary') if t else 'Summary' }}</option>
-                            <option value="contract">{{ t('contract_analysis') if t else 'Contract Analysis' }}</option>
-                            <option value="clauses">{{ t('extract_clauses') if t else 'Extract Clauses' }}</option>
-                            <option value="compliance">{{ t('compliance_check') if t else 'Compliance Check' }}</option>
-                        </select>
-                    </div>
-                    
-                    <div class="chatgpt-form-group">
-                        <label class="chatgpt-form-label">{{ t('document_title') if t else 'Document Title' }}</label>
-                        <input type="text" class="chatgpt-form-input" id="documentTitle" placeholder="{{ t('enter_title') if t else 'Enter document title...' }}">
-                    </div>
-                    
-                    <button type="submit" class="chatgpt-btn chatgpt-btn-primary" style="width: 100%;">
-                        📤 {{ t('upload_and_analyze') if t else 'Upload & Analyze' }}
-                    </button>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Analysis Result Display (for form submissions) -->
-        {% if analysis_result %}
-        <div class="chatgpt-research-result" id="analysisResult">
-            <div class="chatgpt-research-header">
-                <h2>{{ t('analysis_result') if t else 'Analysis Result' }}</h2>
-                <p class="chatgpt-research-query">{{ t('document') if t else 'Document' }}: {{ document_title or 'Uploaded Document' }}</p>
-                
-                <!-- Analysis Actions -->
-                <div class="analysis-actions">
-                    <button class="chatgpt-btn chatgpt-btn-primary" onclick="downloadAnalysisPDF()">
-                        📄 {{ t('download_pdf') if t else 'Download PDF' }}
-                    </button>
-                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="shareAnalysis()">
-                        📤 {{ t('share_analysis') if t else 'Share Analysis' }}
-                    </button>
-                    <button class="chatgpt-btn chatgpt-btn-secondary" onclick="addToKnowledgeBase()">
-                        📚 {{ t('add_to_kb') if t else 'Add to Knowledge Base' }}
-                    </button>
-                </div>
-            </div>
-            <div class="chatgpt-research-content">
-                <div class="legal-research-result">{{ analysis_result }}</div>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Chat Messages Area -->
-        <div class="chatgpt-messages" id="chatMessages" style="display: none;">
-            <!-- Messages will be dynamically added here -->
-        </div>
-        
-        <!-- Input Area -->
-        <div class="chatgpt-input-area">
-            <div class="chatgpt-input-container">
-                <textarea 
-                    class="chatgpt-input" 
-                    id="chatInput" 
-                    placeholder="{{ t('ask_about_document') if t else 'Ask questions about your document...' }}"
-                    rows="1"
-                    onkeydown="handleKeyDown(event)"
-                    oninput="autoResize(this)"
-                ></textarea>
-                <button class="chatgpt-send-btn" id="sendBtn" onclick="sendMessage()">
-                    ➤
-                </button>
-            </div>
-        </div>
-    </main>
-</div>
+<!-- Floating Back Button for Mobile -->
+<button class="floating-back-btn" onclick="window.location.href='/dashboard'" title="Back to Dashboard">
+    ←
+</button>
 
+<div class="document-analysis-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb">
+        <a href="/dashboard" class="breadcrumb-link">🏠 Dashboard</a>
+        <span class="breadcrumb-separator">›</span>
+        <span class="breadcrumb-current">📄 Document Analysis</span>
+    </div>
+
+    <!-- Navigation Header -->
+    <div class="navigation-header">
+        <div class="nav-left">
+            <a href="/dashboard" class="back-btn">
+                <span class="back-icon">←</span>
+                Back to Dashboard
+            </a>
+        </div>
+        <div class="nav-center">
+            <h1 class="nav-title">📄 Document Analysis</h1>
+        </div>
+        <div class="nav-right">
+            <a href="/knowledge-base" class="nav-link">📚 Knowledge Base</a>
+            <a href="/legal-research" class="nav-link">🔍 Research</a>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="analysis-header">
+        <h1>📄 Document Analysis</h1>
+        <p>Upload legal documents and get AI-powered analysis, summaries, and insights</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drop your document here or click to browse</div>
+            <div class="upload-subtext">Supports PDF, DOC, DOCX, TXT files up to 50MB</div>
+            <button class="upload-btn">Choose File</button>
+            <input type="file" id="fileInput" class="file-input" accept=".pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)">
+        </div>
+        
+        <!-- Analysis Options -->
+        <div class="analysis-options">
+            <div class="analysis-option" data-type="summary" onclick="selectAnalysisType('summary')">
+                <span class="option-icon">📝</span>
+                <div class="option-title">Summary</div>
+                <div class="option-description">Get a comprehensive summary of the document's key points and main content</div>
+                </div>
+            <div class="analysis-option" data-type="contract" onclick="selectAnalysisType('contract')">
+                <span class="option-icon">📋</span>
+                <div class="option-title">Contract Analysis</div>
+                <div class="option-description">Analyze contracts for key terms, clauses, and potential issues</div>
+                </div>
+            <div class="analysis-option" data-type="clauses" onclick="selectAnalysisType('clauses')">
+                <span class="option-icon">🔍</span>
+                <div class="option-title">Extract Clauses</div>
+                <div class="option-description">Identify and extract specific legal clauses and provisions</div>
+                </div>
+            <div class="analysis-option" data-type="compliance" onclick="selectAnalysisType('compliance')">
+                <span class="option-icon">✅</span>
+                <div class="option-title">Compliance Check</div>
+                <div class="option-description">Check document compliance with legal standards and regulations</div>
+                </div>
+                </div>
+
+        <!-- Analysis Form -->
+        <div class="analysis-form" id="analysisForm">
+            <div class="form-group">
+                <label class="form-label">Document Title (Optional)</label>
+                <input type="text" class="form-input" id="documentTitle" placeholder="Enter a title for your document...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Analysis Type</label>
+                <select class="form-select" id="analysisType">
+                    <option value="summary">Summary</option>
+                    <option value="contract">Contract Analysis</option>
+                    <option value="clauses">Extract Clauses</option>
+                    <option value="compliance">Compliance Check</option>
+                </select>
+            </div>
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeDocument()">
+                <span id="analyzeText">🔍 Analyze Document</span>
+                <span id="analyzeSpinner" class="spinner" style="display: none;"></span>
+                </button>
+        </div>
+    </div>
+
+    <!-- Progress Section -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text" id="progressText">Preparing analysis...</div>
+        </div>
+        
+    <!-- Results Section -->
+    <div class="results-section" id="resultsSection" {% if analysis_result %}style="display: block;"{% endif %}>
+        <div class="results-header">
+            <h3 class="results-title">Analysis Results</h3>
+            <div class="results-actions">
+                <button class="action-btn" onclick="window.location.href='/dashboard'">
+                    🏠 Home
+                </button>
+                <button class="action-btn" onclick="startNewAnalysis()">
+                    🔄 New Analysis
+                </button>
+                <button class="action-btn" onclick="downloadResults()">
+                    📄 Download PDF
+                </button>
+                <button class="action-btn" onclick="shareResults()">
+                    📤 Share
+                </button>
+                <button class="action-btn primary" onclick="addToKnowledgeBase()">
+                    📚 Add to Knowledge Base
+                </button>
+            </div>
+        </div>
+        <div class="results-content" id="resultsContent">
+            {% if analysis_result %}
+                {{ analysis_result }}
+            {% endif %}
+        </div>
+    </div>
+                    
+    <!-- Error/Success Messages -->
+    <div id="messageContainer">
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
+        {% if kb_success %}
+            <div class="success-message">✅ Document successfully added to knowledge base!</div>
+        {% endif %}
+    </div>
+                    </div>
+                    
 <script>
-let currentDocumentId = null;
-let isAnalyzing = false;
+let selectedFile = null;
+let selectedAnalysisType = 'summary';
 
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
+// File selection handling
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        selectedFile = file;
+        displayFileInfo(file);
+        showAnalysisForm();
+    }
 }
 
-function startNewAnalysis() {
-    currentDocumentId = null;
-    document.getElementById('welcomeScreen').style.display = 'flex';
-    document.getElementById('uploadArea').style.display = 'none';
-    document.getElementById('chatMessages').style.display = 'none';
-    document.getElementById('chatInput').value = '';
+function displayFileInfo(file) {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileIcon = getFileIcon(file.type);
+    
+    uploadArea.innerHTML = `
+        <div class="file-info">
+            <div class="file-icon">${fileIcon}</div>
+            <div class="file-details">
+                <h4>${file.name}</h4>
+                <p>${(file.size / 1024 / 1024).toFixed(2)} MB • ${file.type || 'Unknown type'}</p>
+            </div>
+        </div>
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            Choose Different File
+                </button>
+    `;
 }
 
-// Analysis Action Functions
-function downloadAnalysisPDF() {
-    const analysisResult = document.querySelector('.legal-research-result');
-    if (!analysisResult) {
-        alert('{{ t("no_analysis_to_download") if t else "No analysis available to download" }}');
+function getFileIcon(fileType) {
+    if (fileType.includes('pdf')) return '📄';
+    if (fileType.includes('word') || fileType.includes('document')) return '📝';
+    if (fileType.includes('text')) return '📄';
+    return '📁';
+}
+
+// Analysis type selection
+function selectAnalysisType(type) {
+    selectedAnalysisType = type;
+    
+    // Update visual selection
+    document.querySelectorAll('.analysis-option').forEach(option => {
+        option.classList.remove('selected');
+    });
+    document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+    
+    // Update form
+    document.getElementById('analysisType').value = type;
+}
+
+// Show analysis form
+function showAnalysisForm() {
+    document.getElementById('analysisForm').style.display = 'block';
+}
+
+// Analyze document
+function analyzeDocument() {
+    if (!selectedFile) {
+        showMessage('Please select a file first.', 'error');
         return;
     }
     
-    const analysisText = analysisResult.textContent;
-    const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
-    
-    // Create PDF content
-    const pdfContent = `
-Document Analysis Report
-Generated: ${new Date().toLocaleDateString()}
-${documentTitle}
+    const formData = new FormData();
+    formData.append('document', selectedFile);
+    formData.append('analysis_type', selectedAnalysisType);
+    formData.append('add_to_kb', 'on');
 
-Analysis Results:
-${analysisText}
-    `;
+    // Show progress
+    showProgress();
     
-    // Create and download file
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    // Disable button and show spinner
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const analyzeText = document.getElementById('analyzeText');
+    const analyzeSpinner = document.getElementById('analyzeSpinner');
+    
+    analyzeBtn.disabled = true;
+    analyzeText.style.display = 'none';
+    analyzeSpinner.style.display = 'inline-block';
+
+    fetch('/document-analysis', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        console.log('Response received:', html.substring(0, 500) + '...'); // Debug log
+        // Parse the response to extract analysis result
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Look for the results content div
+        const resultsContent = doc.querySelector('#resultsContent');
+        let analysisResult = null;
+        
+        console.log('Results content found:', resultsContent ? resultsContent.textContent.substring(0, 200) : 'None');
+        
+        if (resultsContent && resultsContent.textContent.trim()) {
+            analysisResult = resultsContent.textContent.trim();
+            console.log('Using results content:', analysisResult.substring(0, 200) + '...');
+        } else {
+            // Look for any meaningful content in the page
+            const bodyText = doc.body.textContent.trim();
+            const lines = bodyText.split('\n').filter(line => {
+                const trimmed = line.trim();
+                return trimmed.length > 50 && 
+                       !trimmed.includes('DALI Legal AI') && 
+                       !trimmed.includes('Navigation') &&
+                       !trimmed.includes('Settings') &&
+                       !trimmed.includes('Document Analysis') &&
+                       !trimmed.includes('Upload Document') &&
+                       !trimmed.includes('Choose File') &&
+                       !trimmed.includes('Analysis Type') &&
+                       !trimmed.includes('Analyze Document') &&
+                       !trimmed.includes('Drop your document') &&
+                       !trimmed.includes('Supports PDF') &&
+                       !trimmed.includes('Summary') &&
+                       !trimmed.includes('Contract Analysis') &&
+                       !trimmed.includes('Extract Clauses') &&
+                       !trimmed.includes('Compliance Check');
+            });
+            
+            if (lines.length > 0) {
+                analysisResult = lines.join('\n').trim();
+            }
+        }
+        
+        // Check for error messages
+        if (!analysisResult) {
+            const errorMessage = doc.querySelector('.error-message');
+            if (errorMessage) {
+                analysisResult = errorMessage.textContent.trim();
+            }
+        }
+        
+        // Final fallback
+        if (!analysisResult) {
+            analysisResult = 'Document analysis completed successfully! The document has been processed and added to your knowledge base.';
+        }
+        
+        displayResults(analysisResult);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error analyzing document. Please try again.', 'error');
+    })
+    .finally(() => {
+        // Re-enable button
+        analyzeBtn.disabled = false;
+        analyzeText.style.display = 'inline';
+        analyzeSpinner.style.display = 'none';
+        hideProgress();
+    });
+}
+
+// Show progress
+function showProgress() {
+    document.getElementById('progressContainer').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    
+    // Animate progress bar
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        
+        document.getElementById('progressFill').style.width = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 200);
+}
+
+function hideProgress() {
+    document.getElementById('progressContainer').style.display = 'none';
+}
+
+// Display results
+function displayResults(content) {
+    const resultsContent = document.getElementById('resultsContent');
+    resultsContent.innerHTML = formatAnalysisContent(content);
+    document.getElementById('resultsSection').style.display = 'block';
+    
+    // Scroll to results
+    document.getElementById('resultsSection').scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+// Format analysis content
+function formatAnalysisContent(content) {
+    // Convert markdown-like formatting to HTML
+    let formatted = content
+        // Convert numbered lists
+        .replace(/(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*?)(?=\d+\.\s*\*\*|$)/gs, (match, num, title, desc) => {
+            return `<div style="margin: 15px 0; padding: 15px; background: #f8fafc; border-left: 4px solid #667eea; border-radius: 0 8px 8px 0;">
+                <h4 style="margin: 0 0 8px 0; color: #1f2937;">${num}. ${title}</h4>
+                <p style="margin: 0; color: #6b7280; line-height: 1.5;">${desc.trim()}</p>
+            </div>`;
+        })
+        // Convert bold text
+        .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937;">$1</strong>')
+        // Convert line breaks
+        .replace(/\n/g, '<br>')
+        // Convert double line breaks to paragraphs
+        .replace(/(<br>\s*){2,}/g, '</p><p style="margin: 15px 0; line-height: 1.6;">')
+        // Wrap in paragraph
+        .replace(/^(.*)$/, '<p style="margin: 15px 0; line-height: 1.6;">$1</p>')
+        // Clean up empty paragraphs
+        .replace(/<p style="margin: 15px 0; line-height: 1.6;"><\/p>/g, '')
+        .replace(/<p style="margin: 15px 0; line-height: 1.6;"><br><\/p>/g, '');
+    
+    return formatted;
+}
+
+// Action functions
+function downloadResults() {
+    const content = document.getElementById('resultsContent').textContent;
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -258,62 +1013,44 @@ ${analysisText}
     document.body.removeChild(a);
 }
 
-function shareAnalysis() {
-    const recipient = prompt('{{ t("enter_username_to_share") if t else "Enter username to share analysis with:" }}');
+function shareResults() {
+    const recipient = prompt('Enter username to share analysis with:');
     if (recipient) {
-        const analysisResult = document.querySelector('.legal-research-result');
-        if (!analysisResult) {
-            alert('{{ t("no_analysis_to_share") if t else "No analysis available to share" }}');
-            return;
-        }
-        
-        const analysisText = analysisResult.textContent;
-        const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
+        const content = document.getElementById('resultsContent').textContent;
         
         fetch('/api/document-analysis/share', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 recipient_username: recipient,
-                analysis_text: analysisText,
-                document_title: documentTitle
+                analysis_text: content,
+                document_title: selectedFile ? selectedFile.name : 'Document Analysis'
             })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('{{ t("analysis_shared_successfully") if t else "Analysis shared successfully!" }}');
+                showMessage('Analysis shared successfully!', 'success');
             } else {
-                alert('{{ t("error_sharing_analysis") if t else "Error sharing analysis" }}: ' + data.error);
+                showMessage('Error sharing analysis: ' + data.error, 'error');
             }
         })
         .catch(error => {
-            console.error('Error sharing analysis:', error);
-            alert('{{ t("error_sharing_analysis") if t else "Error sharing analysis" }}');
+            console.error('Error:', error);
+            showMessage('Error sharing analysis', 'error');
         });
     }
 }
 
 function addToKnowledgeBase() {
-    const analysisResult = document.querySelector('.legal-research-result');
-    if (!analysisResult) {
-        alert('{{ t("no_analysis_to_add") if t else "No analysis available to add to knowledge base" }}');
-        return;
-    }
-    
-    const analysisText = analysisResult.textContent;
-    const documentTitle = document.querySelector('.chatgpt-research-query').textContent;
+    const content = document.getElementById('resultsContent').textContent;
     
     fetch('/api/knowledge-base/add-analysis', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            title: documentTitle,
-            content: analysisText,
+            title: selectedFile ? selectedFile.name : 'Document Analysis',
+            content: content,
             document_type: 'analysis',
             source: 'document_analysis'
         })
@@ -321,288 +1058,118 @@ function addToKnowledgeBase() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('{{ t("analysis_added_to_kb") if t else "Analysis added to knowledge base successfully!" }}');
+            showMessage('Analysis added to knowledge base successfully!', 'success');
         } else {
-            alert('{{ t("error_adding_to_kb") if t else "Error adding to knowledge base" }}: ' + data.error);
+            showMessage('Error adding to knowledge base: ' + data.error, 'error');
         }
     })
     .catch(error => {
-        console.error('Error adding to knowledge base:', error);
-        alert('{{ t("error_adding_to_kb") if t else "Error adding to knowledge base" }}');
+        console.error('Error:', error);
+        showMessage('Error adding to knowledge base', 'error');
     });
 }
 
-function uploadDocument() {
-    document.getElementById('welcomeScreen').style.display = 'none';
-    document.getElementById('uploadArea').style.display = 'flex';
-    document.getElementById('chatMessages').style.display = 'none';
-}
-
-function analyzeContract() {
-    document.getElementById('analysisType').value = 'contract';
-    uploadDocument();
-}
-
-function summarizeDocument() {
-    document.getElementById('analysisType').value = 'summary';
-    uploadDocument();
-}
-
-function extractClauses() {
-    document.getElementById('analysisType').value = 'clauses';
-    uploadDocument();
-}
-
-function autoResize(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-}
-
-function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-    }
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (!message || isAnalyzing) return;
-    
-    // Add user message
-    addMessage('user', message);
-    
-    // Clear input
-    input.value = '';
-    input.style.height = 'auto';
-    
-    // Show typing indicator
-    showTypingIndicator();
-    
-    // Simulate AI response (replace with actual API call)
-    setTimeout(() => {
-        hideTypingIndicator();
-        addMessage('assistant', 'I understand your question about the document. This is a simulated response - in the actual implementation, this would analyze your uploaded document and provide specific insights.');
-    }, 2000);
-}
-
-function formatMessage(text) {
-    // Convert the text to HTML with proper formatting
-    let formatted = text
-        // Convert numbered lists (1. **text**: description)
-        .replace(/(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*?)(?=\d+\.\s*\*\*|$)/gs, (match, num, title, desc) => {
-            return `<div class="chatgpt-list-item">
-                <div class="chatgpt-list-number">${num}.</div>
-                <div class="chatgpt-list-content">
-                    <div class="chatgpt-list-title">${title}</div>
-                    <div class="chatgpt-list-description">${desc.trim()}</div>
-                </div>
-            </div>`;
-        })
-        // Convert bold text **text** to <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Convert line breaks to <br>
-        .replace(/\n/g, '<br>')
-        // Convert double line breaks to paragraph breaks
-        .replace(/(<br>\s*){2,}/g, '</p><p>')
-        // Wrap in paragraph tags
-        .replace(/^(.*)$/, '<p>$1</p>')
-        // Clean up empty paragraphs
-        .replace(/<p><\/p>/g, '')
-        .replace(/<p><br><\/p>/g, '');
-    
-    return formatted;
-}
-
-function addMessage(sender, text) {
-        const messagesContainer = document.getElementById('chatMessages');
-    if (messagesContainer.style.display === 'none') {
-        messagesContainer.style.display = 'flex';
-    }
-    
+// Utility functions
+function showMessage(message, type) {
+    const container = document.getElementById('messageContainer');
     const messageDiv = document.createElement('div');
-    messageDiv.className = 'chatgpt-message';
+    messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+    messageDiv.textContent = message;
     
-    const avatar = document.createElement('div');
-    avatar.className = `chatgpt-message-avatar ${sender}`;
-    avatar.textContent = sender === 'user' ? 'U' : 'AI';
+    container.innerHTML = '';
+    container.appendChild(messageDiv);
     
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatgpt-message-text';
-    
-    if (sender === 'assistant') {
-        // Format AI responses with proper HTML
-        textDiv.innerHTML = formatMessage(text);
-    } else {
-        // Keep user messages as plain text
-        textDiv.textContent = text;
-    }
-    
-    const metaDiv = document.createElement('div');
-    metaDiv.className = 'chatgpt-message-meta';
-    metaDiv.textContent = new Date().toLocaleTimeString();
-    
-    content.appendChild(textDiv);
-    content.appendChild(metaDiv);
-    
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(content);
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (messageDiv.parentNode) {
+            messageDiv.parentNode.removeChild(messageDiv);
+        }
+    }, 5000);
 }
 
-function showTypingIndicator() {
-    isAnalyzing = true;
-        const messagesContainer = document.getElementById('chatMessages');
-    if (messagesContainer.style.display === 'none') {
-        messagesContainer.style.display = 'flex';
-    }
+function startNewAnalysis() {
+    // Reset all form elements
+    selectedFile = null;
+    selectedAnalysisType = 'summary';
     
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'chatgpt-message';
-    typingDiv.id = 'typingIndicator';
+    // Reset file input
+    document.getElementById('fileInput').value = '';
     
-    const avatar = document.createElement('div');
-    avatar.className = 'chatgpt-message-avatar assistant';
-    avatar.textContent = 'AI';
-    
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const typingContent = document.createElement('div');
-    typingContent.className = 'chatgpt-typing';
-    typingContent.innerHTML = `
-        <span>AI is analyzing...</span>
-        <div class="chatgpt-typing-dots">
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
-        </div>
+    // Reset upload area
+    document.getElementById('uploadArea').innerHTML = `
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">Drop your document here or click to browse</div>
+        <div class="upload-subtext">Supports PDF, DOC, DOCX, TXT files up to 50MB</div>
+        <button class="upload-btn">Choose File</button>
     `;
     
-    content.appendChild(typingContent);
+    // Reset analysis form
+    document.getElementById('analysisForm').style.display = 'none';
+    document.getElementById('documentTitle').value = '';
+    document.getElementById('analysisType').value = 'summary';
     
-    typingDiv.appendChild(avatar);
-    typingDiv.appendChild(content);
+    // Hide results and progress
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('progressContainer').style.display = 'none';
     
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-function hideTypingIndicator() {
-    isAnalyzing = false;
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-// Document upload form handling
-document.getElementById('documentUploadForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('documentFile');
-    const analysisType = document.getElementById('analysisType').value;
-    const documentTitle = document.getElementById('documentTitle').value;
-    
-    if (!fileInput.files[0]) {
-        alert('Please select a file to upload.');
-        return;
-    }
-    
-    const formData = new FormData();
-    formData.append('document', fileInput.files[0]);
-    formData.append('analysis_type', analysisType);
-    formData.append('add_to_kb', 'on'); // Always add to knowledge base
-    
-    // Show uploading indicator
-    showTypingIndicator();
-    
-    fetch('/document-analysis', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.text())
-    .then(html => {
-        hideTypingIndicator();
-        // Extract the analysis result from the response
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        let result = 'Document uploaded and analyzed successfully!';
-        
-        // Look for analysis result in various possible locations
-        const resultSelectors = [
-            '.analysis-result',
-            '.document-analysis-result',
-            '.result',
-            '.analysis',
-            '.content',
-            'p',
-            '.response'
-        ];
-        
-        for (const selector of resultSelectors) {
-            const element = doc.querySelector(selector);
-            if (element && element.textContent.trim()) {
-                const text = element.textContent.trim();
-                if (text.length > 50) {
-                    result = text;
-                    break;
-                }
-            }
-        }
-        
-        // If no specific result found, look for any meaningful content
-        if (result === 'Document uploaded and analyzed successfully!') {
-            const bodyText = doc.body.textContent.trim();
-            if (bodyText && bodyText.length > 50) {
-                // Extract meaningful content (skip navigation, headers, etc.)
-                const lines = bodyText.split('\n').filter(line => 
-                    line.trim().length > 20 && 
-                    !line.includes('DALI') && 
-                    !line.includes('Navigation') &&
-                    !line.includes('Settings') &&
-                    !line.includes('Document Analysis')
-                );
-                if (lines.length > 0) {
-                    result = lines.slice(0, 5).join('\n').trim(); // Take first 5 meaningful lines
-                }
-            }
-        }
-        
-        document.getElementById('uploadArea').style.display = 'none';
-        document.getElementById('chatMessages').style.display = 'flex';
-        addMessage('assistant', result);
-    })
-    .catch(error => {
-        hideTypingIndicator();
-        alert('Error uploading document. Please try again.');
-        console.error('Error:', error);
+    // Reset analysis options selection
+    document.querySelectorAll('.analysis-option').forEach(option => {
+        option.classList.remove('selected');
     });
-});
+    
+    // Clear messages
+    document.getElementById('messageContainer').innerHTML = '';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-// Initialize
+// Drag and drop functionality
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('chatInput').focus();
+    const uploadArea = document.getElementById('uploadArea');
     
-    // Close sidebar on mobile when clicking outside
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
-        
-        if (window.innerWidth <= 768 && 
-            !sidebar.contains(event.target) && 
-            !mobileMenu.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
+    // Prevent default drag behaviors
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
     });
+    
+    // Highlight drop area when item is dragged over it
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    // Handle dropped files
+    uploadArea.addEventListener('drop', handleDrop, false);
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight(e) {
+        uploadArea.classList.add('dragover');
+    }
+    
+    function unhighlight(e) {
+        uploadArea.classList.remove('dragover');
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            selectedFile = file;
+            displayFileInfo(file);
+            showAnalysisForm();
+        }
+    }
 });
 </script>
 {% endblock %}

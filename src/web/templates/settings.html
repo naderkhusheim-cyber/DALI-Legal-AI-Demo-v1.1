@@ -18,7 +18,7 @@
         <label for="current_model"><b>Current Model:</b></label><br>
         <select id="current_model" name="current_model" style="width:100%;padding:0.5rem;">
             <optgroup label="Ollama Models" id="ollama_models" {% if current_provider != 'ollama' %}style="display:none;"{% endif %}>
-                <option value="llama3:8b" {% if current_model == 'llama3:8b' %}selected{% endif %}>llama3:8b</option>
+                <option value="llama3.2:1b" {% if current_model == 'llama3.2:1b' %}selected{% endif %}>llama3.2:1b</option>
                 <option value="mistral" {% if current_model == 'mistral' %}selected{% endif %}>mistral</option>
                 <option value="codellama" {% if current_model == 'codellama' %}selected{% endif %}>codellama</option>
             </optgroup>
@@ -47,7 +47,7 @@ function updateModelOptions() {
     // Optionally, auto-select a model when switching provider
     var modelSelect = document.getElementById('current_model');
     if (provider === 'ollama') {
-        modelSelect.value = 'llama3:8b';
+        modelSelect.value = 'llama3.2:1b';
     } else {
         modelSelect.value = 'gpt-4o';
     }

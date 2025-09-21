@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALI Legal AI - Enhanced Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            line-height: 1.6;
+        }
+
+        .navbar {
+            background: var(--primary-gradient);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+
+        .hero-section {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .feature-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .feature-description {
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .feature-badge {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-action-btn {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+            text-decoration: none;
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .system-status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .floating-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .quick-actions {
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quick-actions.show {
+            display: flex;
+        }
+
+        .quick-action-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #374151;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .quick-action-item:hover {
+            transform: translateX(5px);
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .welcome-title {
+            color: #0369a1;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .welcome-text {
+            color: #0c4a6e;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1rem;
+            }
+            
+            .feature-card {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-balance-scale me-2"></i>
+                DALI Legal AI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/enhanced-dashboard">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-star me-1"></i>Enhanced Features
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/enhanced-knowledge-base">
+                                <i class="fas fa-database me-2"></i>Database Intelligence
+                            </a></li>
+                            <li><a class="dropdown-item" href="/api/docs" target="_blank">
+                                <i class="fas fa-book me-2"></i>API Documentation
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-gavel me-1"></i>Legal Tools
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/legal-research">
+                                <i class="fas fa-search me-2"></i>Legal Research
+                            </a></li>
+                            <li><a class="dropdown-item" href="/document-analysis">
+                                <i class="fas fa-file-alt me-2"></i>Document Analysis
+                            </a></li>
+                            <li><a class="dropdown-item" href="/web-research">
+                                <i class="fas fa-globe me-2"></i>Web Research
+                            </a></li>
+                            <li><a class="dropdown-item" href="/knowledge-base">
+                                <i class="fas fa-book me-2"></i>Knowledge Base
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/health" target="_blank">
+                            <i class="fas fa-heartbeat me-1"></i>System Status
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/settings">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title">Welcome to DALI Legal AI</h1>
+                    <p class="hero-subtitle">Your intelligent legal research and document analysis assistant with advanced database intelligence and web scraping capabilities</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="/enhanced-knowledge-base" class="btn btn-light btn-lg">
+                            <i class="fas fa-database me-2"></i>Try Database Intelligence
+                        </a>
+                        <a href="/legal-research" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-search me-2"></i>Start Legal Research
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-4 text-center">
+                    <div class="system-status-card">
+                        <h5 class="mb-3">System Status</h5>
+                        <div class="status-item">
+                            <span class="status-label">Ollama AI</span>
+                            <span class="status-indicator status-offline" id="ollama-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">MySQL Database</span>
+                            <span class="status-indicator status-offline" id="database-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Firecrawl API</span>
+                            <span class="status-indicator status-offline" id="firecrawl-status"></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Sample Data</span>
+                            <span class="status-indicator status-offline" id="sample-db-status"></span>
+                        </div>
+                        <button onclick="checkSystemHealth()" class="btn btn-sm btn-outline-primary mt-3 w-100">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Welcome Message -->
+        <div class="welcome-message">
+            <h4 class="welcome-title">
+                <i class="fas fa-sparkles me-2"></i>
+                New Enhanced Features Available!
+            </h4>
+            <p class="welcome-text">
+                Discover our latest database intelligence and web scraping capabilities. Query your legal databases with natural language, 
+                generate interactive charts, and extract legal content from any website automatically.
+            </p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-5">
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="total-documents">0</div>
+                    <div class="stats-label">Documents Processed</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="total-queries">0</div>
+                    <div class="stats-label">Queries Executed</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="total-research">0</div>
+                    <div class="stats-label">Research Sessions</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="stats-card">
+                    <div class="stats-number" id="system-uptime">100%</div>
+                    <div class="stats-label">System Uptime</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-star me-2" style="color: #fbbf24;"></i>
+                    Enhanced Features
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <!-- Database Intelligence -->
+            <div class="col-lg-6">
+                <div class="feature-card" onclick="window.location.href='/enhanced-knowledge-base'">
+                    <div class="feature-icon" style="background: var(--primary-gradient);">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="feature-title">Database Intelligence</h3>
+                        <span class="feature-badge">NEW</span>
+                    </div>
+                    <p class="feature-description">
+                        Query your legal databases with natural language. Generate SQL automatically, create interactive charts, 
+                        and analyze your practice data with AI-powered intelligence.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">Natural Language to SQL</span>
+                        <span class="badge bg-light text-dark">Interactive Charts</span>
+                        <span class="badge bg-light text-dark">Query History</span>
+                    </div>
+                    <div class="d-flex align-items-center text-primary">
+                        <span>Try it now</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Web Scraping & Analysis -->
+            <div class="col-lg-6">
+                <div class="feature-card" onclick="window.open('/api/docs#/web-scraping', '_blank')">
+                    <div class="feature-icon" style="background: var(--success-gradient);">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h3 class="feature-title">Web Scraping & Analysis</h3>
+                        <span class="feature-badge" style="background: var(--success-gradient);">NEW</span>
+                    </div>
+                    <p class="feature-description">
+                        Extract and analyze legal content from any website. Monitor regulatory changes, 
+                        research case law, and gather legal intelligence automatically.
+                    </p>
+                    <div class="d-flex gap-2 flex-wrap mb-3">
+                        <span class="badge bg-light text-dark">Firecrawl Integration</span>
+                        <span class="badge bg-light text-dark">Document Extraction</span>
+                        <span class="badge bg-light text-dark">Content Analysis</span>
+                    </div>
+                    <div class="d-flex align-items-center text-success">
+                        <span>Learn more</span>
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-bolt me-2" style="color: #f59e0b;"></i>
+                    Quick Actions
+                </h2>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-5">
+            <div class="col-md-3">
+                <a href="/legal-research" class="quick-action-btn">
+                    <i class="fas fa-search" style="color: #667eea;"></i>
+                    <div>
+                        <div class="fw-bold">Legal Research</div>
+                        <small class="text-muted">AI-powered research</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/document-analysis" class="quick-action-btn">
+                    <i class="fas fa-file-alt" style="color: #10b981;"></i>
+                    <div>
+                        <div class="fw-bold">Document Analysis</div>
+                        <small class="text-muted">Upload & analyze</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/web-research" class="quick-action-btn">
+                    <i class="fas fa-globe" style="color: #3b82f6;"></i>
+                    <div>
+                        <div class="fw-bold">Web Research</div>
+                        <small class="text-muted">Scrape & analyze</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="/api/docs" target="_blank" class="quick-action-btn">
+                    <i class="fas fa-book" style="color: #8b5cf6;"></i>
+                    <div>
+                        <div class="fw-bold">API Docs</div>
+                        <small class="text-muted">Developer resources</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="feature-card">
+                    <h3 class="feature-title mb-4">
+                        <i class="fas fa-clock me-2"></i>
+                        Recent Activity
+                    </h3>
+                    <div id="recent-activity">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-3"></i>
+                            <p>No recent activity. Start by exploring our enhanced features!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-action">
+        <div class="quick-actions" id="quick-actions">
+            <a href="/api/docs" target="_blank" class="quick-action-item">
+                <i class="fas fa-book"></i>
+                <span>API Documentation</span>
+            </a>
+            <a href="/api/health" target="_blank" class="quick-action-item">
+                <i class="fas fa-heartbeat"></i>
+                <span>System Health</span>
+            </a>
+            <a href="/enhanced-knowledge-base" class="quick-action-item">
+                <i class="fas fa-database"></i>
+                <span>Database Intelligence</span>
+            </a>
+        </div>
+        <button class="floating-btn" onclick="toggleQuickActions()">
+            <i class="fas fa-bolt"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // System health check
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+                
+                // Update status indicators
+                document.getElementById('ollama-status').className = 
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('database-status').className = 
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('sample-db-status').className = 
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+                
+                // Check Firecrawl
+                try {
+                    const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+                    const firecrawlStatus = await firecrawlResponse.json();
+                    
+                    document.getElementById('firecrawl-status').className = 
+                        'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+                } catch (e) {
+                    document.getElementById('firecrawl-status').className = 'status-indicator status-warning';
+                }
+                
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Toggle quick actions
+        function toggleQuickActions() {
+            const quickActions = document.getElementById('quick-actions');
+            const btn = document.querySelector('.floating-btn');
+            
+            if (quickActions.classList.contains('show')) {
+                quickActions.classList.remove('show');
+                btn.style.transform = 'rotate(0deg)';
+            } else {
+                quickActions.classList.add('show');
+                btn.style.transform = 'rotate(45deg)';
+            }
+        }
+
+        // Load statistics
+        function loadStatistics() {
+            // Simulate loading statistics
+            document.getElementById('total-documents').textContent = '1,247';
+            document.getElementById('total-queries').textContent = '3,891';
+            document.getElementById('total-research').textContent = '156';
+            document.getElementById('system-uptime').textContent = '99.9%';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemHealth();
+            loadStatistics();
+        });
+    </script>
+</body>
+</html>

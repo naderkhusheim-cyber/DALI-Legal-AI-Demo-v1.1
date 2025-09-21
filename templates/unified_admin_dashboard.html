@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --admin-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --info-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            color: #374151;
+        }
+
+        .navbar {
+            background: var(--admin-gradient);
+            box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: white !important;
+            transform: translateY(-1px);
+        }
+
+        .hero-section {
+            background: var(--admin-gradient);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            max-width: 600px;
+            margin: 0 auto 30px auto;
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid #e5e7eb;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+
+        .admin-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .admin-icon.users { background: var(--admin-gradient); }
+        .admin-icon.analytics { background: var(--success-gradient); }
+        .admin-icon.system { background: var(--warning-gradient); }
+        .admin-icon.logs { background: var(--info-gradient); }
+
+        .stats-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 5px;
+        }
+
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+
+        .admin-btn {
+            background: var(--admin-gradient);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .admin-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            color: white;
+        }
+
+        .user-table {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+            border: none;
+            padding: 15px;
+        }
+
+        .table td {
+            padding: 15px;
+            border-color: #f3f4f6;
+        }
+
+        .table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .role-user {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+
+        .activity-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .activity-item:hover {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: white;
+        }
+
+        .activity-icon.user { background: var(--admin-gradient); }
+        .activity-icon.system { background: var(--success-gradient); }
+        .activity-icon.warning { background: var(--warning-gradient); }
+        .activity-icon.info { background: var(--info-gradient); }
+
+        .system-status {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+        }
+
+        .modal-header {
+            background: var(--admin-gradient);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/unified-admin-dashboard">
+                <i class="fas fa-crown me-2"></i>
+                DALI Admin Panel
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/unified-admin-dashboard">
+                            <i class="fas fa-home me-1"></i>Admin Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openAdminFeature('users')">
+                            <i class="fas fa-users me-1"></i>User Management
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openAdminFeature('analytics')">
+                            <i class="fas fa-chart-line me-1"></i>Analytics
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openAdminFeature('system')">
+                            <i class="fas fa-cog me-1"></i>System Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="openAdminFeature('logs')">
+                            <i class="fas fa-file-alt me-1"></i>System Logs
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/unified-user-dashboard">
+                            <i class="fas fa-user me-1"></i>User View
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/api/docs" target="_blank">
+                            <i class="fas fa-book me-1"></i>API Docs
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="fas fa-sign-out-alt me-1"></i>Logout
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <h1 class="hero-title">Admin Dashboard</h1>
+            <p class="hero-subtitle">Manage users, monitor system health, and oversee all DALI Legal AI operations</p>
+            <a href="#" class="admin-btn" onclick="openAdminFeature('users')">
+                <i class="fas fa-users me-2"></i>Manage Users
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- System Status -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="system-status">
+                    <h5 class="mb-3"><i class="fas fa-heartbeat me-2 text-danger"></i>System Status</h5>
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="ollama-status"></div>
+                                <span>Ollama AI Models</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="database-status"></div>
+                                <span>MySQL Database</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="firecrawl-status"></div>
+                                <span>Firecrawl API</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="status-indicator status-offline" id="sample-db-status"></div>
+                                <span>Sample Data</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Statistics -->
+        <div class="row mb-5">
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-users-cog fa-2x text-danger mb-3"></i>
+                    <div class="stats-number" id="total-admins">0</div>
+                    <div class="stats-label">Total Admins</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-user-check fa-2x text-success mb-3"></i>
+                    <div class="stats-number" id="total-users">0</div>
+                    <div class="stats-label">Total Users</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-chart-line fa-2x text-info mb-3"></i>
+                    <div class="stats-number" id="system-uptime">0%</div>
+                    <div class="stats-label">System Uptime</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="stats-card">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                    <div class="stats-number" id="pending-issues">0</div>
+                    <div class="stats-label">Pending Issues</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Features -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-4 text-center">Administrative Features</h3>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="admin-card">
+                    <div class="admin-icon users">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5>User Management</h5>
+                    <p>View, add, edit, and delete user accounts. Manage roles and permissions.</p>
+                    <a href="#" class="admin-btn w-100 text-center" onclick="openAdminFeature('users')">
+                        <i class="fas fa-users me-1"></i>Manage Users
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="admin-card">
+                    <div class="admin-icon analytics">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h5>System Analytics</h5>
+                    <p>Access detailed analytics on system usage, performance, and user activity.</p>
+                    <a href="#" class="admin-btn w-100 text-center" onclick="openAdminFeature('analytics')">
+                        <i class="fas fa-chart-bar me-1"></i>View Analytics
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="admin-card">
+                    <div class="admin-icon system">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <h5>System Settings</h5>
+                    <p>Configure system settings, manage configurations, and monitor system health.</p>
+                    <a href="#" class="admin-btn w-100 text-center" onclick="openAdminFeature('system')">
+                        <i class="fas fa-cog me-1"></i>System Settings
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="admin-card">
+                    <div class="admin-icon logs">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h5>System Logs</h5>
+                    <p>Monitor system logs, track activities, and troubleshoot issues.</p>
+                    <a href="#" class="admin-btn w-100 text-center" onclick="openAdminFeature('logs')">
+                        <i class="fas fa-file-alt me-1"></i>View Logs
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Users Table -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="user-table">
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Recent Users</h5>
+                            <button class="admin-btn" onclick="refreshUsers()">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Last Login</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        Loading users...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <h3 class="mb-4">Recent System Activity</h3>
+                <div id="recent-activity">
+                    <div class="activity-item">
+                        <div class="activity-icon user">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>New user registered: john.doe@example.com</strong>
+                            <small class="text-muted d-block">5 minutes ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon system">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>Database backup completed successfully</strong>
+                            <small class="text-muted d-block">1 hour ago</small>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong>High CPU usage detected on server</strong>
+                            <small class="text-muted d-block">2 hours ago</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Feature Modals -->
+    <!-- User Management Modal -->
+    <div class="modal fade" id="userManagementModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-users me-2"></i>User Management</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <button class="admin-btn" onclick="addNewUser()">
+                                <i class="fas fa-plus me-1"></i>Add New User
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search users..." id="userSearch">
+                                <button class="btn btn-outline-secondary" onclick="searchUsers()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="user-management-content">
+                        <p class="text-center text-muted">Loading user management interface...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Modal -->
+    <div class="modal fade" id="analyticsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-chart-line me-2"></i>System Analytics</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="analytics-content">
+                        <p class="text-center text-muted">Loading analytics data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Settings Modal -->
+    <div class="modal fade" id="systemSettingsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-cog me-2"></i>System Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="system-settings-content">
+                        <p class="text-center text-muted">Loading system settings...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Logs Modal -->
+    <div class="modal fade" id="systemLogsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-alt me-2"></i>System Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="system-logs-content">
+                        <p class="text-center text-muted">Loading system logs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // System Health Check
+        async function updateSystemStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+
+                document.getElementById('ollama-status').className =
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                document.getElementById('database-status').className =
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                document.getElementById('sample-db-status').className =
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+
+                const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+                const firecrawlStatus = await firecrawlResponse.json();
+                document.getElementById('firecrawl-status').className =
+                    'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+
+            } catch (error) {
+                console.error('Failed to fetch system health:', error);
+            }
+        }
+
+        // Load Admin Statistics
+        async function loadAdminStatistics() {
+            try {
+                const response = await fetch('/admin/api/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const totalUsers = data.total;
+                    const adminUsers = data.users.filter(user => user.role === 'admin').length;
+                    
+                    document.getElementById('total-users').textContent = totalUsers;
+                    document.getElementById('total-admins').textContent = adminUsers;
+                }
+                
+                // Load system info
+                const systemResponse = await fetch('/admin/system');
+                const systemData = await systemResponse.json();
+                
+                if (systemData.success) {
+                    document.getElementById('system-uptime').textContent = '98%';
+                    document.getElementById('pending-issues').textContent = '2';
+                }
+            } catch (error) {
+                console.error('Failed to load admin statistics:', error);
+            }
+        }
+
+        // Load Users Table
+        async function loadUsersTable() {
+            try {
+                const response = await fetch('/admin/api/users');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayUsersTable(data.users);
+                } else {
+                    document.getElementById('users-table-body').innerHTML = 
+                        '<tr><td colspan="6" class="text-center text-danger">Failed to load users</td></tr>';
+                }
+            } catch (error) {
+                console.error('Failed to load users:', error);
+                document.getElementById('users-table-body').innerHTML = 
+                    '<tr><td colspan="6" class="text-center text-danger">Error loading users</td></tr>';
+            }
+        }
+
+        function displayUsersTable(users) {
+            const tbody = document.getElementById('users-table-body');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No users found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.slice(0, 5).map(user => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; color: white; font-weight: 600;">
+                                ${user.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="fw-bold">${user.username}</div>
+                                <small class="text-muted">${user.email || 'No email'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="role-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                    </td>
+                    <td>
+                        <span class="status-indicator ${user.is_active ? 'status-online' : 'status-offline'}"></span>
+                        ${user.is_active ? 'Active' : 'Inactive'}
+                    </td>
+                    <td>Never</td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Admin Feature Functions
+        function openAdminFeature(feature) {
+            const modalMap = {
+                'users': 'userManagementModal',
+                'analytics': 'analyticsModal',
+                'system': 'systemSettingsModal',
+                'logs': 'systemLogsModal'
+            };
+            
+            const modal = new bootstrap.Modal(document.getElementById(modalMap[feature]));
+            modal.show();
+            
+            // Load content based on feature
+            switch(feature) {
+                case 'users':
+                    loadUsersTable();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+                case 'system':
+                    loadSystemSettings();
+                    break;
+                case 'logs':
+                    loadSystemLogs();
+                    break;
+            }
+        }
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/admin/analytics');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('analytics-content').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>User Statistics</h6>
+                                <p>Total Users: ${data.analytics.users.total}</p>
+                                <p>Active Users: ${data.analytics.users.active}</p>
+                                <p>Inactive Users: ${data.analytics.users.inactive}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>System Statistics</h6>
+                                <p>Total Documents: ${data.analytics.documents.total}</p>
+                                <p>Total Conversations: ${data.analytics.conversations.total}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('analytics-content').innerHTML = 
+                    '<p class="text-danger">Failed to load analytics data</p>';
+            }
+        }
+
+        async function loadSystemSettings() {
+            try {
+                const response = await fetch('/admin/system');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('system-settings-content').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>System Information</h6>
+                                <p>Platform: ${data.system.platform}</p>
+                                <p>Python Version: ${data.system.python_version}</p>
+                                <p>Database Status: ${data.system.database.status}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Database Information</h6>
+                                <p>Users Count: ${data.system.database.users_count}</p>
+                                <p>Uptime: ${data.system.uptime}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('system-settings-content').innerHTML = 
+                    '<p class="text-danger">Failed to load system settings</p>';
+            }
+        }
+
+        async function loadSystemLogs() {
+            try {
+                const response = await fetch('/admin/logs');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const logsHtml = data.logs.map(log => `
+                        <div class="activity-item">
+                            <div class="activity-icon info">
+                                <i class="fas fa-info"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>${log.action}</strong>
+                                <small class="text-muted d-block">${log.details} - ${new Date(log.created_at).toLocaleString()}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('system-logs-content').innerHTML = logsHtml || '<p class="text-muted">No logs available</p>';
+                }
+            } catch (error) {
+                document.getElementById('system-logs-content').innerHTML = 
+                    '<p class="text-danger">Failed to load system logs</p>';
+            }
+        }
+
+        function refreshUsers() {
+            loadUsersTable();
+        }
+
+        function addNewUser() {
+            alert('Add new user functionality would be implemented here');
+        }
+
+        function editUser(userId) {
+            alert('Edit user functionality would be implemented here for user ID: ' + userId);
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch(`/admin/api/users/${userId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('User deleted successfully');
+                        loadUsersTable();
+                    } else {
+                        alert('Failed to delete user');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting user');
+                });
+            }
+        }
+
+        function searchUsers() {
+            const query = document.getElementById('userSearch').value;
+            alert('Search users functionality would be implemented here for query: ' + query);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSystemStatus();
+            loadAdminStatistics();
+            loadUsersTable();
+            
+            // Update status every 30 seconds
+            setInterval(updateSystemStatus, 30000);
+        });
+    </script>
+</body>
+</html>

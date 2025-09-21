@@ -1,0 +1,623 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Knowledge Base - DALI Legal AI{% endblock %}
+
+{% block head %}
+<style>
+/* Knowledge Base Specific Styles */
+.knowledge-base-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.search-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.search-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.search-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-label {
+    font-weight: 500;
+    color: var(--text-color);
+    font-size: 0.875rem;
+}
+
+.filter-select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.documents-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.document-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.document-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-color: var(--primary-color);
+}
+
+.document-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.document-icon {
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
+}
+
+.document-meta {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.document-content {
+    color: var(--text-color);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.document-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.action-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: white;
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.action-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    text-decoration: none;
+}
+
+.action-btn.primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.action-btn.primary:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+.upload-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.upload-area {
+    border: 3px dashed #e5e7eb;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-icon {
+    font-size: 2rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.upload-text {
+    color: var(--text-color);
+    margin-bottom: 0.25rem;
+}
+
+.upload-subtext {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.file-input {
+    display: none;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.pagination-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background: white;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    text-decoration: none;
+}
+
+.pagination-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .search-bar {
+        flex-direction: column;
+    }
+    
+    .search-filters {
+        grid-template-columns: 1fr;
+    }
+    
+    .documents-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .document-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="knowledge-base-container">
+    <div class="chatgpt-card-header">
+        <div class="chatgpt-card-icon">
+            <i class="fas fa-database"></i>
+        </div>
+        <h1 class="chatgpt-card-title">Knowledge Base</h1>
+    </div>
+    
+    <div class="search-section">
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" 
+                   placeholder="Search documents in your knowledge base...">
+            <button type="button" class="chatgpt-btn" id="searchBtn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+        
+        <div class="search-filters">
+            <div class="filter-group">
+                <label class="filter-label">Document Type</label>
+                <select id="documentTypeFilter" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="PDF Document">PDF</option>
+                    <option value="Word Document">Word</option>
+                    <option value="Text Document">Text</option>
+                    <option value="Legal Contract">Contract</option>
+                    <option value="Legislation">Legislation</option>
+                    <option value="Case Law">Case Law</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Date Range</label>
+                <select id="dateFilter" class="filter-select">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                    <option value="year">This Year</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Sort By</label>
+                <select id="sortFilter" class="filter-select">
+                    <option value="created_at">Date Added</option>
+                    <option value="title">Title</option>
+                    <option value="document_type">Type</option>
+                    <option value="updated_at">Last Modified</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="upload-section">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="upload-text">Add Documents to Knowledge Base</div>
+            <div class="upload-subtext">Upload PDF, DOCX, TXT, MD files</div>
+            <input type="file" id="fileInput" class="file-input" multiple accept=".pdf,.docx,.doc,.txt,.md">
+        </div>
+        <button type="button" class="chatgpt-btn" id="uploadBtn" disabled>
+            <i class="fas fa-upload"></i> Upload Documents
+        </button>
+    </div>
+    
+    <div id="documentsContainer">
+        <div class="empty-state">
+            <i class="fas fa-database"></i>
+            <h5>No Documents Found</h5>
+            <p>Upload documents or adjust your search criteria</p>
+        </div>
+    </div>
+    
+    <div class="pagination" id="pagination" style="display: none;">
+        <button class="pagination-btn" id="prevBtn" disabled>
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <span id="pageInfo">Page 1 of 1</span>
+        <button class="pagination-btn" id="nextBtn" disabled>
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let totalPages = 1;
+let selectedFiles = [];
+
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const documentTypeFilter = document.getElementById('documentTypeFilter');
+const dateFilter = document.getElementById('dateFilter');
+const sortFilter = document.getElementById('sortFilter');
+
+searchBtn.addEventListener('click', performSearch);
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') performSearch();
+});
+
+// Filter change handlers
+[documentTypeFilter, dateFilter, sortFilter].forEach(filter => {
+    filter.addEventListener('change', performSearch);
+});
+
+async function performSearch() {
+    const query = searchInput.value.trim();
+    const documentType = documentTypeFilter.value;
+    const dateRange = dateFilter.value;
+    const sortBy = sortFilter.value;
+    
+    currentPage = 1;
+    await loadDocuments(query, documentType, dateRange, sortBy, currentPage);
+}
+
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFileSelect);
+uploadBtn.addEventListener('click', uploadFiles);
+
+function handleFileSelect(e) {
+    const files = Array.from(e.target.files);
+    selectedFiles = files.filter(file => isValidFile(file));
+    uploadBtn.disabled = selectedFiles.length === 0;
+}
+
+function isValidFile(file) {
+    const validTypes = ['.pdf', '.docx', '.doc', '.txt', '.md'];
+    const maxSize = 200 * 1024 * 1024; // 200MB
+    
+    const hasValidExtension = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+    const hasValidSize = file.size <= maxSize;
+    
+    if (!hasValidExtension) {
+        alert(`File ${file.name} has an unsupported format.`);
+        return false;
+    }
+    
+    if (!hasValidSize) {
+        alert(`File ${file.name} is too large. Maximum size is 200MB.`);
+        return false;
+    }
+    
+    return true;
+}
+
+async function uploadFiles() {
+    if (selectedFiles.length === 0) return;
+    
+    const formData = new FormData();
+    selectedFiles.forEach(file => {
+        formData.append('files', file);
+    });
+    
+    try {
+        const response = await fetch('/api/knowledge-base/upload', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert(`Successfully uploaded ${data.uploaded_count} documents`);
+            selectedFiles = [];
+            fileInput.value = '';
+            uploadBtn.disabled = true;
+            performSearch(); // Refresh the list
+        } else {
+            alert('Upload failed: ' + data.error);
+        }
+        
+    } catch (error) {
+        alert('Upload error: ' + error.message);
+    }
+}
+
+// Document loading
+async function loadDocuments(query = '', documentType = '', dateRange = '', sortBy = 'created_at', page = 1) {
+    const container = document.getElementById('documentsContainer');
+    
+    // Show loading
+    container.innerHTML = `
+        <div class="research-loading">
+            <div class="spinner"></div>
+            <span>Loading documents...</span>
+        </div>
+    `;
+    
+    try {
+        const params = new URLSearchParams({
+            query: query,
+            document_type: documentType,
+            date_range: dateRange,
+            sort_by: sortBy,
+            page: page,
+            limit: 12
+        });
+        
+        const response = await fetch(`/api/knowledge-base?${params}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            displayDocuments(data.documents);
+            updatePagination(data.total_count, data.page, data.total_pages);
+        } else {
+            displayError(data.error || 'Failed to load documents');
+        }
+        
+    } catch (error) {
+        displayError('Network error: ' + error.message);
+    }
+}
+
+function displayDocuments(documents) {
+    const container = document.getElementById('documentsContainer');
+    
+    if (documents.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-search"></i>
+                <h5>No Documents Found</h5>
+                <p>Try adjusting your search criteria or upload new documents</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const html = `
+        <div class="documents-grid">
+            ${documents.map(doc => `
+                <div class="document-card" onclick="viewDocument(${doc.id})">
+                    <div class="document-header">
+                        <div class="document-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="document-info">
+                            <div class="document-title">${doc.title}</div>
+                            <div class="document-meta">
+                                ${doc.document_type} • ${formatDate(doc.created_at)}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="document-content">
+                        ${doc.content ? doc.content.substring(0, 200) + '...' : 'No content preview available'}
+                    </div>
+                    <div class="document-actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); viewDocument(${doc.id})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="action-btn primary" onclick="event.stopPropagation(); shareDocument(${doc.id})">
+                            <i class="fas fa-share"></i> Share
+                        </button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+function updatePagination(totalCount, currentPageNum, totalPagesNum) {
+    const pagination = document.getElementById('pagination');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageInfo = document.getElementById('pageInfo');
+    
+    currentPage = currentPageNum;
+    totalPages = totalPagesNum;
+    
+    if (totalPages <= 1) {
+        pagination.style.display = 'none';
+        return;
+    }
+    
+    pagination.style.display = 'flex';
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+    
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            performSearch();
+        }
+    };
+    
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            performSearch();
+        }
+    };
+}
+
+function displayError(error) {
+    const container = document.getElementById('documentsContainer');
+    container.innerHTML = `
+        <div class="research-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Error:</strong> ${error}
+        </div>
+    `;
+}
+
+function viewDocument(documentId) {
+    window.open(`/document/${documentId}`, '_blank');
+}
+
+function shareDocument(documentId) {
+    // Implement document sharing functionality
+    alert('Document sharing functionality will be implemented');
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+// Load initial documents
+document.addEventListener('DOMContentLoaded', () => {
+    performSearch();
+});
+</script>
+{% endblock %}

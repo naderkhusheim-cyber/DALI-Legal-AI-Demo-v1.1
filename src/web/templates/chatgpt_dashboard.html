@@ -22,6 +22,23 @@
         
         <nav class="chatgpt-nav">
             <div class="chatgpt-nav-section">
+                <div class="chatgpt-nav-section-title">{{ t('enhanced_features') if t else 'Enhanced Features' }}</div>
+                <div class="chatgpt-nav-item">
+                    <a href="/enhanced-dashboard" class="chatgpt-nav-link {% if active_page=='enhanced-dashboard' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">⭐</span>
+                        {{ t('enhanced_dashboard') if t else 'Enhanced Dashboard' }}
+                        <span class="feature-badge">v1.2.0</span>
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/api/docs" target="_blank" class="chatgpt-nav-link">
+                        <span class="chatgpt-nav-icon">📖</span>
+                        {{ t('api_documentation') if t else 'API Documentation' }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="chatgpt-nav-section">
                 <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
                 <div class="chatgpt-nav-item">
                     <a href="/legal-research" class="chatgpt-nav-link {% if active_page=='legal-research' %}active{% endif %}">
@@ -36,9 +53,17 @@
                     </a>
                 </div>
                 <div class="chatgpt-nav-item">
-                    <a href="/knowledge-base" class="chatgpt-nav-link {% if active_page=='knowledge-base' %}active{% endif %}">
+                    <a href="/enhanced-knowledge-base" class="chatgpt-nav-link {% if active_page=='enhanced-knowledge-base' %}active{% endif %}">
                         <span class="chatgpt-nav-icon">📚</span>
+                        {{ t('enhanced_knowledge_base') if t else 'Enhanced Knowledge Base' }}
+                        <span class="feature-badge" style="margin-left: 8px;">NEW</span>
+                    </a>
+                </div>
+                <div class="chatgpt-nav-item">
+                    <a href="/knowledge-base" class="chatgpt-nav-link {% if active_page=='knowledge-base' %}active{% endif %}">
+                        <span class="chatgpt-nav-icon">📖</span>
                         {{ t('knowledge_base') if t else 'Knowledge Base' }}
+                        <span style="font-size: 0.7rem; color: #6b7280;">(Legacy)</span>
                     </a>
                 </div>
                 <div class="chatgpt-nav-item">
@@ -88,12 +113,79 @@
             ☰
         </button>
         
-        <!-- Chat Header -->
+        <!-- Enhanced Header -->
         <div class="chatgpt-header">
-            <div class="chatgpt-header-title">{{ t('welcome_title') if t else 'Welcome to DALI Legal AI' }}</div>
-            <div class="chatgpt-header-subtitle">{{ t('welcome_subtitle') if t else 'How can I help you with your legal research today?' }}</div>
+            <div class="chatgpt-header-title">
+                {{ t('welcome_title') if t else 'Welcome to DALI Legal AI' }}
+                <span class="feature-badge" style="margin-left: 15px;">Enhanced v1.2.0</span>
+            </div>
+            <div class="chatgpt-header-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal research and document analysis assistant with advanced database intelligence and web scraping capabilities' }}</div>
+            
+            <!-- System Status -->
+            <div class="system-status" style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: 600; color: #374151;">System Status</span>
+                    <button onclick="checkSystemHealth()" style="padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div id="system-status-indicators" style="display: flex; gap: 20px; font-size: 14px;">
+                    <div><span class="status-indicator status-offline" id="ollama-status"></span>Ollama AI</div>
+                    <div><span class="status-indicator status-offline" id="database-status"></span>MySQL DB</div>
+                    <div><span class="status-indicator status-offline" id="firecrawl-status"></span>Firecrawl</div>
+                    <div><span class="status-indicator status-offline" id="sample-db-status"></span>Sample Data</div>
+                </div>
+            </div>
         </div>
         
+        <!-- Enhanced Features Showcase -->
+        <div class="enhanced-features" style="margin: 30px 0;">
+            <h3 style="color: #374151; margin-bottom: 20px; font-size: 1.5rem;">
+                <i class="fas fa-star" style="color: #fbbf24; margin-right: 8px;"></i>
+                New Enhanced Features
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                <!-- Database Intelligence -->
+                <div class="feature-card" onclick="window.open('/api/docs#/knowledge-base', '_blank')" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-database" style="color: white; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #374151; font-size: 1.1rem;">Database Intelligence</h4>
+                            <span class="feature-badge">NEW</span>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 0.9rem;">Query your legal databases with natural language. Generate SQL, create charts, and analyze your practice data with AI-powered intelligence.</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Natural Language to SQL</span>
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Interactive Charts</span>
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Query History</span>
+                    </div>
+                </div>
+                
+                <!-- Web Scraping & Analysis -->
+                <div class="feature-card" onclick="window.open('/api/docs#/web-scraping', '_blank')" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-globe" style="color: white; font-size: 18px;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0; color: #374151; font-size: 1.1rem;">Web Scraping & Analysis</h4>
+                            <span class="feature-badge" style="background: #10b981;">NEW</span>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; margin: 0 0 15px 0; font-size: 0.9rem;">Extract and analyze legal content from any website. Monitor regulatory changes, research case law, and gather legal intelligence automatically.</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Firecrawl Integration</span>
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Document Extraction</span>
+                        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; color: #374151;">Content Analysis</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Search Section -->
         <div class="search-section">
             <div class="search-prompt">{{ t('what_to_search_today') if t else 'What do you want to search for today?' }}</div>
@@ -393,9 +485,44 @@ function filterByCategory(category) {
     console.log('Filtering by category:', category);
 }
 
+// System Health Check
+async function checkSystemHealth() {
+    try {
+        const response = await fetch('/api/health');
+        const health = await response.json();
+        
+        // Update status indicators
+        document.getElementById('ollama-status').className = 
+            'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('database-status').className = 
+            'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+        
+        document.getElementById('sample-db-status').className = 
+            'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+        
+        // Check Firecrawl
+        try {
+            const firecrawlResponse = await fetch('/api/web-scraping/test-firecrawl');
+            const firecrawlStatus = await firecrawlResponse.json();
+            
+            document.getElementById('firecrawl-status').className = 
+                'status-indicator ' + (firecrawlStatus.firecrawl_available ? 'status-online' : 'status-warning');
+        } catch (e) {
+            document.getElementById('firecrawl-status').className = 'status-indicator status-warning';
+        }
+        
+    } catch (error) {
+        console.error('Health check failed:', error);
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('chatInput').focus();
+    
+    // Load system status
+    checkSystemHealth();
     
     // Close sidebar on mobile when clicking outside
     document.addEventListener('click', function(event) {

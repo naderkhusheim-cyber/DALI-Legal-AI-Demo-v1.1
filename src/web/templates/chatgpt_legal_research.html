@@ -1,361 +1,542 @@
 {% extends "chatgpt_base.html" %}
-{% block title %}{{ t('legal_research') if t else 'Legal Research' }} - DALI Legal AI{% endblock %}
+{% block title %}Legal Research - DALI Legal AI{% endblock %}
 
 {% block head %}
 <link rel="stylesheet" href="/static/chatgpt-ui.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Legal Research Styles */
+.legal-research-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 15px 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-subtitle {
+    font-size: 1.1rem;
+    color: #6b7280;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.research-container {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.form-input, .form-textarea, .form-select {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+    color: #374151;
+    font-family: inherit;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.6;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.checkbox-container input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #667eea;
+}
+
+.checkbox-container label {
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+}
+
+.submit-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 18px 40px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    width: 100%;
+    margin-top: 10px;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.results-container {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+    display: none;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f3f4f6;
+}
+
+.results-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.results-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.action-btn {
+    padding: 12px 24px;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+    transform: translateY(-1px);
+}
+
+.action-btn.primary {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.action-btn.primary:hover {
+    background: #5a67d8;
+    color: white;
+}
+
+.result-content {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+    line-height: 1.7;
+    font-size: 1rem;
+    color: #374151;
+    white-space: pre-wrap;
+}
+
+.result-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.message-container {
+    margin-bottom: 20px;
+}
+
+.success-message {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #a7f3d0;
+    font-weight: 500;
+    text-align: center;
+}
+
+.error-message {
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #fca5a5;
+    font-weight: 500;
+    text-align: center;
+}
+
+.loading-container {
+    text-align: center;
+    padding: 40px;
+    display: none;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    color: #6b7280;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .legal-research-page {
+        padding: 15px;
+    }
+    
+    .page-header {
+        padding: 20px;
+    }
+    
+    .page-title {
+        font-size: 2rem;
+    }
+    
+    .research-container, .results-container {
+        padding: 25px;
+    }
+    
+    .results-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.quick-action-btn {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: #374151;
+}
+
+.quick-action-btn:hover {
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.quick-action-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.quick-action-title {
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.quick-action-desc {
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="chatgpt-layout chatgpt-legal-research">
-    <!-- ChatGPT-Style Sidebar -->
-    <aside class="chatgpt-sidebar" id="sidebar">
-        <div class="chatgpt-sidebar-header">
-            <div class="chatgpt-sidebar-title">⚖️ DALI Legal AI</div>
-            <div class="chatgpt-sidebar-subtitle">{{ t('welcome_subtitle') if t else 'Your intelligent legal assistant' }}</div>
+<div class="legal-research-page">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 class="page-title">🔍 Legal Research</h1>
+        <p class="page-subtitle">Get intelligent answers about Saudi Arabian law, regulations, and legal precedents from our comprehensive legal database.</p>
         </div>
         
-        <button class="chatgpt-new-chat-btn" onclick="startNewResearch()">
-            <span>+</span>
-            {{ t('new_research') if t else 'New Research' }}
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <button class="quick-action-btn" onclick="askQuestion('What are the labor law requirements in Saudi Arabia?')">
+            <span class="quick-action-icon">👥</span>
+            <div class="quick-action-title">Labor Law</div>
+            <div class="quick-action-desc">Employment regulations and worker rights</div>
         </button>
-        
-        <nav class="chatgpt-nav">
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('legal_tools') if t else 'Legal Tools' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🏠</span>
-                        {{ t('dashboard') if t else 'Dashboard' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/legal-research" class="chatgpt-nav-link active">
-                        <span class="chatgpt-nav-icon">🔍</span>
-                        {{ t('legal_research') if t else 'Legal Research' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/document-analysis" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">📄</span>
-                        {{ t('document_analysis') if t else 'Document Analysis' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/knowledge-base" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">📚</span>
-                        {{ t('knowledge_base') if t else 'Knowledge Base' }}
-                    </a>
-                </div>
-                <div class="chatgpt-nav-item">
-                    <a href="/web-research" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">🌐</span>
-                        {{ t('web_research') if t else 'Web Research' }}
-                    </a>
-                </div>
+        <button class="quick-action-btn" onclick="askQuestion('What are the business registration requirements in Saudi Arabia?')">
+            <span class="quick-action-icon">💼</span>
+            <div class="quick-action-title">Business Law</div>
+            <div class="quick-action-desc">Company formation and regulations</div>
+        </button>
+        <button class="quick-action-btn" onclick="askQuestion('What are the tax laws and regulations in Saudi Arabia?')">
+            <span class="quick-action-icon">💰</span>
+            <div class="quick-action-title">Tax Law</div>
+            <div class="quick-action-desc">Tax obligations and compliance</div>
+        </button>
+        <button class="quick-action-btn" onclick="askQuestion('What are the intellectual property laws in Saudi Arabia?')">
+            <span class="quick-action-icon">🧠</span>
+            <div class="quick-action-title">IP Law</div>
+            <div class="quick-action-desc">Patents, trademarks, and copyrights</div>
+        </button>
+    </div>
+
+    <!-- Research Form -->
+    <div class="research-container">
+        <form id="legalResearchForm" method="POST" action="/legal-research">
+            <div class="form-group">
+                <label for="query" class="form-label">Your Legal Question</label>
+                <textarea 
+                    id="query" 
+                    name="query" 
+                    class="form-textarea" 
+                    placeholder="Ask your legal question here... (e.g., What are the requirements for starting a business in Saudi Arabia?)"
+                    required
+                >{{ query if query else '' }}</textarea>
             </div>
             
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('account') if t else 'Account' }}</div>
-                <div class="chatgpt-nav-item">
-                    <a href="/settings" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">⚙️</span>
-                        {{ t('settings') if t else 'Settings' }}
-                    </a>
-                </div>
-                {% if user and user.role == 'admin' %}
-                <div class="chatgpt-nav-item">
-                    <a href="/admin/dashboard" class="chatgpt-nav-link">
-                        <span class="chatgpt-nav-icon">👑</span>
-                        {{ t('admin_panel') if t else 'Admin Panel' }}
-                    </a>
-                </div>
-                {% endif %}
+            <div class="form-group">
+                <label for="jurisdiction" class="form-label">Jurisdiction</label>
+                <select id="jurisdiction" name="jurisdiction" class="form-select">
+                    <option value="Saudi Arabia" {% if jurisdiction == 'Saudi Arabia' %}selected{% endif %}>🇸🇦 Saudi Arabia</option>
+                    <option value="UAE" {% if jurisdiction == 'UAE' %}selected{% endif %}>🇦🇪 United Arab Emirates</option>
+                    <option value="Kuwait" {% if jurisdiction == 'Kuwait' %}selected{% endif %}>🇰🇼 Kuwait</option>
+                    <option value="Qatar" {% if jurisdiction == 'Qatar' %}selected{% endif %}>🇶🇦 Qatar</option>
+                    <option value="Bahrain" {% if jurisdiction == 'Bahrain' %}selected{% endif %}>🇧🇭 Bahrain</option>
+                    <option value="Oman" {% if jurisdiction == 'Oman' %}selected{% endif %}>🇴🇲 Oman</option>
+                </select>
             </div>
-        </nav>
-        
-        <!-- Conversation History -->
-        <div class="chatgpt-conversation-history" id="conversationHistory">
-            <div class="chatgpt-nav-section">
-                <div class="chatgpt-nav-section-title">{{ t('recent_research') if t else 'Recent Research' }}</div>
-                <div id="conversationList" class="chatgpt-conversation-list">
-                    <!-- Conversations will be loaded here -->
-                </div>
+
+            <div class="checkbox-container">
+                <input type="checkbox" id="include_web_search" name="include_web_search" {% if include_web_search %}checked{% endif %}>
+                <label for="include_web_search">Include web search for additional information</label>
             </div>
-        </div>
-        
-        {% if user %}
-        <div class="chatgpt-user-info">
-            <div class="chatgpt-user-greeting">{{ t('hello') if t else 'Hello' }}, {{ user.greeting_name or user.username }}</div>
-            <div class="chatgpt-user-role">{{ t('role_' + user.role) if t else user.role.title() }}</div>
-            <form method="get" action="/logout">
-                <button type="submit" class="chatgpt-logout-btn">
-                    {{ t('logout') if t else 'Logout' }}
+
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span id="submitText">🔍 Start Research</span>
+                <span id="submitLoading" style="display: none;">⏳ Researching...</span>
+            </button>
+            
+            <!-- Fallback for when JavaScript fails -->
+            <noscript>
+                <button type="submit" class="submit-btn" style="margin-top: 10px;">
+                    🔍 Submit Research (No JavaScript)
                 </button>
+            </noscript>
             </form>
         </div>
-        {% endif %}
-    </aside>
-    
-    <!-- Main Legal Research Interface -->
-    <main class="chatgpt-main">
-        <!-- Mobile Menu Button -->
-        <button class="chatgpt-mobile-menu" onclick="toggleSidebar()">
-            ☰
-        </button>
-        
-        <!-- Research Header -->
-        <div class="chatgpt-header">
-            <div class="chatgpt-header-title">{{ t('legal_research') if t else 'Legal Research' }}</div>
-            <div class="chatgpt-header-subtitle">{{ t('legal_research_subtitle') if t else 'Ask questions about Saudi Arabian law and get intelligent answers' }}</div>
+
+    <!-- Loading Container -->
+    <div class="loading-container" id="loadingContainer">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Researching legal information...</div>
         </div>
         
-        <!-- Welcome Screen -->
-        <div class="chatgpt-welcome" id="welcomeScreen">
-            <div class="chatgpt-welcome-icon">🔍</div>
-            <h1 class="chatgpt-welcome-title">{{ t('legal_research') if t else 'Legal Research' }}</h1>
-            <p class="chatgpt-welcome-subtitle">{{ t('legal_research_description') if t else 'Ask questions about Saudi Arabian law, regulations, and legal precedents. Get intelligent answers based on our comprehensive legal database.' }}</p>
-            
-            <div class="chatgpt-welcome-actions">
-                <button class="chatgpt-action-btn" onclick="askQuestion('What are the requirements for starting a business in Saudi Arabia?')">
-                    💼 {{ t('business_law') if t else 'Business Law' }}
+    <!-- Results Container -->
+    <div class="results-container" id="resultsContainer">
+        <div class="results-header">
+            <h2 class="results-title">Research Results</h2>
+            <div class="results-actions">
+                <button class="action-btn" onclick="startNewResearch()">
+                    🔄 New Research
                 </button>
-                <button class="chatgpt-action-btn" onclick="askQuestion('What are the labor law requirements in Saudi Arabia?')">
-                    👥 {{ t('labor_law') if t else 'Labor Law' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="askQuestion('What are the tax regulations in Saudi Arabia?')">
-                    💰 {{ t('tax_law') if t else 'Tax Law' }}
-                </button>
-                <button class="chatgpt-action-btn" onclick="askQuestion('What are the intellectual property laws in Saudi Arabia?')">
-                    🧠 {{ t('ip_law') if t else 'Intellectual Property' }}
+                <button class="action-btn" onclick="window.location.href='/dashboard'">
+                    🏠 Dashboard
                 </button>
             </div>
         </div>
+        <div id="resultsContent">
+            <!-- Results will be displayed here -->
+            </div>
+        </div>
         
-        <!-- Research Result Display (for form submissions) -->
+    <!-- Message Container -->
+    <div id="messageContainer" class="message-container">
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
         {% if research_result %}
-        <div class="chatgpt-research-result" id="researchResult" data-conversation-id="{{ conversation_id }}">
-            <div class="chatgpt-research-header">
-                <h2>{{ t('research_result') if t else 'Research Result' }}</h2>
-                <p class="chatgpt-research-query">{{ t('query') if t else 'Query' }}: {{ query }}</p>
-            </div>
-            <div class="chatgpt-research-content">
-                <div class="legal-research-result">{{ research_result }}</div>
-            </div>
-        </div>
+            <div class="success-message">✅ Research completed successfully!</div>
         {% endif %}
-        
-        <!-- Chat Messages Area -->
-        <div class="chatgpt-messages" id="chatMessages" style="display: none;">
-            <!-- Messages will be dynamically added here -->
         </div>
-        
-        <!-- Input Area -->
-        <div class="chatgpt-input-area">
-            <div class="chatgpt-input-container">
-                <textarea 
-                    class="chatgpt-input" 
-                    id="chatInput" 
-                    placeholder="{{ t('ask_legal_question') if t else 'Ask your legal question here...' }}"
-                    rows="1"
-                    onkeydown="handleKeyDown(event)"
-                    oninput="autoResize(this)"
-                ></textarea>
-                <button class="chatgpt-voice-btn" id="voiceBtn" onclick="toggleVoiceRecording()" title="{{ t('voice_input') if t else 'Voice Input' }}">
-                    🎤
-                </button>
-                <button class="chatgpt-send-btn" id="sendBtn" onclick="sendMessage()">
-                    ➤
-                </button>
-            </div>
-            <div id="voice-status" class="voice-status" style="display: none;">
-                <span id="voice-status-text">{{ t('listening') if t else 'Listening...' }}</span>
-                <button class="voice-stop-btn" onclick="stopVoiceRecording()">⏹️</button>
-            </div>
-        </div>
-    </main>
 </div>
 
 <script>
-let currentResearchId = null;
-let currentConversationId = null;
-let isTyping = false;
-let isRecording = false;
-let recognition = null;
+let isResearching = false;
 
-// Voice-to-Text Functions
-function initializeSpeechRecognition() {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US'; // Default to English, can be changed based on user preference
-        
-        recognition.onstart = function() {
-            isRecording = true;
-            document.getElementById('voiceBtn').classList.add('recording');
-            document.getElementById('voiceBtn').innerHTML = '🔴';
-            document.getElementById('voice-status').style.display = 'flex';
-            document.getElementById('voice-status-text').textContent = '{{ t("listening") if t else "Listening..." }}';
-        };
-        
-        recognition.onresult = function(event) {
-            let interimTranscript = '';
-            let finalTranscript = '';
-            
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalTranscript += transcript;
-                } else {
-                    interimTranscript += transcript;
-                }
-            }
-            
-            // Update the input field with interim results
-            const chatInput = document.getElementById('chatInput');
-            if (interimTranscript) {
-                chatInput.value = finalTranscript + interimTranscript;
-                autoResize(chatInput);
-            }
-            
-            // If we have final results, use them
-            if (finalTranscript) {
-                chatInput.value = finalTranscript;
-                autoResize(chatInput);
-            }
-        };
-        
-        recognition.onerror = function(event) {
-            console.error('Speech recognition error:', event.error);
-            stopVoiceRecording();
-            alert('{{ t("voice_recognition_error") if t else "Voice recognition error. Please try again." }}');
-        };
-        
-        recognition.onend = function() {
-            stopVoiceRecording();
-        };
-    } else {
-        console.warn('Speech recognition not supported');
-        alert('{{ t("voice_not_supported") if t else "Voice recognition is not supported in this browser." }}');
-    }
-}
-
-function toggleVoiceRecording() {
-    if (!recognition) {
-        initializeSpeechRecognition();
+// Form submission handling
+document.getElementById('legalResearchForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const query = document.getElementById('query').value.trim();
+    const jurisdiction = document.getElementById('jurisdiction').value;
+    const includeWebSearch = document.getElementById('include_web_search').checked;
+    
+    if (!query) {
+        showMessage('Please enter a legal question.', 'error');
+        return;
     }
     
-    if (isRecording) {
-        stopVoiceRecording();
-    } else {
-        startVoiceRecording();
-    }
-}
-
-function startVoiceRecording() {
-    if (recognition) {
-        try {
-            recognition.start();
-        } catch (error) {
-            console.error('Error starting voice recognition:', error);
-            alert('{{ t("error_starting_voice") if t else "Error starting voice recognition. Please try again." }}');
-        }
-    }
-}
-
-function stopVoiceRecording() {
-    if (recognition && isRecording) {
-        recognition.stop();
+    if (isResearching) {
+        return;
     }
     
-    isRecording = false;
-    document.getElementById('voiceBtn').classList.remove('recording');
-    document.getElementById('voiceBtn').innerHTML = '🎤';
-    document.getElementById('voice-status').style.display = 'none';
-}
-
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('open');
-}
-
-function startNewResearch() {
-    currentResearchId = null;
-    document.getElementById('welcomeScreen').style.display = 'flex';
-    document.getElementById('chatMessages').style.display = 'none';
-    document.getElementById('chatInput').value = '';
-    document.getElementById('chatInput').focus();
-}
-
-function askQuestion(question) {
-    document.getElementById('chatInput').value = question;
-    sendMessage();
-}
-
-function autoResize(textarea) {
-    textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
-}
-
-function handleKeyDown(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        sendMessage();
-    }
-}
-
-function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
+    isResearching = true;
+    showLoading();
     
-    if (!message || isTyping) return;
-    
-    // Hide welcome screen and show messages
-    document.getElementById('welcomeScreen').style.display = 'none';
-    document.getElementById('chatMessages').style.display = 'flex';
-    
-    // Add user message
-    addMessage('user', message);
-    
-    // Clear input
-    input.value = '';
-    input.style.height = 'auto';
-    
-    // Show typing indicator
-    showTypingIndicator();
-    
-    // Send to legal research API with conversation ID
     const formData = new FormData();
-    formData.append('query', message);
-    formData.append('jurisdiction', 'Saudi Arabia');
-    formData.append('include_web_search', '');
-    if (currentConversationId) {
-        formData.append('conversation_id', currentConversationId);
+    formData.append('query', query);
+    formData.append('jurisdiction', jurisdiction);
+    if (includeWebSearch) {
+        formData.append('include_web_search', 'on');
     }
     
     fetch('/legal-research', {
         method: 'POST',
-        body: formData
+        body: formData,
+        credentials: 'same-origin'  // Include cookies/session
     })
-    .then(response => response.text())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (response.status === 200) {
+            return response.text();
+        } else if (response.status === 303) {
+            // Handle redirect to login
+            window.location.href = '/login';
+            return;
+        } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+    })
     .then(html => {
-        hideTypingIndicator();
-        // Extract the answer from the response
+        console.log('Legal research response received, length:', html.length);
+        console.log('Response preview:', html.substring(0, 500) + '...');
+        
+        // Parse the response to extract research results
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         
-        // Extract conversation ID from the response
-        const conversationIdElement = doc.querySelector('[data-conversation-id]');
-        if (conversationIdElement) {
-            currentConversationId = conversationIdElement.getAttribute('data-conversation-id');
-        }
+        // Look for the research result
+        let researchResult = null;
         
-        // Look for research result in various possible locations
-        let answer = 'I found some relevant information, but there was an issue processing the response.';
-        
+        // Check if we got redirected to login page
+        if (html.includes('Login - DALI Legal AI') || html.includes('loginForm')) {
+            researchResult = 'Authentication session expired. Please refresh the page and try again. If the problem persists, please log out and log back in.';
+        } else if (html.includes('research_result') || html.includes('Research Results')) {
+            // Look for server-rendered research result
+            const serverResult = doc.querySelector('.result-content');
+            if (serverResult && serverResult.textContent.trim()) {
+                researchResult = serverResult.textContent.trim();
+            } else {
+                // Try to find any meaningful content in the response
+                const bodyText = doc.body.textContent.trim();
+                const lines = bodyText.split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    return trimmed.length > 50 && 
+                           !trimmed.includes('DALI Legal AI') && 
+                           !trimmed.includes('Navigation') &&
+                           !trimmed.includes('Settings') &&
+                           !trimmed.includes('Legal Research') &&
+                           !trimmed.includes('Ask Your Legal Question') &&
+                           !trimmed.includes('Enter your legal question') &&
+                           !trimmed.includes('Jurisdiction') &&
+                           !trimmed.includes('Include web search') &&
+                           !trimmed.includes('Start Research') &&
+                           !trimmed.includes('Get intelligent answers about Saudi Arabian law');
+                });
+                
+                if (lines.length > 0) {
+                    researchResult = lines[0].trim();
+                }
+            }
+        } else {
         // Try different selectors that might contain the research result
         const resultSelectors = [
             '.legal-research-result',
@@ -363,305 +544,189 @@ function sendMessage() {
             '.result',
             '.answer',
             '.response',
-            'p',
-            '.content'
+                '#resultsContent',
+                '.result-content',
+                'p'
         ];
         
         for (const selector of resultSelectors) {
             const element = doc.querySelector(selector);
             if (element && element.textContent.trim()) {
-                answer = element.textContent.trim();
+                    const text = element.textContent.trim();
+                    // Skip generic placeholder text
+                    if (!text.includes('Get intelligent answers about Saudi Arabian law') && 
+                        !text.includes('Ask your legal question here') &&
+                        text.length > 20) {
+                        researchResult = text;
                 break;
+                    }
             }
         }
         
         // If no specific result found, look for any meaningful content
-        if (answer.includes('issue processing')) {
+            if (!researchResult) {
             const bodyText = doc.body.textContent.trim();
-            if (bodyText && bodyText.length > 50) {
-                // Extract meaningful content (skip navigation, headers, etc.)
-                const lines = bodyText.split('\n').filter(line => 
-                    line.trim().length > 20 && 
-                    !line.includes('DALI') && 
-                    !line.includes('Navigation') && 
-                    !line.includes('Settings')
-                );
+                const lines = bodyText.split('\n').filter(line => {
+                    const trimmed = line.trim();
+                    return trimmed.length > 50 && 
+                           !trimmed.includes('DALI Legal AI') && 
+                           !trimmed.includes('Navigation') &&
+                           !trimmed.includes('Settings') &&
+                           !trimmed.includes('Legal Research') &&
+                           !trimmed.includes('Ask Your Legal Question') &&
+                           !trimmed.includes('Enter your legal question') &&
+                           !trimmed.includes('Jurisdiction') &&
+                           !trimmed.includes('Include web search') &&
+                           !trimmed.includes('Start Research') &&
+                           !trimmed.includes('Get intelligent answers about Saudi Arabian law');
+                });
+                
                 if (lines.length > 0) {
-                    answer = lines[0].trim();
+                    researchResult = lines[0].trim();
                 }
             }
         }
         
-        addMessage('assistant', answer);
+        // Final fallback
+        if (!researchResult) {
+            // Show a test response to verify the display is working
+            researchResult = `Test Response: I received your question "${query}" but was unable to parse the server response properly. This indicates there might be an issue with the response parsing. The server might be working, but the JavaScript is not extracting the result correctly.
+
+Debug Information:
+- Response length: ${html.length} characters
+- Contains 'research_result': ${html.includes('research_result')}
+- Contains 'Research Results': ${html.includes('Research Results')}
+- Contains login form: ${html.includes('loginForm')}
+
+Please check the browser console for more details.`;
+        }
         
-        // Refresh conversation list
-        loadConversations();
+        displayResults(researchResult);
     })
     .catch(error => {
-        hideTypingIndicator();
-        addMessage('assistant', 'I apologize, but I encountered an error while searching for legal information. Please try again.');
         console.error('Error:', error);
+        showMessage('Error researching legal information. Please try again.', 'error');
+    })
+    .finally(() => {
+        isResearching = false;
+        hideLoading();
     });
+});
+
+function askQuestion(question) {
+    document.getElementById('query').value = question;
+    document.getElementById('legalResearchForm').dispatchEvent(new Event('submit'));
 }
 
-function formatMessage(text) {
-    // Convert the text to HTML with proper formatting
-    let formatted = text
-        // Convert numbered lists (1. **text**: description)
-        .replace(/(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*?)(?=\d+\.\s*\*\*|$)/gs, (match, num, title, desc) => {
-            return `<div class="chatgpt-list-item">
-                <div class="chatgpt-list-number">${num}.</div>
-                <div class="chatgpt-list-content">
-                    <div class="chatgpt-list-title">${title}</div>
-                    <div class="chatgpt-list-description">${desc.trim()}</div>
-                </div>
-            </div>`;
-        })
-        // Convert bold text **text** to <strong>text</strong>
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Convert line breaks to <br>
-        .replace(/\n/g, '<br>')
-        // Convert double line breaks to paragraph breaks
-        .replace(/(<br>\s*){2,}/g, '</p><p>')
-        // Wrap in paragraph tags
-        .replace(/^(.*)$/, '<p>$1</p>')
-        // Clean up empty paragraphs
-        .replace(/<p><\/p>/g, '')
-        .replace(/<p><br><\/p>/g, '');
-    
-    return formatted;
+function showLoading() {
+    document.getElementById('loadingContainer').style.display = 'block';
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitText').style.display = 'none';
+    document.getElementById('submitLoading').style.display = 'inline';
 }
 
-function addMessage(sender, text) {
-    const messagesContainer = document.getElementById('chatMessages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'chatgpt-message';
-    
-    const avatar = document.createElement('div');
-    avatar.className = `chatgpt-message-avatar ${sender}`;
-    avatar.textContent = sender === 'user' ? 'U' : 'AI';
-    
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const textDiv = document.createElement('div');
-    textDiv.className = 'chatgpt-message-text';
-    
-    if (sender === 'assistant') {
-        // Format AI responses with proper HTML
-        textDiv.innerHTML = formatMessage(text);
-    } else {
-        // Keep user messages as plain text
-        textDiv.textContent = text;
-    }
-    
-    const metaDiv = document.createElement('div');
-    metaDiv.className = 'chatgpt-message-meta';
-    metaDiv.textContent = new Date().toLocaleTimeString();
-    
-    content.appendChild(textDiv);
-    content.appendChild(metaDiv);
-    
-    messageDiv.appendChild(avatar);
-    messageDiv.appendChild(content);
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+function hideLoading() {
+    document.getElementById('loadingContainer').style.display = 'none';
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitText').style.display = 'inline';
+    document.getElementById('submitLoading').style.display = 'none';
 }
 
-function showTypingIndicator() {
-    isTyping = true;
-    const messagesContainer = document.getElementById('chatMessages');
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'chatgpt-message';
-    typingDiv.id = 'typingIndicator';
+function displayResults(result) {
+    const resultsContent = document.getElementById('resultsContent');
     
-    const avatar = document.createElement('div');
-    avatar.className = 'chatgpt-message-avatar assistant';
-    avatar.textContent = 'AI';
-    
-    const content = document.createElement('div');
-    content.className = 'chatgpt-message-content';
-    
-    const typingContent = document.createElement('div');
-    typingContent.className = 'chatgpt-typing';
-    typingContent.innerHTML = `
-        <span>AI is researching...</span>
-        <div class="chatgpt-typing-dots">
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
-            <div class="chatgpt-typing-dot"></div>
+    resultsContent.innerHTML = `
+        <div class="result-content">
+            ${result}
         </div>
-    `;
-    
-    content.appendChild(typingContent);
-    
-    typingDiv.appendChild(avatar);
-    typingDiv.appendChild(content);
-    
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-}
-
-function hideTypingIndicator() {
-    isTyping = false;
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-        typingIndicator.remove();
-    }
-}
-
-// Conversation Management Functions
-function loadConversations() {
-    fetch('/api/conversations')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to load conversations');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const conversationList = document.getElementById('conversationList');
-            conversationList.innerHTML = '';
-            
-            if (data.conversations && data.conversations.length > 0) {
-                data.conversations.forEach(conversation => {
-                    const conversationItem = document.createElement('div');
-                    conversationItem.className = 'chatgpt-conversation-item';
-                    conversationItem.setAttribute('data-conversation-id', conversation.id);
-                    
-                    if (conversation.id == currentConversationId) {
-                        conversationItem.classList.add('active');
-                    }
-                    
-                    conversationItem.innerHTML = `
-                        <div class="chatgpt-conversation-title">${conversation.title}</div>
-                        <div class="chatgpt-conversation-actions">
-                            <button class="chatgpt-conversation-action" onclick="loadConversation(${conversation.id})" title="Load Conversation">
-                                📂
+        <div class="result-actions">
+            <button class="action-btn" onclick="copyToClipboard('${result.replace(/'/g, "\\'")}')">
+                📋 Copy Result
                             </button>
-                            <button class="chatgpt-conversation-action delete" onclick="deleteConversation(${conversation.id})" title="Delete Conversation">
-                                🗑️
+            <button class="action-btn primary" onclick="addToKnowledgeBase('Legal Research Result', '${result.replace(/'/g, "\\'")}', 'Legal Research')">
+                📚 Add to Knowledge Base
                             </button>
                         </div>
                     `;
                     
-                    conversationItem.addEventListener('click', (e) => {
-                        if (!e.target.closest('.chatgpt-conversation-action')) {
-                            loadConversation(conversation.id);
-                        }
-                    });
-                    
-                    conversationList.appendChild(conversationItem);
-                });
-            } else {
-                // Show empty state
-                conversationList.innerHTML = '<div class="chatgpt-conversation-empty">No conversations yet</div>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading conversations:', error);
-            const conversationList = document.getElementById('conversationList');
-            conversationList.innerHTML = '<div class="chatgpt-conversation-empty">Conversations unavailable</div>';
-        });
-}
-
-function loadConversation(conversationId) {
-    currentConversationId = conversationId;
-    
-    // Update active conversation in sidebar
-    document.querySelectorAll('.chatgpt-conversation-item').forEach(item => {
-        item.classList.remove('active');
+    document.getElementById('resultsContainer').style.display = 'block';
+    document.getElementById('resultsContainer').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
     });
-    document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
-    
-    // Load conversation messages
-    fetch(`/api/conversations/${conversationId}/messages`)
-        .then(response => response.json())
-        .then(data => {
-            // Clear current messages
-            const messagesContainer = document.getElementById('chatMessages');
-            messagesContainer.innerHTML = '';
-            
-            // Hide welcome screen and show messages
-            document.getElementById('welcomeScreen').style.display = 'none';
-            document.getElementById('chatMessages').style.display = 'flex';
-            
-            // Add all messages
-            data.messages.forEach(message => {
-                addMessage(message.sender_type, message.message);
-            });
-        })
-        .catch(error => {
-            console.error('Error loading conversation:', error);
-        });
 }
 
-function deleteConversation(conversationId) {
-    if (confirm('Are you sure you want to delete this conversation?')) {
-        fetch(`/api/conversations/${conversationId}`, {
-            method: 'DELETE'
+function showMessage(message, type) {
+    const messageContainer = document.getElementById('messageContainer');
+    const messageClass = type === 'error' ? 'error-message' : 'success-message';
+    messageContainer.innerHTML = `<div class="${messageClass}">${message}</div>`;
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        messageContainer.innerHTML = '';
+    }, 5000);
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showMessage('Result copied to clipboard!', 'success');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        showMessage('Failed to copy result', 'error');
+    });
+}
+
+function addToKnowledgeBase(title, content, source) {
+    fetch('/api/knowledge-base/add-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: title,
+            content: content,
+            document_type: 'legal_research',
+            source: source
+        })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // If we deleted the current conversation, start fresh
-                if (conversationId == currentConversationId) {
-                    currentConversationId = null;
-                    document.getElementById('welcomeScreen').style.display = 'block';
-                    document.getElementById('chatMessages').style.display = 'none';
-                    document.getElementById('chatMessages').innerHTML = '';
-                }
-                loadConversations();
+            showMessage('Result added to knowledge base successfully!', 'success');
+        } else {
+            showMessage('Error adding to knowledge base: ' + data.error, 'error');
             }
         })
         .catch(error => {
-            console.error('Error deleting conversation:', error);
+        console.error('Error:', error);
+        showMessage('Error adding to knowledge base', 'error');
         });
-    }
 }
 
 function startNewResearch() {
-    currentConversationId = null;
-    document.getElementById('welcomeScreen').style.display = 'block';
-    document.getElementById('chatMessages').style.display = 'none';
-    document.getElementById('chatMessages').innerHTML = '';
+    // Reset form
+    document.getElementById('query').value = '';
+    document.getElementById('jurisdiction').value = 'Saudi Arabia';
+    document.getElementById('include_web_search').checked = false;
     
-    // Remove active state from all conversations
-    document.querySelectorAll('.chatgpt-conversation-item').forEach(item => {
-        item.classList.remove('active');
-    });
+    // Hide results and loading
+    document.getElementById('resultsContainer').style.display = 'none';
+    document.getElementById('loadingContainer').style.display = 'none';
     
-    // Focus on input
-    document.getElementById('chatInput').focus();
+    // Clear messages
+    document.getElementById('messageContainer').innerHTML = '';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('chatInput').focus();
+    document.getElementById('query').focus();
     
-    // Try to load conversations, but don't fail if it doesn't work
-    try {
-        loadConversations();
-    } catch (error) {
-        console.log('Conversation loading disabled:', error);
-        const conversationList = document.getElementById('conversationList');
-        if (conversationList) {
-            conversationList.innerHTML = '<div class="chatgpt-conversation-empty">Conversations unavailable</div>';
-        }
-    }
-    
-    // Close sidebar on mobile when clicking outside
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const mobileMenu = document.querySelector('.chatgpt-mobile-menu');
-        
-        if (window.innerWidth <= 768 && 
-            !sidebar.contains(event.target) && 
-            !mobileMenu.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
-    });
+    // Check if there are server results and display them
+    {% if research_result %}
+        console.log('Server research result found:', '{{ research_result|length }}' + ' characters');
+        displayResults('{{ research_result|replace("'", "\\'")|replace('"', '\\"')|replace('\n', '\\n') }}');
+    {% endif %}
 });
 </script>
 {% endblock %}

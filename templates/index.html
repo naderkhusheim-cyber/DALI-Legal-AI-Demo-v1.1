@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALI Legal AI - Choose Your Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --admin-gradient: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-selector {
+            background: white;
+            border-radius: 20px;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 100%;
+            margin: 20px;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #6b7280;
+            margin-bottom: 50px;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 2px solid transparent;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+
+        .dashboard-card.user {
+            border-color: #667eea;
+        }
+
+        .dashboard-card.admin {
+            border-color: #dc2626;
+        }
+
+        .dashboard-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            margin: 0 auto 30px auto;
+        }
+
+        .dashboard-icon.user {
+            background: var(--primary-gradient);
+        }
+
+        .dashboard-icon.admin {
+            background: var(--admin-gradient);
+        }
+
+        .dashboard-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .dashboard-description {
+            color: #6b7280;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .dashboard-btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            border: none;
+            width: 100%;
+        }
+
+        .dashboard-btn.user {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .dashboard-btn.user:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .dashboard-btn.admin {
+            background: var(--admin-gradient);
+            color: white;
+        }
+
+        .dashboard-btn.admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+            color: white;
+        }
+
+        .features-list {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .features-list li {
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .features-list i {
+            color: #10b981;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-selector">
+        <div class="logo">
+            <i class="fas fa-balance-scale me-3"></i>
+            DALI Legal AI
+        </div>
+        <p class="subtitle">Choose your dashboard to access the legal AI platform</p>
+        
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="dashboard-card user">
+                    <div class="dashboard-icon user">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="dashboard-title">User Dashboard</h3>
+                    <p class="dashboard-description">
+                        Access all legal research and document analysis features. Perfect for legal professionals, researchers, and users.
+                    </p>
+                    <ul class="features-list">
+                        <li><i class="fas fa-check"></i> Legal Research with AI</li>
+                        <li><i class="fas fa-check"></i> Document Analysis</li>
+                        <li><i class="fas fa-check"></i> Web Research & Scraping</li>
+                        <li><i class="fas fa-check"></i> Knowledge Base Queries</li>
+                        <li><i class="fas fa-check"></i> Real-time System Status</li>
+                    </ul>
+                    <a href="/login" class="dashboard-btn user">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login to User Dashboard
+                    </a>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="dashboard-card admin">
+                    <div class="dashboard-icon admin">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="dashboard-title">Admin Dashboard</h3>
+                    <p class="dashboard-description">
+                        Manage users, monitor system health, and oversee all platform operations. For administrators and system managers.
+                    </p>
+                    <ul class="features-list">
+                        <li><i class="fas fa-check"></i> User Management</li>
+                        <li><i class="fas fa-check"></i> System Analytics</li>
+                        <li><i class="fas fa-check"></i> System Settings</li>
+                        <li><i class="fas fa-check"></i> Activity Logs</li>
+                        <li><i class="fas fa-check"></i> Health Monitoring</li>
+                    </ul>
+                    <a href="/login" class="dashboard-btn admin">
+                        <i class="fas fa-sign-in-alt me-2"></i>Login to Admin Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-5">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Both dashboards are fully integrated and connected to the MySQL database
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="/signup" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>Create New Account
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

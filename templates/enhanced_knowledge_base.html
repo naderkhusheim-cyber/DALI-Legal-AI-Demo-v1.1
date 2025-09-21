@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Knowledge Base - DALI Legal AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .page-header {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e5e7eb;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .feature-badge {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background-color: #10b981; }
+        .status-offline { background-color: #ef4444; }
+        .status-warning { background-color: #f59e0b; }
+        
+        .query-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: 30px 0;
+        }
+        
+        .query-input {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .query-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .query-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .results-section {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin: 30px 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .table {
+            font-size: 0.9rem;
+        }
+        
+        .table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .floating-actions {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 9999;
+        }
+        
+        .floating-toggle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .floating-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .quick-actions {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .floating-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e5e7eb;
+            color: #374151;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+        
+        .floating-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+            color: #667eea;
+            transform: scale(1.1);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-balance-scale me-2"></i>
+                DALI Legal AI - Enhanced Knowledge Base
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/dashboard">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="/enhanced-dashboard">
+                    <i class="fas fa-star me-1"></i>Enhanced Dashboard
+                </a>
+                <a class="nav-link" href="/api/docs" target="_blank">
+                    <i class="fas fa-book me-1"></i>API Docs
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header text-center">
+            <h1 class="page-title">Enhanced Knowledge Base</h1>
+            <p class="lead">AI-powered database intelligence with natural language queries, SQL generation, and interactive charts</p>
+            
+            <!-- System Status -->
+            <div class="mt-4 p-3" style="background: #f8fafc; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold text-dark">System Status</span>
+                    <button onclick="checkSystemHealth()" class="btn btn-sm" style="background: #667eea; color: white; border: none;">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div id="system-status-indicators" class="d-flex gap-4 flex-wrap">
+                    <div><span class="status-indicator status-offline" id="ollama-status"></span>Ollama AI</div>
+                    <div><span class="status-indicator status-offline" id="database-status"></span>MySQL DB</div>
+                    <div><span class="status-indicator status-offline" id="sample-db-status"></span>Sample Data</div>
+                    <div><span class="status-indicator status-offline" id="api-status"></span>API Services</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card" onclick="focusQueryInput()">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Natural Language Queries</h5>
+                            <span class="feature-badge">NEW</span>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-3">Ask questions in plain English and get SQL queries generated automatically. No technical knowledge required.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark">AI-Powered</span>
+                        <span class="badge bg-light text-dark">User-Friendly</span>
+                        <span class="badge bg-light text-dark">Smart Translation</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card" onclick="showChartExample()">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Interactive Charts</h5>
+                            <span class="feature-badge" style="background: #10b981;">NEW</span>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-3">Visualize your data with beautiful, interactive charts generated automatically from query results.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark">Visualization</span>
+                        <span class="badge bg-light text-dark">Interactive</span>
+                        <span class="badge bg-light text-dark">Auto-Generated</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card" onclick="showQueryHistory()">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Query History</h5>
+                            <span class="feature-badge" style="background: #f59e0b;">NEW</span>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-3">Track all your queries and results. Save, reuse, and share your most useful database queries.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark">Tracking</span>
+                        <span class="badge bg-light text-dark">Reusable</span>
+                        <span class="badge bg-light text-dark">Shareable</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card" onclick="showDatabaseInfo()">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-0">Database Management</h5>
+                            <span class="feature-badge" style="background: #8b5cf6;">NEW</span>
+                        </div>
+                    </div>
+                    <p class="text-muted mb-3">Connect to multiple databases, manage schemas, and explore your data structure with AI assistance.</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark">Multi-DB</span>
+                        <span class="badge bg-light text-dark">Schema Explorer</span>
+                        <span class="badge bg-light text-dark">AI Assistant</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Section -->
+        <div class="query-section">
+            <h2 class="mb-4">
+                <i class="fas fa-search me-2"></i>
+                Ask Your Database
+            </h2>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <input type="text" id="queryInput" class="form-control query-input" placeholder="e.g., Show me all clients with total value over $200,000" />
+                </div>
+                <div class="col-md-4">
+                    <button onclick="executeQuery()" class="btn query-btn w-100">
+                        <i class="fas fa-play me-1"></i>
+                        Execute Query
+                    </button>
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2 flex-wrap">
+                <button onclick="setSampleQuery('clients')" class="btn btn-outline-secondary btn-sm">Sample: Clients</button>
+                <button onclick="setSampleQuery('cases')" class="btn btn-outline-secondary btn-sm">Sample: Cases</button>
+                <button onclick="setSampleQuery('revenue')" class="btn btn-outline-secondary btn-sm">Sample: Revenue</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection" style="display: none;">
+            <h2 class="mb-4">
+                <i class="fas fa-table me-2"></i>
+                Query Results
+            </h2>
+            <div id="resultsContent">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="results-section" id="chartSection" style="display: none;">
+            <h2 class="mb-4">
+                <i class="fas fa-chart-line me-2"></i>
+                Data Visualization
+            </h2>
+            <div id="chartContent">
+                <!-- Charts will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Actions -->
+    <div class="floating-actions">
+        <div id="quick-actions" class="quick-actions">
+            <a href="/api/docs" target="_blank" class="floating-btn" title="API Documentation">
+                <i class="fas fa-book"></i>
+            </a>
+            <a href="/enhanced-dashboard" class="floating-btn" title="Enhanced Dashboard">
+                <i class="fas fa-star"></i>
+            </a>
+            <a href="/api/health" target="_blank" class="floating-btn" title="System Health">
+                <i class="fas fa-heartbeat"></i>
+            </a>
+        </div>
+        <button id="floating-toggle" onclick="toggleFloatingActions()" class="floating-toggle" title="Quick Actions">
+            <i class="fas fa-bolt"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sample queries
+        const sampleQueries = {
+            clients: "Show me all clients with total value over $200,000",
+            cases: "List all cases by status and their assigned lawyers",
+            revenue: "Show monthly revenue trends for the last 12 months"
+        };
+
+        // Set sample query
+        function setSampleQuery(type) {
+            document.getElementById('queryInput').value = sampleQueries[type];
+        }
+
+        // Focus query input
+        function focusQueryInput() {
+            document.getElementById('queryInput').focus();
+        }
+
+        // Execute query
+        async function executeQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a query');
+                return;
+            }
+
+            const resultsSection = document.getElementById('resultsSection');
+            const resultsContent = document.getElementById('resultsContent');
+            const chartSection = document.getElementById('chartSection');
+            const chartContent = document.getElementById('chartContent');
+
+            // Show loading
+            resultsSection.style.display = 'block';
+            resultsContent.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin me-2"></i>Processing your query...</div>';
+            chartSection.style.display = 'none';
+
+            try {
+                // Step 1: Connect to sample database
+                const connectResponse = await fetch('/api/knowledge-base/connect', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        db_type: 'sqlite',
+                        db_path: 'data/sample_databases/legal_practice.db'
+                    })
+                });
+
+                if (!connectResponse.ok) {
+                    throw new Error('Database connection failed');
+                }
+
+                // Step 2: Generate SQL
+                const sqlResponse = await fetch('/api/knowledge-base/generate-sql', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        natural_language: query
+                    })
+                });
+
+                const sqlResult = await sqlResponse.json();
+
+                if (!sqlResult.success) {
+                    throw new Error(sqlResult.error || 'SQL generation failed');
+                }
+
+                // Step 3: Execute query
+                const executeResponse = await fetch('/api/knowledge-base/execute-query', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        query: sqlResult.sql_query,
+                        natural_language: query
+                    })
+                });
+
+                const executeResult = await executeResponse.json();
+
+                if (!executeResult.success) {
+                    throw new Error(executeResult.error || 'Query execution failed');
+                }
+
+                // Display results
+                displayResults(executeResult, sqlResult.sql_query);
+
+                // Generate chart if data is suitable
+                if (executeResult.data && executeResult.data.length > 0) {
+                    await generateChart(executeResult);
+                }
+
+            } catch (error) {
+                resultsContent.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            }
+        }
+
+        // Display query results
+        function displayResults(result, sqlQuery) {
+            const resultsContent = document.getElementById('resultsContent');
+            
+            let html = `
+                <div class="success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Query executed successfully! Found ${result.row_count} rows.
+                </div>
+                
+                <div class="mt-3">
+                    <h5>Generated SQL:</h5>
+                    <pre class="bg-light p-3 rounded" style="overflow-x: auto; font-size: 0.9rem;"><code>${sqlQuery}</code></pre>
+                </div>
+            `;
+
+            if (result.data && result.data.length > 0) {
+                html += `
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    ${result.columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.slice(0, 20).map(row => 
+                                    `<tr>${result.columns.map(col => `<td>${row[col] || ''}</td>`).join('')}</tr>`
+                                ).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                if (result.data.length > 20) {
+                    html += `<p class="text-muted mt-2">Showing first 20 rows of ${result.data.length} total results.</p>`;
+                }
+            }
+
+            resultsContent.innerHTML = html;
+        }
+
+        // Generate chart
+        async function generateChart(result) {
+            try {
+                const chartResponse = await fetch('/api/knowledge-base/generate-chart', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        data: result.data,
+                        columns: result.columns,
+                        natural_language: document.getElementById('queryInput').value
+                    })
+                });
+
+                const chartResult = await chartResponse.json();
+
+                if (chartResult.success && chartResult.chart_html) {
+                    const chartSection = document.getElementById('chartSection');
+                    const chartContent = document.getElementById('chartContent');
+                    
+                    chartSection.style.display = 'block';
+                    chartContent.innerHTML = chartResult.chart_html;
+                }
+            } catch (error) {
+                console.error('Chart generation failed:', error);
+            }
+        }
+
+        // System health check
+        async function checkSystemHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const health = await response.json();
+                
+                // Update status indicators
+                document.getElementById('ollama-status').className = 
+                    'status-indicator ' + (health.components.ollama === 'online' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('database-status').className = 
+                    'status-indicator ' + (health.components.mysql_database === 'connected' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('sample-db-status').className = 
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-offline');
+                
+                document.getElementById('api-status').className = 
+                    'status-indicator ' + (health.components.sample_database === 'available' ? 'status-online' : 'status-warning');
+                
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        }
+
+        // Floating actions toggle
+        function toggleFloatingActions() {
+            const quickActions = document.getElementById('quick-actions');
+            const toggle = document.getElementById('floating-toggle');
+            
+            if (quickActions.style.display === 'none' || quickActions.style.display === '') {
+                quickActions.style.display = 'flex';
+                toggle.style.transform = 'rotate(45deg)';
+            } else {
+                quickActions.style.display = 'none';
+                toggle.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Show chart example
+        function showChartExample() {
+            alert('Chart visualization will be generated automatically when you run queries with suitable data!');
+        }
+
+        // Show query history
+        function showQueryHistory() {
+            alert('Query history feature coming soon! Your queries will be saved and accessible here.');
+        }
+
+        // Show database info
+        function showDatabaseInfo() {
+            alert('Database management features coming soon! You will be able to connect to multiple databases and explore schemas.');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSystemHealth();
+            document.getElementById('queryInput').focus();
+            
+            // Handle Enter key
+            document.getElementById('queryInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    executeQuery();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

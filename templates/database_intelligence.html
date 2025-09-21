@@ -1,0 +1,748 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Database Intelligence - DALI Legal AI{% endblock %}
+
+{% block head %}
+<!-- Plotly.js for chart rendering -->
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+/* Database Intelligence Specific Styles */
+.database-intelligence-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.query-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.query-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.query-tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.query-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.query-tab:hover {
+    color: var(--primary-color);
+}
+
+.query-content {
+    display: none;
+}
+
+.query-content.active {
+    display: block;
+}
+
+.natural-language-form {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.natural-language-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.natural-language-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.sql-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sql-textarea {
+    min-height: 120px;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.sql-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.results-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 400px;
+}
+
+.results-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.results-tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.results-tab.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.results-content {
+    display: none;
+}
+
+.results-content.active {
+    display: block;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.data-table tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.chart-container {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.chart-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.125rem;
+}
+
+.chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.chart-reasoning {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+.chart-content {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 2px dashed #e5e7eb;
+}
+
+.schema-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.schema-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.schema-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+}
+
+.schema-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.schema-card-content {
+    color: var(--text-color);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.query-suggestions {
+    background: rgba(59, 130, 246, 0.05);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.query-suggestions h6 {
+    color: #1e40af;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.suggestion-item {
+    display: inline-block;
+    background: white;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.suggestion-item:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: #3b82f6;
+}
+
+.loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #e5e7eb;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.error-message {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger-color);
+    color: #991b1b;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .natural-language-form {
+        flex-direction: column;
+    }
+    
+    .query-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .results-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .schema-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="database-intelligence-container">
+    <div class="chatgpt-card-header">
+        <div class="chatgpt-card-icon">
+            <i class="fas fa-database"></i>
+        </div>
+        <h1 class="chatgpt-card-title">Database Intelligence</h1>
+    </div>
+    
+    <div class="query-section">
+        <div class="query-tabs">
+            <button class="query-tab active" onclick="switchQueryTab('natural')">
+                <i class="fas fa-comments"></i> Natural Language
+            </button>
+            <button class="query-tab" onclick="switchQueryTab('sql')">
+                <i class="fas fa-code"></i> SQL Query
+            </button>
+        </div>
+        
+        <div id="naturalQuery" class="query-content active">
+            <form id="naturalLanguageForm">
+                <div class="natural-language-form">
+                    <input type="text" id="naturalLanguageInput" class="natural-language-input" 
+                           placeholder="Ask a question about your data in plain English..." required>
+                    <button type="submit" class="chatgpt-btn">
+                        <i class="fas fa-magic"></i> Generate Query
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="sqlQuery" class="query-content">
+            <form id="sqlForm">
+                <div class="sql-form">
+                    <textarea id="sqlInput" class="sql-textarea" 
+                              placeholder="Enter your SQL query here..." required></textarea>
+                    <button type="submit" class="chatgpt-btn">
+                        <i class="fas fa-play"></i> Execute Query
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="schema-section">
+        <div class="chatgpt-card-header">
+            <div class="chatgpt-card-icon">
+                <i class="fas fa-table"></i>
+            </div>
+            <h3 class="chatgpt-card-title">Database Schema</h3>
+        </div>
+        <div id="schemaContent">
+            <div class="loading-spinner">
+                <div class="spinner"></div>
+                <span>Loading database schema...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="results-section">
+        <div class="chatgpt-card-header">
+            <div class="chatgpt-card-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h3 class="chatgpt-card-title">Query Results</h3>
+        </div>
+        
+        <div class="results-tabs">
+            <button class="results-tab active" onclick="switchResultsTab('data')">
+                <i class="fas fa-table"></i> Data Table
+            </button>
+            <button class="results-tab" onclick="switchResultsTab('chart')">
+                <i class="fas fa-chart-line"></i> Chart
+            </button>
+        </div>
+        
+        <div id="dataResults" class="results-content active">
+            <div class="text-center text-muted">
+                <i class="fas fa-database fa-3x mb-3"></i>
+                <h5>No Query Executed</h5>
+                <p>Enter a natural language question or SQL query to see results</p>
+            </div>
+        </div>
+        
+        <div id="chartResults" class="results-content">
+            <div class="text-center text-muted">
+                <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                <h5>No Chart Generated</h5>
+                <p>Execute a query to generate an interactive chart</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="query-suggestions">
+        <h6><i class="fas fa-lightbulb"></i> Query Suggestions</h6>
+        <div class="suggestion-item" onclick="setNaturalQuery('Show me all users created this month')">
+            Recent Users
+        </div>
+        <div class="suggestion-item" onclick="setNaturalQuery('Count documents by type')">
+            Document Types
+        </div>
+        <div class="suggestion-item" onclick="setNaturalQuery('Show user activity trends')">
+            Activity Trends
+        </div>
+        <div class="suggestion-item" onclick="setNaturalQuery('Find users with most documents')">
+            Top Users
+        </div>
+        <div class="suggestion-item" onclick="setNaturalQuery('Show document uploads by date')">
+            Upload Timeline
+        </div>
+        <div class="suggestion-item" onclick="setNaturalQuery('Count conversations by user')">
+            Chat Activity
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentQueryTab = 'natural';
+let currentResultsTab = 'data';
+
+function switchQueryTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.query-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[onclick="switchQueryTab('${tab}')"]`).classList.add('active');
+    
+    // Update content
+    document.querySelectorAll('.query-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(tab + 'Query').classList.add('active');
+    
+    currentQueryTab = tab;
+}
+
+function switchResultsTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[onclick="switchResultsTab('${tab}')"]`).classList.add('active');
+    
+    // Update content
+    document.querySelectorAll('.results-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(tab + 'Results').classList.add('active');
+    
+    currentResultsTab = tab;
+}
+
+function setNaturalQuery(query) {
+    document.getElementById('naturalLanguageInput').value = query;
+}
+
+// Load database schema
+async function loadSchema() {
+    try {
+        const response = await fetch('/api/database-intelligence/schema');
+        const data = await response.json();
+        
+        if (data.success) {
+            displaySchema(data.schema_context, data.tables);
+        } else {
+            displayError('schemaContent', data.error);
+        }
+    } catch (error) {
+        displayError('schemaContent', 'Failed to load schema: ' + error.message);
+    }
+}
+
+function displaySchema(schemaContext, tables) {
+    const container = document.getElementById('schemaContent');
+    
+    let html = '<div class="schema-grid">';
+    
+    // Display tables
+    if (tables && tables.length > 0) {
+        tables.forEach(table => {
+            html += `
+                <div class="schema-card">
+                    <div class="schema-card-title">
+                        <i class="fas fa-table"></i>
+                        ${table.name || table}
+                    </div>
+                    <div class="schema-card-content">
+                        ${table.description || 'Database table'}
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += `
+            <div class="schema-card">
+                <div class="schema-card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Schema Information
+                </div>
+                <div class="schema-card-content">
+                    ${schemaContext || 'No schema information available'}
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function displayError(containerId, error) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = `
+        <div class="error-message">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Error:</strong> ${error}
+        </div>
+    `;
+}
+
+// Natural language form submission
+document.getElementById('naturalLanguageForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const query = document.getElementById('naturalLanguageInput').value.trim();
+    if (!query) return;
+    
+    await executeNaturalLanguageQuery(query);
+});
+
+// SQL form submission
+document.getElementById('sqlForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    const sql = document.getElementById('sqlInput').value.trim();
+    if (!sql) return;
+    
+    await executeSQLQuery(sql);
+});
+
+async function executeNaturalLanguageQuery(query) {
+    const resultsContainer = document.getElementById('dataResults');
+    const chartContainer = document.getElementById('chartResults');
+    
+    // Show loading
+    resultsContainer.innerHTML = `
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <span>Processing natural language query...</span>
+        </div>
+    `;
+    
+    try {
+        const formData = new FormData();
+        formData.append('natural_language', query);
+        
+        const response = await fetch('/api/database-intelligence/natural-language-query', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayDataResults(data.data, data.columns, data.sql_query);
+            displayChartResults(data.chart_html, data.reasoning);
+        } else {
+            displayError('dataResults', data.error);
+        }
+        
+    } catch (error) {
+        displayError('dataResults', 'Query failed: ' + error.message);
+    }
+}
+
+async function executeSQLQuery(sql) {
+    const resultsContainer = document.getElementById('dataResults');
+    
+    // Show loading
+    resultsContainer.innerHTML = `
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <span>Executing SQL query...</span>
+        </div>
+    `;
+    
+    try {
+        const formData = new FormData();
+        formData.append('sql_query', sql);
+        
+        const response = await fetch('/api/database-intelligence/execute-sql', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayDataResults(data.data, data.columns, data.sql_query);
+        } else {
+            displayError('dataResults', data.error);
+        }
+        
+    } catch (error) {
+        displayError('dataResults', 'Query failed: ' + error.message);
+    }
+}
+
+function displayDataResults(data, columns, sqlQuery) {
+    const container = document.getElementById('dataResults');
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                <h5>No Results Found</h5>
+                <p>The query executed successfully but returned no data</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="mb-3">
+            <h6><i class="fas fa-code"></i> Executed SQL:</h6>
+            <code style="background: #f8fafc; padding: 0.5rem; border-radius: 0.25rem; display: block; font-size: 0.875rem;">
+                ${sqlQuery}
+            </code>
+        </div>
+        <div class="mb-3">
+            <span class="badge bg-success">${data.length} rows returned</span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        ${columns.map(col => `<th>${col}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.slice(0, 100).map(row => `
+                        <tr>
+                            ${columns.map(col => `<td>${row[col] || ''}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    if (data.length > 100) {
+        html += `<div class="mt-2 text-muted">Showing first 100 rows of ${data.length} total results</div>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function displayChartResults(chartHtml, reasoning) {
+    const container = document.getElementById('chartResults');
+    
+    if (!chartHtml) {
+        container.innerHTML = `
+            <div class="text-center text-muted">
+                <i class="fas fa-chart-bar fa-3x mb-3"></i>
+                <h5>No Chart Available</h5>
+                <p>Chart generation failed or no suitable chart type found</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="chart-container">
+            <div class="chart-header">
+                <div class="chart-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h4 class="chart-title">Generated Chart</h4>
+            </div>
+    `;
+    
+    if (reasoning) {
+        html += `
+            <div class="chart-reasoning">
+                <strong>Chart Reasoning:</strong> ${reasoning}
+            </div>
+        `;
+    }
+    
+    html += `
+            <div class="chart-content">
+                ${chartHtml}
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    // Execute any JavaScript in the chart HTML
+    const scripts = container.querySelectorAll('script');
+    scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        newScript.textContent = script.textContent;
+        document.head.appendChild(newScript);
+        document.head.removeChild(newScript);
+    });
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', () => {
+    loadSchema();
+});
+</script>
+{% endblock %}

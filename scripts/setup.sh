@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 PYTHON_MIN_VERSION="3.8"
-OLLAMA_MODEL="llama3"
+OLLAMA_MODEL="llama3.2:1b"
 VENV_NAME="dali-env"
 
 # Function to print colored output

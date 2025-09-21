@@ -104,7 +104,7 @@ class Config:
             'ollama': {
                 'host': 'localhost',
                 'port': 11434,
-                'model': 'llama3',
+                'model': 'llama3.2:1b',
                 'temperature': 0.3,
                 'max_tokens': 2048
             },
@@ -147,8 +147,8 @@ class Config:
             'mysql': {
                 'host': 'localhost',
                 'port': 3306,
-                'user': 'dali_user',
-                'password': 'dali_password',
+                'user': 'root',
+                'password': 'ap-hoHfB;6da',
                 'database': 'dali_legal_ai'
             }
         }
@@ -341,9 +341,9 @@ def create_sample_config(output_path: str = "config/config.yaml") -> bool:
 
 # Ollama LLM Engine Configuration
 ollama:
-  host: localhost          # Ollama server host
-  port: 11434             # Ollama server port
-  model: llama3           # Default model to use (llama3, mistral, codellama)
+  host: 127.0.0.1 # Ollama server host
+  port: 11435            # Ollama server port
+  model: llama3.2:1b          # Default model to use (llama3, mistral, codellama)
   temperature: 0.3        # Response temperature (0.0-1.0)
   max_tokens: 2048        # Maximum response tokens
 
@@ -412,7 +412,7 @@ def get_mysql_config():
         'host': mysql_cfg.get('host', 'localhost'),
         'port': mysql_cfg.get('port', 3306),
         'user': mysql_cfg.get('user', 'dali_user'),
-        'password': mysql_cfg.get('password', 'dali_password'),
+        'password': mysql_cfg.get('password', 'ap-hoHfB;6da'),
         'database': mysql_cfg.get('database', 'dali_legal_ai')
     }
 

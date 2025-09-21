@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 VENV_NAME="dali-env"
 STREAMLIT_PORT=8501
-OLLAMA_MODEL="llama3"
+OLLAMA_MODEL="llama3.2:1b"
 
 # Function to print colored output
 print_status() {

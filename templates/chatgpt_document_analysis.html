@@ -1,0 +1,540 @@
+{% extends "chatgpt_base.html" %}
+{% block title %}Document Analysis - DALI Legal AI{% endblock %}
+
+{% block head %}
+<style>
+/* Document Analysis Specific Styles */
+.document-analysis-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.upload-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.upload-area {
+    border: 3px dashed #e5e7eb;
+    border-radius: 1rem;
+    padding: 3rem 2rem;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-area.dragover {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.upload-text {
+    font-size: 1.125rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.upload-subtext {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.file-input {
+    display: none;
+}
+
+.analysis-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.analysis-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.analysis-option:hover {
+    background: rgba(102, 126, 234, 0.05);
+    border-color: var(--primary-color);
+}
+
+.analysis-option input[type="radio"] {
+    margin: 0;
+}
+
+.analysis-option.selected {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary-color);
+}
+
+.analysis-results {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 400px;
+}
+
+.analysis-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.analysis-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.analysis-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.analysis-content {
+    color: var(--text-color);
+    line-height: 1.6;
+}
+
+.analysis-highlight {
+    background: rgba(255, 235, 59, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.analysis-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.metric-card {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 0.5rem;
+    background: #e5e7eb;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    transition: width 0.3s ease;
+}
+
+.file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.file-item .remove-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    padding: 0;
+    margin-left: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .analysis-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .analysis-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="document-analysis-container">
+    <div class="chatgpt-card-header">
+        <div class="chatgpt-card-icon">
+            <i class="fas fa-file-alt"></i>
+        </div>
+        <h1 class="chatgpt-card-title">Document Analysis</h1>
+    </div>
+    
+    <div class="upload-section">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <div class="upload-text">Drop files here or click to upload</div>
+            <div class="upload-subtext">Supports PDF, DOCX, TXT, MD files (Max 200MB)</div>
+            <input type="file" id="fileInput" class="file-input" multiple accept=".pdf,.docx,.doc,.txt,.md">
+        </div>
+        
+        <div class="file-list" id="fileList"></div>
+        
+        <div class="analysis-options">
+            <div class="analysis-option" data-type="quick">
+                <input type="radio" name="analysisType" value="quick" id="quickAnalysis" checked>
+                <label for="quickAnalysis">
+                    <i class="fas fa-bolt"></i>
+                    <div>
+                        <strong>Quick Analysis</strong>
+                        <small>Basic document overview</small>
+                    </div>
+                </label>
+            </div>
+            
+            <div class="analysis-option" data-type="detailed">
+                <input type="radio" name="analysisType" value="detailed" id="detailedAnalysis">
+                <label for="detailedAnalysis">
+                    <i class="fas fa-microscope"></i>
+                    <div>
+                        <strong>Detailed Analysis</strong>
+                        <small>Comprehensive document review</small>
+                    </div>
+                </label>
+            </div>
+            
+            <div class="analysis-option" data-type="contract">
+                <input type="radio" name="analysisType" value="contract" id="contractAnalysis">
+                <label for="contractAnalysis">
+                    <i class="fas fa-handshake"></i>
+                    <div>
+                        <strong>Contract Analysis</strong>
+                        <small>Contract-specific insights</small>
+                    </div>
+                </label>
+            </div>
+            
+            <div class="analysis-option" data-type="compliance">
+                <input type="radio" name="analysisType" value="compliance" id="complianceAnalysis">
+                <label for="complianceAnalysis">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <strong>Compliance Check</strong>
+                        <small>Regulatory compliance review</small>
+                    </div>
+                </label>
+            </div>
+        </div>
+        
+        <button type="button" class="chatgpt-btn" id="analyzeBtn" disabled>
+            <i class="fas fa-play"></i> Analyze Documents
+        </button>
+    </div>
+    
+    <div class="analysis-results" id="analysisResults">
+        <div class="text-center text-muted">
+            <i class="fas fa-file-alt fa-3x mb-3"></i>
+            <h5>Upload Documents to Analyze</h5>
+            <p>Select files and choose analysis type to begin</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedFiles = [];
+
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const analyzeBtn = document.getElementById('analyzeBtn');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', handleDragOver);
+uploadArea.addEventListener('dragleave', handleDragLeave);
+uploadArea.addEventListener('drop', handleDrop);
+fileInput.addEventListener('change', handleFileSelect);
+
+function handleDragOver(e) {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files);
+}
+
+function handleFileSelect(e) {
+    const files = Array.from(e.target.files);
+    addFiles(files);
+}
+
+function addFiles(files) {
+    files.forEach(file => {
+        if (isValidFile(file) && !selectedFiles.find(f => f.name === file.name)) {
+            selectedFiles.push(file);
+        }
+    });
+    updateFileList();
+    updateAnalyzeButton();
+}
+
+function isValidFile(file) {
+    const validTypes = ['.pdf', '.docx', '.doc', '.txt', '.md'];
+    const maxSize = 200 * 1024 * 1024; // 200MB
+    
+    const hasValidExtension = validTypes.some(type => file.name.toLowerCase().endsWith(type));
+    const hasValidSize = file.size <= maxSize;
+    
+    if (!hasValidExtension) {
+        alert(`File ${file.name} has an unsupported format. Please use PDF, DOCX, TXT, or MD files.`);
+        return false;
+    }
+    
+    if (!hasValidSize) {
+        alert(`File ${file.name} is too large. Maximum size is 200MB.`);
+        return false;
+    }
+    
+    return true;
+}
+
+function updateFileList() {
+    fileList.innerHTML = selectedFiles.map(file => `
+        <div class="file-item">
+            <i class="fas fa-file"></i>
+            <span>${file.name}</span>
+            <button class="remove-btn" onclick="removeFile('${file.name}')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+function removeFile(fileName) {
+    selectedFiles = selectedFiles.filter(file => file.name !== fileName);
+    updateFileList();
+    updateAnalyzeButton();
+}
+
+function updateAnalyzeButton() {
+    analyzeBtn.disabled = selectedFiles.length === 0;
+}
+
+// Analysis type selection
+document.querySelectorAll('.analysis-option').forEach(option => {
+    option.addEventListener('click', () => {
+        document.querySelectorAll('.analysis-option').forEach(opt => opt.classList.remove('selected'));
+        option.classList.add('selected');
+        option.querySelector('input[type="radio"]').checked = true;
+    });
+});
+
+// Analysis execution
+analyzeBtn.addEventListener('click', async function() {
+    if (selectedFiles.length === 0) return;
+    
+    const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
+    
+    // Show loading state
+    const resultsDiv = document.getElementById('analysisResults');
+    resultsDiv.innerHTML = `
+        <div class="research-loading">
+            <div class="spinner"></div>
+            <span>Analyzing documents...</span>
+        </div>
+    `;
+    
+    try {
+        const formData = new FormData();
+        selectedFiles.forEach(file => {
+            formData.append('files', file);
+        });
+        formData.append('analysis_type', analysisType);
+        
+        const response = await fetch('/api/document-analysis', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayAnalysisResults(data.results);
+        } else {
+            displayError(data.error || 'Analysis failed');
+        }
+        
+    } catch (error) {
+        displayError('Network error: ' + error.message);
+    }
+});
+
+function displayAnalysisResults(results) {
+    const resultsDiv = document.getElementById('analysisResults');
+    
+    let html = '<h5 class="mb-3"><i class="fas fa-chart-line"></i> Analysis Results</h5>';
+    
+    // Document metrics
+    if (results.metrics) {
+        html += `
+            <div class="analysis-section">
+                <div class="analysis-section-title">
+                    <i class="fas fa-chart-bar"></i> Document Metrics
+                </div>
+                <div class="analysis-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">${results.metrics.word_count || 0}</div>
+                        <div class="metric-label">Words</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${results.metrics.page_count || 0}</div>
+                        <div class="metric-label">Pages</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${results.metrics.section_count || 0}</div>
+                        <div class="metric-label">Sections</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">${results.metrics.complexity_score || 0}%</div>
+                        <div class="metric-label">Complexity</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Summary
+    if (results.summary) {
+        html += `
+            <div class="analysis-section">
+                <div class="analysis-section-title">
+                    <i class="fas fa-clipboard-list"></i> Document Summary
+                </div>
+                <div class="analysis-content">${results.summary}</div>
+            </div>
+        `;
+    }
+    
+    // Key findings
+    if (results.key_findings && results.key_findings.length > 0) {
+        html += `
+            <div class="analysis-section">
+                <div class="analysis-section-title">
+                    <i class="fas fa-lightbulb"></i> Key Findings
+                </div>
+                <div class="analysis-content">
+                    <ul>
+                        ${results.key_findings.map(finding => `<li>${finding}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Legal insights
+    if (results.legal_insights) {
+        html += `
+            <div class="analysis-section">
+                <div class="analysis-section-title">
+                    <i class="fas fa-gavel"></i> Legal Insights
+                </div>
+                <div class="analysis-content">${results.legal_insights}</div>
+            </div>
+        `;
+    }
+    
+    // Recommendations
+    if (results.recommendations && results.recommendations.length > 0) {
+        html += `
+            <div class="analysis-section">
+                <div class="analysis-section-title">
+                    <i class="fas fa-arrow-right"></i> Recommendations
+                </div>
+                <div class="analysis-content">
+                    <ul>
+                        ${results.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    
+    resultsDiv.innerHTML = html;
+}
+
+function displayError(error) {
+    const resultsDiv = document.getElementById('analysisResults');
+    resultsDiv.innerHTML = `
+        <div class="research-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Analysis Error:</strong> ${error}
+        </div>
+    `;
+}
+</script>
+{% endblock %}
