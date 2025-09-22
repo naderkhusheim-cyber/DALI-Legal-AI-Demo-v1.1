@@ -142,6 +142,39 @@ def create_database():
         )
     ''')
     
+    # Create conversation_memory table
+    cursor.execute('''
+        CREATE TABLE conversation_memory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            session_id TEXT NOT NULL,
+            message_type TEXT NOT NULL, -- 'user' or 'assistant'
+            message_content TEXT NOT NULL,
+            context_data TEXT, -- JSON string for storing additional context
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Create conversation_sessions table
+    cursor.execute('''
+        CREATE TABLE conversation_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            session_id TEXT UNIQUE NOT NULL,
+            session_name TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Create indexes for better performance
+    cursor.execute('CREATE INDEX idx_conversation_memory_user_session ON conversation_memory(user_id, session_id)')
+    cursor.execute('CREATE INDEX idx_conversation_memory_created_at ON conversation_memory(created_at)')
+    cursor.execute('CREATE INDEX idx_conversation_sessions_user ON conversation_sessions(user_id)')
+    
     # Create admin user
     from passlib.context import CryptContext
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -172,6 +205,8 @@ def create_database():
     print("  - shared_documents")
     print("  - activity_log")
     print("  - document_permission_requests")
+    print("  - conversation_memory")
+    print("  - conversation_sessions")
     print("\n👤 Created users:")
     print("  - admin1 / 1234 (admin)")
     print("  - testuser / test123 (user)")

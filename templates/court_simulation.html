@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Court Simulation - DALI Legal AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .court-room {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        
+        .judge-bench {
+            background: #8B4513;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .prosecutor-table {
+            background: #DC143C;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .defense-table {
+            background: #4169E1;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .courtroom-seating {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .case-upload-area {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .conversation-area {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .voice-controls {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .voice-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .voice-btn.recording {
+            animation: pulse 1.5s infinite;
+            background-color: #dc3545 !important;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+        
+        .message.judge {
+            background: #8B4513;
+            color: white;
+            margin-left: 0;
+        }
+        
+        .message.prosecutor {
+            background: #DC143C;
+            color: white;
+            margin-left: 0;
+        }
+        
+        .message.defense {
+            background: #4169E1;
+            color: white;
+            margin-left: auto;
+        }
+        
+        .message.system {
+            background: #6c757d;
+            color: white;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .back-to-dashboard {
+            margin-bottom: 2rem;
+        }
+        
+        .back-to-dashboard a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .back-to-dashboard a:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .simulation-status {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-ready { background-color: #28a745; }
+        .status-active { background-color: #ffc107; }
+        .status-completed { background-color: #17a2b8; }
+        
+        .report-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .similar-cases {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="court-room">
+        <div class="container">
+            <!-- Back to Dashboard -->
+            <div class="back-to-dashboard">
+                <a href="/user-dashboard">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+            
+            <!-- Header -->
+            <div class="text-center text-white mb-4">
+                <h1><i class="fas fa-gavel me-3"></i>Court Simulation</h1>
+                <p class="lead">Practice your legal arguments with AI Judge and Prosecutor</p>
+            </div>
+            
+            <!-- Simulation Status -->
+            <div class="simulation-status">
+                <h5><span class="status-indicator status-ready"></span>Simulation Status: <span id="simulationStatus">Ready to Start</span></h5>
+                <p class="mb-0">Upload your case document to begin the simulation</p>
+            </div>
+            
+            <!-- Case Upload Section -->
+            <div class="case-upload-area">
+                <h4><i class="fas fa-file-upload me-2"></i>Upload Case Document</h4>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-3">
+                            <label for="caseFile" class="form-label">Case Document (PDF, DOC, TXT)</label>
+                            <input type="file" class="form-control" id="caseFile" accept=".pdf,.doc,.docx,.txt">
+                        </div>
+                        <div class="mb-3">
+                            <label for="caseTitle" class="form-label">Case Title</label>
+                            <input type="text" class="form-control" id="caseTitle" placeholder="Enter case title...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="caseDescription" class="form-label">Case Description</label>
+                            <textarea class="form-control" id="caseDescription" rows="3" placeholder="Brief description of the case..."></textarea>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <button class="btn btn-primary btn-lg" id="uploadCaseBtn" disabled>
+                                <i class="fas fa-upload me-2"></i>Upload & Analyze Case
+                            </button>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Upload your case document to start the simulation. The AI will analyze it and prepare questions.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Courtroom Layout -->
+            <div class="courtroom-seating">
+                <!-- Judge -->
+                <div class="judge-bench text-center text-white">
+                    <h3><i class="fas fa-gavel me-2"></i>Judge</h3>
+                    <div class="mb-3">
+                        <img src="https://via.placeholder.com/80x80/8B4513/FFFFFF?text=J" class="rounded-circle" alt="Judge">
+                    </div>
+                    <p class="mb-0">AI Judge</p>
+                    <small>Ready to preside</small>
+                </div>
+                
+                <!-- Center Area -->
+                <div class="text-center text-white">
+                    <h3><i class="fas fa-balance-scale me-2"></i>Courtroom</h3>
+                    <p>Simulation in progress...</p>
+                    <div id="courtTimer" class="h4">00:00</div>
+                </div>
+                
+                <!-- Prosecutor -->
+                <div class="prosecutor-table text-center text-white">
+                    <h3><i class="fas fa-user-tie me-2"></i>Prosecutor</h3>
+                    <div class="mb-3">
+                        <img src="https://via.placeholder.com/80x80/DC143C/FFFFFF?text=P" class="rounded-circle" alt="Prosecutor">
+                    </div>
+                    <p class="mb-0">AI Prosecutor</p>
+                    <small>Ready to present</small>
+                </div>
+            </div>
+            
+            <!-- Defense Table -->
+            <div class="defense-table text-center text-white">
+                <h3><i class="fas fa-shield-alt me-2"></i>Defense Attorney</h3>
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="mb-0">You are the defense attorney</p>
+                        <small>Prepare your arguments and respond to questions</small>
+                    </div>
+                    <div class="col-md-4">
+                        <img src="https://via.placeholder.com/80x80/4169E1/FFFFFF?text=D" class="rounded-circle" alt="Defense">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Voice Controls -->
+            <div class="voice-controls">
+                <h5><i class="fas fa-microphone me-2"></i>Voice Controls</h5>
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="d-flex gap-3">
+                            <button class="btn btn-success voice-btn" id="startRecordingBtn">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button class="btn btn-danger voice-btn" id="stopRecordingBtn" disabled>
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <button class="btn btn-info voice-btn" id="playResponseBtn" disabled>
+                                <i class="fas fa-play"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="voiceEnabled">
+                            <label class="form-check-label" for="voiceEnabled">
+                                Enable Voice Responses
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" id="recordingProgress" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted" id="recordingStatus">Ready to record</small>
+                </div>
+            </div>
+            
+            <!-- Conversation Area -->
+            <div class="conversation-area">
+                <h5><i class="fas fa-comments me-2"></i>Court Proceedings</h5>
+                <div id="conversationContainer">
+                    <div class="message system">
+                        <strong>Court Clerk:</strong> The court is now in session. Please upload your case document to begin the simulation.
+                    </div>
+                </div>
+                
+                <!-- Input Area -->
+                <div class="mt-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="textInput" placeholder="Type your response or use voice input..." disabled>
+                        <button class="btn btn-primary" id="sendResponseBtn" disabled>
+                            <i class="fas fa-paper-plane"></i> Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Similar Cases Section -->
+            <div class="similar-cases">
+                <h5><i class="fas fa-search me-2"></i>Similar Cases & Recommendations</h5>
+                <div id="similarCasesContainer">
+                    <p class="text-muted">Similar cases will appear here after case analysis...</p>
+                </div>
+            </div>
+            
+            <!-- Report Section -->
+            <div class="report-section">
+                <h5><i class="fas fa-file-pdf me-2"></i>Simulation Report</h5>
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="text-muted">A comprehensive report will be generated at the end of the simulation, including:</p>
+                        <ul class="text-muted">
+                            <li>Performance analysis</li>
+                            <li>Key arguments presented</li>
+                            <li>Areas for improvement</li>
+                            <li>Similar case references</li>
+                            <li>Recommended strategies</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-grid">
+                            <button class="btn btn-success btn-lg" id="generateReportBtn" disabled>
+                                <i class="fas fa-download me-2"></i>Generate PDF Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let isRecording = false;
+        let recognition = null;
+        let simulationActive = false;
+        let caseData = null;
+        let conversationHistory = [];
+        let startTime = null;
+        let timerInterval = null;
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeVoiceRecognition();
+            initializeEventListeners();
+            updateSimulationStatus('Ready to Start');
+        });
+        
+        // Initialize voice recognition
+        function initializeVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    isRecording = true;
+                    updateRecordingUI(true);
+                };
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('textInput').value = transcript;
+                };
+                
+                recognition.onend = function() {
+                    isRecording = false;
+                    updateRecordingUI(false);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isRecording = false;
+                    updateRecordingUI(false);
+                };
+            } else {
+                console.warn('Speech recognition not supported');
+                document.getElementById('startRecordingBtn').disabled = true;
+            }
+        }
+        
+        // Initialize event listeners
+        function initializeEventListeners() {
+            // File upload
+            document.getElementById('caseFile').addEventListener('change', function() {
+                const file = this.files[0];
+                const uploadBtn = document.getElementById('uploadCaseBtn');
+                if (file) {
+                    uploadBtn.disabled = false;
+                } else {
+                    uploadBtn.disabled = true;
+                }
+            });
+            
+            // Upload case
+            document.getElementById('uploadCaseBtn').addEventListener('click', uploadCase);
+            
+            // Voice controls
+            document.getElementById('startRecordingBtn').addEventListener('click', startRecording);
+            document.getElementById('stopRecordingBtn').addEventListener('click', stopRecording);
+            document.getElementById('playResponseBtn').addEventListener('click', playLastResponse);
+            
+            // Text input
+            document.getElementById('sendResponseBtn').addEventListener('click', sendResponse);
+            document.getElementById('textInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendResponse();
+                }
+            });
+            
+            // Generate report
+            document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+        }
+        
+        // Upload and analyze case
+        async function uploadCase() {
+            const fileInput = document.getElementById('caseFile');
+            const titleInput = document.getElementById('caseTitle');
+            const descriptionInput = document.getElementById('caseDescription');
+            
+            if (!fileInput.files[0]) {
+                alert('Please select a case file');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('title', titleInput.value || 'Untitled Case');
+            formData.append('description', descriptionInput.value || '');
+            
+            try {
+                updateSimulationStatus('Analyzing Case...');
+                showMessage('system', 'Court Clerk: Analyzing uploaded case document...');
+                
+                const response = await fetch('/api/court-simulation/upload-case', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    caseData = result.data;
+                    updateSimulationStatus('Case Analyzed - Ready to Begin');
+                    showMessage('system', 'Court Clerk: Case analysis complete. The simulation is ready to begin.');
+                    
+                    // Enable simulation controls
+                    document.getElementById('textInput').disabled = false;
+                    document.getElementById('sendResponseBtn').disabled = false;
+                    document.getElementById('generateReportBtn').disabled = false;
+                    
+                    // Start simulation
+                    startSimulation();
+                } else {
+                    throw new Error(result.error || 'Failed to analyze case');
+                }
+            } catch (error) {
+                console.error('Error uploading case:', error);
+                alert('Error uploading case: ' + error.message);
+                updateSimulationStatus('Upload Failed');
+            }
+        }
+        
+        // Start simulation
+        function startSimulation() {
+            simulationActive = true;
+            startTime = new Date();
+            startTimer();
+            updateSimulationStatus('Simulation Active');
+            
+            // Add initial messages from judge and prosecutor
+            setTimeout(() => {
+                showMessage('judge', 'Judge: Court is now in session. Defense attorney, please present your opening statement.');
+            }, 1000);
+            
+            setTimeout(() => {
+                showMessage('prosecutor', 'Prosecutor: Your Honor, the prosecution is ready to present the case against the defendant.');
+            }, 2000);
+        }
+        
+        // Start timer
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const elapsed = Math.floor((now - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('courtTimer').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        // Update simulation status
+        function updateSimulationStatus(status) {
+            document.getElementById('simulationStatus').textContent = status;
+            
+            const indicator = document.querySelector('.status-indicator');
+            indicator.className = 'status-indicator';
+            
+            if (status.includes('Ready')) {
+                indicator.classList.add('status-ready');
+            } else if (status.includes('Active') || status.includes('Analyzing')) {
+                indicator.classList.add('status-active');
+            } else if (status.includes('Complete')) {
+                indicator.classList.add('status-completed');
+            }
+        }
+        
+        // Show message in conversation
+        function showMessage(sender, message) {
+            const container = document.getElementById('conversationContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<strong>${sender.charAt(0).toUpperCase() + sender.slice(1)}:</strong> ${message}`;
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Store in conversation history
+            conversationHistory.push({
+                sender: sender,
+                message: message,
+                timestamp: new Date()
+            });
+        }
+        
+        // Start recording
+        function startRecording() {
+            if (recognition && !isRecording) {
+                recognition.start();
+            }
+        }
+        
+        // Stop recording
+        function stopRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+        }
+        
+        // Update recording UI
+        function updateRecordingUI(recording) {
+            const startBtn = document.getElementById('startRecordingBtn');
+            const stopBtn = document.getElementById('stopRecordingBtn');
+            const status = document.getElementById('recordingStatus');
+            
+            if (recording) {
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                startBtn.classList.add('recording');
+                status.textContent = 'Recording...';
+            } else {
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                startBtn.classList.remove('recording');
+                status.textContent = 'Ready to record';
+            }
+        }
+        
+        // Play last response
+        function playLastResponse() {
+            // This would integrate with 11labs for voice synthesis
+            console.log('Playing last response...');
+        }
+        
+        // Send response
+        async function sendResponse() {
+            const input = document.getElementById('textInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Show defense message
+            showMessage('defense', message);
+            input.value = '';
+            
+            // Get AI responses
+            try {
+                const response = await fetch('/api/court-simulation/respond', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        caseData: caseData,
+                        conversationHistory: conversationHistory
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show judge response
+                    if (result.judgeResponse) {
+                        setTimeout(() => {
+                            showMessage('judge', result.judgeResponse);
+                        }, 1000);
+                    }
+                    
+                    // Show prosecutor response
+                    if (result.prosecutorResponse) {
+                        setTimeout(() => {
+                            showMessage('prosecutor', result.prosecutorResponse);
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                console.error('Error sending response:', error);
+            }
+        }
+        
+        // Generate report
+        async function generateReport() {
+            try {
+                updateSimulationStatus('Generating Report...');
+                
+                const response = await fetch('/api/court-simulation/generate-report', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        caseData: caseData,
+                        conversationHistory: conversationHistory,
+                        simulationDuration: timerInterval ? Math.floor((new Date() - startTime) / 1000) : 0
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Download the PDF
+                    const link = document.createElement('a');
+                    link.href = result.reportUrl;
+                    link.download = `court_simulation_report_${Date.now()}.pdf`;
+                    link.click();
+                    
+                    updateSimulationStatus('Report Generated');
+                    showMessage('system', 'Court Clerk: Simulation report has been generated and downloaded.');
+                } else {
+                    throw new Error(result.error || 'Failed to generate report');
+                }
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

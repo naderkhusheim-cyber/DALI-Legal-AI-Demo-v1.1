@@ -380,6 +380,12 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Store access token in localStorage
+                    if (data.access_token) {
+                        localStorage.setItem('access_token', data.access_token);
+                        console.log('Access token stored:', data.access_token);
+                    }
+                    
                     // Redirect based on user role
                     if (data.user.role === 'admin') {
                         window.location.href = '/unified-admin-dashboard';

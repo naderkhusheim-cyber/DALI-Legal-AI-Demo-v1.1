@@ -17,6 +17,125 @@
     margin-bottom: 2rem;
 }
 
+/* ChatGPT-style response formatting */
+.chatgpt-response {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+.chatgpt-response h2 {
+    color: #1a1a1a;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 1.5rem 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chatgpt-response h3 {
+    color: #2d2d2d;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.75rem 0;
+}
+
+.chatgpt-response p {
+    margin: 0.75rem 0;
+    color: #4a4a4a;
+}
+
+.chatgpt-response ul, .chatgpt-response ol {
+    margin: 0.75rem 0;
+    padding-left: 1.5rem;
+}
+
+.chatgpt-response li {
+    margin: 0.5rem 0;
+    color: #4a4a4a;
+}
+
+.chatgpt-response strong {
+    color: #1a1a1a;
+    font-weight: 600;
+}
+
+.chatgpt-response .legal-section {
+    background: #f8fafc;
+    border-left: 4px solid #667eea;
+    padding: 1rem 1.5rem;
+    margin: 1rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.chatgpt-response .legal-principle {
+    background: #f0f9ff;
+    border-left: 4px solid #0ea5e9;
+    padding: 1rem 1.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.chatgpt-response .case-law {
+    background: #fef3f2;
+    border-left: 4px solid #f87171;
+    padding: 1rem 1.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.chatgpt-response .practical-implication {
+    background: #f0fdf4;
+    border-left: 4px solid #22c55e;
+    padding: 1rem 1.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.chatgpt-response .consideration {
+    background: #fefce8;
+    border-left: 4px solid #eab308;
+    padding: 1rem 1.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.chatgpt-response .resource {
+    background: #f3e8ff;
+    border-left: 4px solid #a855f7;
+    padding: 1rem 1.5rem;
+    margin: 0.75rem 0;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+/* Ensure proper spacing and visibility */
+.chatgpt-response h2 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.chatgpt-response h2:first-child {
+    margin-top: 0;
+}
+
+.chatgpt-response p {
+    margin: 0.5rem 0;
+}
+
+.chatgpt-response ul {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.chatgpt-response li {
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
 .research-input-group {
     display: flex;
     gap: 1rem;
@@ -302,7 +421,14 @@ document.getElementById('researchForm').addEventListener('submit', async functio
         const data = await response.json();
         
         if (data.success) {
-            displayResults(data.results);
+            // Handle both string responses and array responses
+            if (typeof data.results === 'string') {
+                displayResults([data.results]);
+            } else if (Array.isArray(data.results)) {
+                displayResults(data.results);
+            } else {
+                displayResults([data.results]);
+            }
         } else {
             displayError(data.error || 'Research failed');
         }
@@ -313,6 +439,7 @@ document.getElementById('researchForm').addEventListener('submit', async functio
 });
 
 function displayResults(results) {
+    console.log('displayResults called with:', results);
     const resultsDiv = document.getElementById('researchResults');
     
     if (!results || results.length === 0) {
@@ -326,27 +453,82 @@ function displayResults(results) {
         return;
     }
     
-    let html = '<h5 class="mb-3"><i class="fas fa-list"></i> Research Results</h5>';
+    // Format the response in ChatGPT style
+    let html = '<div class="chatgpt-response">';
     
     results.forEach((result, index) => {
-        html += `
-            <div class="research-result-item">
-                <div class="research-result-title">
-                    ${result.title || `Result ${index + 1}`}
+        console.log(`Processing result ${index}:`, typeof result, result);
+        if (typeof result === 'string') {
+            // Format the text response
+            html += formatLegalResponse(result);
+        } else {
+            // Format structured results
+            html += `
+                <div class="research-result-item">
+                    <div class="research-result-title">
+                        ${result.title || `Result ${index + 1}`}
+                    </div>
+                    <div class="research-result-content">
+                        ${result.content || result.summary || 'No content available'}
+                    </div>
+                    <div class="research-result-meta">
+                        <span><i class="fas fa-calendar"></i> ${result.date || 'Recent'}</span>
+                        <span><i class="fas fa-tag"></i> ${result.type || 'Legal Document'}</span>
+                        ${result.source ? `<span><i class="fas fa-link"></i> ${result.source}</span>` : ''}
+                    </div>
                 </div>
-                <div class="research-result-content">
-                    ${result.content || result.summary || 'No content available'}
-                </div>
-                <div class="research-result-meta">
-                    <span><i class="fas fa-calendar"></i> ${result.date || 'Recent'}</span>
-                    <span><i class="fas fa-tag"></i> ${result.type || 'Legal Document'}</span>
-                    ${result.source ? `<span><i class="fas fa-link"></i> ${result.source}</span>` : ''}
-                </div>
-            </div>
-        `;
+            `;
+        }
     });
     
+    html += '</div>';
+    console.log('Final HTML:', html);
     resultsDiv.innerHTML = html;
+}
+
+function formatLegalResponse(text) {
+    console.log('Original text:', text);
+    
+    // Convert markdown-style formatting to HTML
+    let formatted = text
+        // Convert **Legal Overview** sections first
+        .replace(/\*\*Legal Overview\*\*/g, '<h2>Legal Overview</h2>')
+        // Convert **Key Legal Principles** sections
+        .replace(/\*\*Key Legal Principles\*\*/g, '<h2>Key Legal Principles</h2>')
+        // Convert **Relevant Case Law** sections
+        .replace(/\*\*Relevant Case Law\*\*/g, '<h2>Relevant Case Law</h2>')
+        // Convert **Practical Implications** sections
+        .replace(/\*\*Practical Implications\*\*/g, '<h2>Practical Implications</h2>')
+        // Convert **Additional Considerations** sections
+        .replace(/\*\*Additional Considerations\*\*/g, '<h2>Additional Considerations</h2>')
+        // Convert **Resources** sections
+        .replace(/\*\*Resources\*\*/g, '<h2>Resources</h2>')
+        // Convert numbered lists with bold titles
+        .replace(/^(\d+)\.\s*\*\*(.*?)\*\*:\s*(.*)$/gm, '<div class="legal-principle"><strong>$1. $2:</strong> $3</div>')
+        // Convert bullet points with bold titles
+        .replace(/^-\s*\*\*(.*?)\*\*:\s*(.*)$/gm, '<div class="practical-implication"><strong>$1:</strong> $2</div>')
+        // Convert regular bullet points
+        .replace(/^-\s*(.*)$/gm, '<li>$1</li>')
+        // Convert **text** to <strong>text</strong>
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Convert ## headings to h2
+        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+        // Convert ### headings to h3
+        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+        // Convert line breaks to <br>
+        .replace(/\n/g, '<br>')
+        // Wrap lists in ul tags
+        .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+        // Clean up empty paragraphs
+        .replace(/<br><br>/g, '</p><p>')
+        // Wrap in paragraph tags
+        .replace(/^(.*)$/, '<p>$1</p>')
+        // Clean up empty paragraphs
+        .replace(/<p><\/p>/g, '')
+        .replace(/<p><br><\/p>/g, '');
+    
+    console.log('Formatted text:', formatted);
+    return formatted;
 }
 
 function displayError(error) {

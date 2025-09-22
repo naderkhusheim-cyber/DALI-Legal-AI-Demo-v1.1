@@ -283,10 +283,10 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <p><i class="fas fa-user"></i>{{ t('uploaded_by') if t else 'Uploaded by' }}: <strong>{{ document.uploader_name or 'Unknown' }}</strong></p>
-                                <p><i class="fas fa-calendar"></i>{{ t('upload_date') if t else 'Upload Date' }}: <strong>{{ document.created_at.strftime('%B %d, %Y') if document.created_at else 'Unknown' }}</strong></p>
+                                <p><i class="fas fa-calendar"></i>{{ t('upload_date') if t else 'Upload Date' }}: <strong>{{ document.created_at[:10] if document.created_at else 'Unknown' }}</strong></p>
                             </div>
                             <div class="col-md-6">
-                                <p><i class="fas fa-weight"></i>{{ t('file_size') if t else 'File Size' }}: <strong>{{ "%.2f KB"|format(document.file_size / 1024) if document.file_size else 'Unknown' }}</strong></p>
+                                <p><i class="fas fa-weight"></i>{{ t('file_size') if t else 'File Size' }}: <strong>{{ "%.2f KB"|format(document.content|length / 1024) if document.content else 'Unknown' }}</strong></p>
                                 <p><i class="fas fa-tag"></i>{{ t('file_type') if t else 'File Type' }}: <strong>{{ document.title.split('.')[-1].upper() if '.' in document.title else 'Unknown' }}</strong></p>
                             </div>
                         </div>

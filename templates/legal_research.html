@@ -30,34 +30,7 @@
             width: 100%;
             min-height: 100vh;
             background: #f8fafc;
-        }
-        
-        
-        .navbar-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .navbar-right {
-            display: flex;
-            align-items: center;
-        }
-        
-        .sidebar-toggle-mobile {
-            display: none;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-        
-        .sidebar-toggle-mobile:hover {
-            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
         }
         
         /* Navigation */
@@ -90,6 +63,8 @@
         .main-container {
             min-height: calc(100vh - 80px);
             padding: 2rem 0;
+            position: relative;
+            z-index: 0;
         }
         
         .page-header {
@@ -116,96 +91,454 @@
             margin-bottom: 0;
         }
         
-        /* Research Form */
-        .research-form {
+        /* Chat Interface Styles */
+        .chat-container {
             background: white;
             border-radius: 20px;
-            padding: 2rem;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
+            height: 80vh;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: height 0.5s ease;
+            position: relative;
+            z-index: 1;
         }
         
-        .form-label {
-            font-weight: 600;
-            color: #374151;
+        .chat-container.expanded {
+            height: 85vh;
+        }
+        
+        .chat-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chat-history-toggle {
+            margin-left: auto;
+        }
+        
+        .chat-history-panel {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            margin: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .chat-history-header {
+            background: #e9ecef;
+            padding: 1rem;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .chat-history-list {
+            padding: 1rem;
+        }
+        
+        .history-item {
+            padding: 0.75rem;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
             margin-bottom: 0.5rem;
-        }
-        
-        .form-control, .form-select {
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            font-size: 1rem;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
         
-        .form-control:focus, .form-select:focus {
+        .history-item:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+        
+        .history-item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+        
+        .history-item-preview {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        
+        .history-item-date {
+            font-size: 0.75rem;
+            color: #999;
+        }
+        
+        .chat-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chat-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+            max-height: calc(80vh - 200px);
+        }
+        
+        .welcome-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 15px;
+            border-left: 4px solid #667eea;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .welcome-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .welcome-text h4 {
+            color: #1a1a1a;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-text p {
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        
+        .welcome-text ul {
+            color: #6b7280;
+            margin-left: 1rem;
+        }
+        
+        .chat-input-container {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            background: #f8fafc;
+            position: relative;
+            z-index: 10;
+            display: block !important;
+            visibility: visible !important;
+            min-height: 200px;
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .chat-input-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            width: 100%;
+            visibility: visible !important;
+        }
+        
+        .chat-input {
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            padding: 1.5rem;
+            resize: none;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-height: 100px;
+            max-height: 300px;
+            font-family: inherit;
+            background: white !important;
+            color: #333 !important;
+            display: block !important;
+            visibility: visible !important;
+        }
+        
+        .chat-input:focus {
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
-        .btn-primary {
+        .chat-send-btn {
             background: var(--primary-gradient);
             border: none;
-            border-radius: 12px;
-            padding: 0.75rem 2rem;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .voice-btn {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+        
+        .voice-btn:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .voice-btn.recording {
+            background: #dc3545;
+            border-color: #dc3545;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        #langToggleBtn {
+            background: #6c757d;
+            border-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+        
+        #langToggleBtn:hover {
+            background: #5a6268;
+            border-color: #5a6268;
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .chat-send-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .chat-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .chat-options .form-check-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .chat-options .form-select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Message styles */
+        .message {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .message.user {
+            flex-direction: row-reverse;
+        }
+        
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .message.user .message-avatar {
+            background: var(--primary-gradient);
+            color: white;
+        }
+        
+        .message.assistant .message-avatar {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+        
+        .message-content {
+            max-width: 70%;
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            position: relative;
+        }
+        
+        .message.user .message-content {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 15px 15px 5px 15px;
+        }
+        
+        .message.assistant .message-content {
+            background: #f8fafc;
+            color: #1a1a1a;
+            border: 1px solid #e5e7eb;
+            border-radius: 15px 15px 15px 5px;
+        }
+        
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+        
+        /* Chart suggestion buttons */
+        .chart-suggestion-buttons {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 15px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .chart-suggestion-text {
             font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .chart-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .chart-btn {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: white;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
             transition: all 0.3s ease;
         }
         
-        .btn-primary:hover {
+        .chart-btn:hover {
+            background: #667eea;
+            color: white;
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
         
-        /* Results Section */
-        .results-section {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            display: none;
+        .chart-btn i {
+            margin-right: 0.5rem;
         }
         
-        .result-item {
+        /* Typing indicator */
+        .typing-indicator .message-content {
             background: #f8fafc;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #667eea;
+            border: 1px solid #e5e7eb;
         }
         
-        .result-title {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.5rem;
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            align-items: center;
         }
         
-        .result-content {
-            color: #6b7280;
-            line-height: 1.6;
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
         }
         
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 2rem;
+        .typing-dots span:nth-child(1) {
+            animation-delay: -0.32s;
         }
         
-        .spinner-border {
-            color: #667eea;
+        .typing-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Chart message */
+        .chart-message {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: 15px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         /* Responsive */
         @media (max-width: 768px) {
-            .main-content-with-sidebar {
-                margin-left: 0 !important;
-            }
-            
-            .sidebar-toggle-mobile {
-                display: block;
-            }
-            
             .page-title {
                 font-size: 2rem;
             }
@@ -214,15 +547,39 @@
                 padding: 1rem 0;
             }
             
-            .page-header, .research-form, .results-section {
+            .page-header {
                 padding: 1.5rem;
             }
+        }
+        
+        /* Chart Styles */
+        .chart-container {
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .chart-wrapper {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .chart-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <!-- Include Sidebar -->
-    
     <!-- Main Content -->
     <div class="main-content-wrapper">
         <!-- Navigation -->
@@ -248,154 +605,926 @@
 
     <!-- Main Content -->
     <div class="container main-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1 class="page-title">
-                <i class="fas fa-search me-3"></i>Legal Research
-            </h1>
-            <p class="page-subtitle">
-                {{ t('legal_research_subtitle') if t else 'Conduct comprehensive legal research using AI-powered analysis of laws, regulations, and case precedents.' }}
-            </p>
+        <!-- Back to Dashboard Button -->
+        <div class="back-to-dashboard mb-3">
+            <a href="/user-dashboard" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
         </div>
 
-        <!-- Research Form -->
-        <div class="research-form">
-            <form id="researchForm">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="mb-3">
-                            <label for="researchQuery" class="form-label">
-                                <i class="fas fa-search me-2"></i>{{ t('research_query') if t else 'Research Query' }}
-                            </label>
-                            <textarea class="form-control" id="researchQuery" rows="4" 
-                                placeholder="{{ t('research_query_placeholder') if t else 'Enter your legal research question or topic...' }}" required></textarea>
+        <!-- Chat Interface -->
+        <div class="chat-container">
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <i class="fas fa-gavel me-2"></i>
+                        Legal Research Assistant
                         </div>
+                    <div class="chat-history-toggle">
+                        <button class="btn btn-sm btn-outline-secondary" id="toggleHistoryBtn">
+                            <i class="fas fa-history me-1"></i>Chat History
+                        </button>
                     </div>
-                    <div class="col-md-4">
-                        <div class="mb-3">
-                            <label for="jurisdiction" class="form-label">
-                                <i class="fas fa-map-marker-alt me-2"></i>{{ t('jurisdiction') if t else 'Jurisdiction' }}
-                            </label>
-                            <select class="form-select" id="jurisdiction">
-                                <option value="general">{{ t('general') if t else 'General' }}</option>
-                                <option value="saudi_arabia">{{ t('saudi_arabia') if t else 'Saudi Arabia' }}</option>
-                                <option value="uae">{{ t('uae') if t else 'UAE' }}</option>
-                                <option value="international">{{ t('international') if t else 'International' }}</option>
-                            </select>
                         </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="includeWebSearch">
-                                <label class="form-check-label" for="includeWebSearch">
-                                    {{ t('include_web_search') if t else 'Include Web Search' }}
-                                </label>
+                
+                <!-- Chat History Panel -->
+                <div class="chat-history-panel" id="chatHistoryPanel" style="display: none;">
+                    <div class="chat-history-header">
+                        <h6><i class="fas fa-history me-2"></i>Previous Conversations</h6>
+                        <button class="btn btn-sm btn-outline-secondary" id="closeHistoryBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
                             </div>
+                    <div class="chat-history-list" id="chatHistoryList">
+                        <!-- History items will be loaded here -->
+                        </div>
+                    </div>
+
+                <!-- Chat Messages Area -->
+                <div class="chat-messages" id="chatMessages">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">
+                            <i class="fas fa-robot"></i>
+                </div>
+                        <div class="welcome-text">
+                            <h4>Welcome to DALI Legal AI!</h4>
+                            <p>I'm your intelligent legal research assistant. I can help you with:</p>
+                            <ul>
+                                <li>Legal research and analysis</li>
+                                <li>Case law references</li>
+                                <li>Data visualization and charts</li>
+                                <li>Jurisdiction-specific information</li>
+                            </ul>
+                            <p>Just ask me anything, and I'll provide comprehensive legal insights!</p>
+                </div>
+                    </div>
+        </div>
+
+                <!-- Chat Input Area -->
+                <div class="chat-input-container" style="display: block !important; visibility: visible !important; background: #f8fafc !important; border: 2px solid #e5e7eb !important; margin: 20px 0 !important;">
+                    <div class="chat-input-wrapper">
+                        <div class="input-group chat-input-group">
+                            <textarea 
+                                class="form-control chat-input" 
+                                id="chatInput" 
+                                placeholder="Ask me about legal matters, request charts, or continue our conversation..."
+                                rows="3"
+                                style="display: block !important; visibility: visible !important; background: white !important; border: 2px solid #e5e7eb !important; min-height: 100px !important;"
+                            ></textarea>
+                            <button class="btn btn-outline-primary voice-btn" id="voiceBtn" type="button" title="Voice Input (Arabic/English)">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" id="langToggleBtn" type="button" title="Toggle Language (Arabic/English)">
+                                <i class="fas fa-language"></i>
+                            </button>
+                            <button class="btn btn-primary chat-send-btn" id="sendBtn" type="button">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+            </div>
+                        <div class="chat-options">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="includeWebSearch" checked>
+                                <label class="form-check-label" for="includeWebSearch">
+                                    Include web search
+                                </label>
+        </div>
+                            <div class="form-group">
+                                <select class="form-select form-select-sm" id="jurisdictionSelect">
+                                    <option value="Saudi Arabia">Saudi Arabia</option>
+                                    <option value="general">General</option>
+                                    <option value="United States">United States</option>
+                                    <option value="United Kingdom">United Kingdom</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-warning" onclick="debugElements()">
+                                Debug Elements
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success" onclick="scrollToInput()">
+                                Show Input
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-search me-2"></i>{{ t('start_research') if t else 'Start Research' }}
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Loading Spinner -->
-        <div class="loading-spinner" id="loadingSpinner">
-            <div class="spinner-border" role="status">
-                <span class="visually-hidden">{{ t('loading') if t else 'Loading...' }}</span>
-            </div>
-            <p class="mt-3">{{ t('researching') if t else 'Conducting research...' }}</p>
-        </div>
-
-        <!-- Results Section -->
-        <div class="results-section" id="resultsSection">
-            <h3 class="mb-4">
-                <i class="fas fa-clipboard-list me-2"></i>{{ t('research_results') if t else 'Research Results' }}
-            </h3>
-            <div id="resultsContent"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.getElementById('researchForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Debug function to check if elements exist
+        function debugElements() {
+            console.log('=== DEBUGGING ELEMENTS ===');
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const voiceBtn = document.getElementById('voiceBtn');
+            const chatContainer = document.querySelector('.chat-input-container');
             
-            const query = document.getElementById('researchQuery').value;
-            const jurisdiction = document.getElementById('jurisdiction').value;
-            const includeWebSearch = document.getElementById('includeWebSearch').checked;
+            console.log('Chat Input:', chatInput);
+            console.log('Send Button:', sendBtn);
+            console.log('Voice Button:', voiceBtn);
+            console.log('Chat Container:', chatContainer);
             
-            // Show loading spinner
-            document.getElementById('loadingSpinner').style.display = 'block';
-            document.getElementById('resultsSection').style.display = 'none';
+            if (chatInput) {
+                console.log('Chat Input Style:', window.getComputedStyle(chatInput).display);
+                console.log('Chat Input Visibility:', window.getComputedStyle(chatInput).visibility);
+            }
+            
+            console.log('=== END DEBUG ===');
+        }
+        
+        // Function to scroll to input area
+        function scrollToInput() {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                chatInput.focus();
+                chatInput.style.border = '3px solid #28a745';
+                chatInput.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
+                console.log('✅ Scrolled to input area');
+            } else {
+                console.error('❌ Chat input not found');
+                alert('Chat input not found!');
+            }
+        }
+        
+        // Call debug function after page loads
+        setTimeout(debugElements, 1000);
+        
+        // Simple test to show input is working
+        setTimeout(function() {
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                console.log('✅ Chat input found and ready!');
+                chatInput.style.border = '3px solid #28a745';
+                chatInput.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
+                
+                // Scroll to bottom to show input
+                chatInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                
+                // Also scroll the chat container to bottom
+                const chatContainer = document.querySelector('.chat-container');
+                if (chatContainer) {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+            } else {
+                console.error('❌ Chat input NOT found!');
+                alert('Chat input not found! Check console for details.');
+            }
+        }, 2000);
+        
+        // Voice Input System with Language Detection
+        console.log('JavaScript file loaded');
+        
+        // Voice input variables
+        let recognition = null;
+        let isRecording = false;
+        let currentLanguage = 'en-US'; // Default to English
+        
+        // Initialize speech recognition
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                console.log('Using webkitSpeechRecognition');
+            } else if ('SpeechRecognition' in window) {
+                recognition = new SpeechRecognition();
+                console.log('Using SpeechRecognition');
+            } else {
+                console.log('Speech recognition not supported');
+                document.getElementById('voiceBtn').style.display = 'none';
+                document.getElementById('langToggleBtn').style.display = 'none';
+                return;
+            }
+            
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+            
+            // Log available languages
+            console.log('Available languages:', recognition.lang);
+            
+            recognition.onstart = function() {
+                console.log('Speech recognition started');
+                isRecording = true;
+                document.getElementById('voiceBtn').classList.add('recording');
+                document.getElementById('voiceBtn').innerHTML = '<i class="fas fa-stop"></i>';
+            };
+            
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                // Update textarea with interim results
+                const chatInput = document.getElementById('chatInput');
+                if (interimTranscript) {
+                    chatInput.value = interimTranscript;
+                }
+                
+                if (finalTranscript) {
+                    chatInput.value = finalTranscript;
+                    console.log('Final transcript:', finalTranscript);
+                    
+                    // Detect language and set appropriate language for response
+                    detectLanguage(finalTranscript);
+                    
+                    // Auto-send the message
+                    setTimeout(() => {
+                        sendMessage();
+                    }, 500);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                stopRecording();
+                showNotification('Voice input error: ' + event.error, 'error');
+            };
+            
+            recognition.onend = function() {
+                console.log('Speech recognition ended');
+                stopRecording();
+            };
+        }
+        
+        // Detect language from text
+        function detectLanguage(text) {
+            // Enhanced language detection for Arabic and English
+            const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+            const englishPattern = /[a-zA-Z]/;
+            
+            const arabicMatches = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
+            const englishMatches = (text.match(/[a-zA-Z]/g) || []).length;
+            
+            console.log(`Arabic characters: ${arabicMatches}, English characters: ${englishMatches}`);
+            
+            if (arabicMatches > englishMatches) {
+                currentLanguage = 'ar-SA'; // Arabic (Saudi Arabia)
+                console.log('Detected language: Arabic');
+            } else {
+                currentLanguage = 'en-US'; // English (US)
+                console.log('Detected language: English');
+            }
+            
+            // Update recognition language for next use
+            if (recognition) {
+                recognition.lang = currentLanguage;
+                console.log('Updated recognition language to:', currentLanguage);
+            }
+        }
+        
+        // Set initial language for speech recognition
+        function setInitialLanguage() {
+            if (recognition) {
+                // Try to detect from browser language or default to English
+                const browserLang = navigator.language || navigator.userLanguage;
+                console.log('Browser language:', browserLang);
+                
+                if (browserLang.startsWith('ar')) {
+                    currentLanguage = 'ar-SA';
+                    recognition.lang = 'ar-SA';
+                    console.log('Set initial language to Arabic (ar-SA)');
+                } else {
+                    currentLanguage = 'en-US';
+                    recognition.lang = 'en-US';
+                    console.log('Set initial language to English (en-US)');
+                }
+                
+                // Also check if user has Arabic keyboard or input method
+                if (navigator.languages) {
+                    const hasArabic = navigator.languages.some(lang => lang.startsWith('ar'));
+                    if (hasArabic) {
+                        currentLanguage = 'ar-SA';
+                        recognition.lang = 'ar-SA';
+                        console.log('Detected Arabic in browser languages, set to Arabic');
+                    }
+                }
+            }
+        }
+        
+        // Start voice recording
+        function startRecording() {
+            if (!recognition) {
+                showNotification('Speech recognition not supported in this browser', 'error');
+                return;
+            }
             
             try {
-                const response = await fetch(`/api/legal-research?query=${encodeURIComponent(query)}&jurisdiction=${jurisdiction}&include_web_search=${includeWebSearch}`);
+                // Set language before starting
+                if (currentLanguage) {
+                    recognition.lang = currentLanguage;
+                    console.log('Starting recognition with language:', currentLanguage);
+                }
+                recognition.start();
+                showNotification('Listening... Speak now', 'info');
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                showNotification('Error starting voice input', 'error');
+            }
+        }
+        
+        // Stop voice recording
+        function stopRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+            }
+            isRecording = false;
+            document.getElementById('voiceBtn').classList.remove('recording');
+            document.getElementById('voiceBtn').innerHTML = '<i class="fas fa-microphone"></i>';
+        }
+        
+        // Toggle voice recording
+        function toggleVoiceRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        // Toggle language for voice input
+        function toggleLanguage() {
+            if (currentLanguage === 'ar-SA') {
+                currentLanguage = 'en-US';
+                if (recognition) {
+                    recognition.lang = 'en-US';
+                }
+                document.getElementById('langToggleBtn').innerHTML = '<i class="fas fa-language"></i> EN';
+                showNotification('Switched to English voice input', 'info');
+                console.log('Switched to English voice input');
+            } else {
+                currentLanguage = 'ar-SA';
+                if (recognition) {
+                    recognition.lang = 'ar-SA';
+                }
+                document.getElementById('langToggleBtn').innerHTML = '<i class="fas fa-language"></i> ع';
+                showNotification('تم التبديل إلى الإدخال الصوتي العربي', 'info');
+                console.log('Switched to Arabic voice input');
+            }
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+        
+        // Chat History Functions
+        async function loadChatHistory() {
+            try {
+                const response = await fetch('/api/conversation/history');
                 const data = await response.json();
                 
-                // Hide loading spinner
-                document.getElementById('loadingSpinner').style.display = 'none';
-                
-                // Display results
-                displayResults(data);
-                
+                if (data.success && data.sessions) {
+                    displayChatHistory(data.sessions);
+                }
             } catch (error) {
-                console.error('Research error:', error);
-                document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('resultsContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        {{ t('research_error') if t else 'An error occurred during research. Please try again.' }}
-                    </div>
+                console.error('Error loading chat history:', error);
+            }
+        }
+        
+        function displayChatHistory(sessions) {
+            const historyList = document.getElementById('chatHistoryList');
+            historyList.innerHTML = '';
+            
+            if (sessions.length === 0) {
+                historyList.innerHTML = '<p class="text-muted text-center">No previous conversations found.</p>';
+                return;
+            }
+            
+            sessions.forEach(session => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.onclick = () => loadSession(session.id);
+                
+                const title = session.title || 'Legal Research Session';
+                const preview = session.last_message ? session.last_message.substring(0, 100) + '...' : 'No messages';
+                const date = new Date(session.created_at).toLocaleDateString();
+                
+                historyItem.innerHTML = `
+                    <div class="history-item-title">${title}</div>
+                    <div class="history-item-preview">${preview}</div>
+                    <div class="history-item-date">${date}</div>
                 `;
-                document.getElementById('resultsSection').style.display = 'block';
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        async function loadSession(sessionId) {
+            try {
+                const response = await fetch(`/api/conversation/session/${sessionId}`);
+                const data = await response.json();
+                
+                if (data.success && data.messages) {
+                    // Clear current chat
+                    const chatMessages = document.getElementById('chatMessages');
+                    chatMessages.innerHTML = '';
+                    
+                    // Load session messages
+                    data.messages.forEach(message => {
+                        addMessageToChat(message.type, message.content);
+                    });
+                    
+                    // Hide history panel
+                    document.getElementById('chatHistoryPanel').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading session:', error);
+                showNotification('Error loading conversation', 'error');
+            }
+        }
+        
+        function toggleChatHistory() {
+            const panel = document.getElementById('chatHistoryPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                loadChatHistory();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+        
+        // Test function
+        function testButton() {
+            alert('Button clicked! JavaScript is working!');
+            console.log('Button test successful');
+        }
+        
+        // Test Chart.js
+        // Global function to create charts from data
+        window.createChartFromData = function(chartId, chartData) {
+            console.log('createChartFromData called with:', chartId, chartData);
+            const canvas = document.getElementById(chartId);
+            if (canvas && typeof Chart !== 'undefined') {
+                console.log('Creating chart with data:', chartData);
+                try {
+                    new Chart(canvas, chartData);
+                    console.log('Chart created successfully');
+                } catch (error) {
+                    console.error('Chart creation failed:', error);
+                }
+            } else {
+                console.error('Canvas element not found or Chart.js not loaded:', chartId);
+            }
+        };
+        
+        function testChart() {
+            console.log('Chart.js available:', typeof Chart !== 'undefined');
+            if (typeof Chart !== 'undefined') {
+                // Create a simple test chart
+                const testCanvas = document.createElement('canvas');
+                testCanvas.id = 'testChart';
+                testCanvas.width = 400;
+                testCanvas.height = 300;
+                
+                const chatMessages = document.getElementById('chatMessages');
+                const testDiv = document.createElement('div');
+                testDiv.className = 'chart-message';
+                testDiv.innerHTML = '<div class="chart-title">Test Chart</div><div class="chart-wrapper"></div>';
+                testDiv.querySelector('.chart-wrapper').appendChild(testCanvas);
+                chatMessages.appendChild(testDiv);
+                
+                // Create a simple pie chart
+                const ctx = testCanvas.getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Test 1', 'Test 2', 'Test 3'],
+                        datasets: [{
+                            data: [30, 50, 20],
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+                
+                alert('Test chart created! Check the chat area.');
+            } else {
+                alert('Chart.js is NOT loaded!');
+            }
+        }
+        
+        // Debug function to check what's in the generated HTML
+        function debugChartHTML() {
+            const chartMessages = document.querySelectorAll('.chart-message');
+            console.log('Found chart messages:', chartMessages.length);
+            chartMessages.forEach((msg, index) => {
+                console.log(`Chart message ${index}:`, msg.innerHTML);
+                const canvas = msg.querySelector('canvas');
+                console.log(`Canvas ${index}:`, canvas);
+                if (canvas) {
+                    console.log(`Canvas ID ${index}:`, canvas.id);
+                }
+            });
+        }
+        
+        // Global variables
+        let currentSessionId = null;
+        
+        // Wait for page to load
+        window.addEventListener('load', function() {
+            console.log('Page loaded');
+            
+            const sendBtn = document.getElementById('sendBtn');
+            const chatInput = document.getElementById('chatInput');
+            
+            console.log('Send button found:', sendBtn);
+            console.log('Chat input found:', chatInput);
+            
+            if (sendBtn) {
+                sendBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Send button clicked!');
+                    sendMessage();
+                });
+                console.log('Event listener added to send button');
+            } else {
+                console.error('Send button not found!');
+            }
+            
+            // Add Enter key support
+            if (chatInput) {
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+                        sendMessage();
+                    }
+                });
             }
         });
         
-        function displayResults(data) {
-            const resultsContent = document.getElementById('resultsContent');
+        function sendMessage() {
+            console.log('sendMessage function called');
+            const chatInput = document.getElementById('chatInput');
+            const message = chatInput.value.trim();
             
-            if (data.success && data.results) {
-                // Display the research results
-                resultsContent.innerHTML = `
-                    <div class="result-item">
-                        <div class="result-content">${data.results}</div>
-                    </div>
-                `;
-            } else if (data.error) {
-                resultsContent.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        ${data.error}
-                    </div>
-                `;
-            } else {
-                resultsContent.innerHTML = `
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        {{ t('no_results_found') if t else 'No specific results found. Please try refining your search query.' }}
-                    </div>
-                `;
+            console.log('Message:', message);
+            
+            if (!message) {
+                console.log('No message to send');
+                return;
             }
             
-            document.getElementById('resultsSection').style.display = 'block';
+            // Expand chat container on first message
+            const chatContainer = document.querySelector('.chat-container');
+            if (!chatContainer.classList.contains('expanded')) {
+                chatContainer.classList.add('expanded');
+            }
+            
+            // Add user message to chat
+            addMessageToChat('user', message);
+            
+            // Clear input
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            
+            // Show loading
+            showTypingIndicator();
+            
+            // Send to API
+            sendToAPI(message);
         }
         
-        // Mobile sidebar toggle
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileToggle = document.getElementById('sidebarToggleMobile');
-            const sidebar = document.getElementById('sidebarMenu');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
+        function addMessageToChat(type, content, timestamp = null) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
             
-            if (mobileToggle && sidebar) {
-                mobileToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('mobile-open');
-                    sidebarOverlay.classList.toggle('active');
+            const avatar = type === 'user' ? 
+                '<i class="fas fa-user"></i>' : 
+                '<i class="fas fa-robot"></i>';
+            
+            const time = timestamp || new Date().toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-avatar">${avatar}</div>
+                <div class="message-content">
+                    <div class="message-text">${formatMessageContent(content)}</div>
+                    <div class="message-time">${time}</div>
+                    </div>
+                `;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function formatMessageContent(content) {
+            // Convert markdown-style formatting to HTML
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^\- (.*$)/gm, '<li>$1</li>')
+                .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
+                .replace(/\n/g, '<br>')
+                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+        }
+        
+        function showTypingIndicator() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message assistant typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            
+            typingDiv.innerHTML = `
+                <div class="message-avatar"><i class="fas fa-robot"></i></div>
+                <div class="message-content">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    </div>
+                `;
+            
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+        
+        async function sendToAPI(message) {
+            try {
+                console.log('sendToAPI called with message:', message);
+                
+                // Check authentication
+                const token = localStorage.getItem('access_token');
+                console.log('Access token:', token ? 'Found' : 'Not found');
+                
+                if (!token) {
+                    console.error('No access token found - user not authenticated');
+                    addMessageToChat('assistant', 'Please log in to use the chat feature.');
+                    return;
+                }
+                
+                const jurisdiction = document.getElementById('jurisdictionSelect').value;
+                const includeWebSearch = document.getElementById('includeWebSearch').checked;
+                
+                console.log('Sending request to API...');
+                
+                const response = await fetch('/api/legal-research', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        jurisdiction: jurisdiction,
+                        include_web_search: includeWebSearch.toString()
+                    })
                 });
+                
+                console.log('API response status:', response.status);
+                const data = await response.json();
+                console.log('API response data:', data);
+                
+                // Debug: Check if data is null or undefined
+                if (!data) {
+                    console.error('API returned null or undefined data');
+                    removeTypingIndicator();
+                    addMessageToChat('assistant', 'Sorry, I received an invalid response from the server.');
+                    return;
+                }
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                if (data && data.success) {
+                    // Store session ID for future requests
+                    if (data.session_id) {
+                        currentSessionId = data.session_id;
+                    }
+                    
+                    // Add AI response to chat
+                    addMessageToChat('assistant', data.results);
+                    
+                    // Check if AI is creating a chart
+                    if (data.results && (data.results.includes('Creating your pie chart now') || 
+                        data.results.includes('Creating your chart now') ||
+                        (data.results.includes('pie chart') && data.results.includes('Creating')))) {
+                        // Automatically generate pie chart
+                        setTimeout(() => {
+                            requestChart('pie');
+                        }, 1000);
+                    }
+                    
+                    // Check if AI suggested a chart
+                    if (data.results && data.results.includes('Would you like me to create a chart')) {
+                        // Add chart suggestion buttons
+                        addChartSuggestionButtons();
+                    }
+            } else {
+                    const errorMsg = data && data.error ? data.error : 'Unknown error occurred';
+                    addMessageToChat('assistant', `Sorry, I encountered an error: ${errorMsg}`);
+                }
+            } catch (error) {
+                console.error('Error in sendToAPI:', error);
+                removeTypingIndicator();
+                addMessageToChat('assistant', `Sorry, I encountered an error: ${error.message}`);
+            }
+        }
+        
+        function addChartSuggestionButtons() {
+            const chatMessages = document.getElementById('chatMessages');
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'chart-suggestion-buttons';
+            
+            buttonsDiv.innerHTML = `
+                <div class="chart-suggestion-text">Choose a chart type:</div>
+                <div class="chart-buttons">
+                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('pie')">
+                        <i class="fas fa-chart-pie"></i> Pie Chart
+                    </button>
+                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('bar')">
+                        <i class="fas fa-chart-bar"></i> Bar Chart
+                    </button>
+                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('doughnut')">
+                        <i class="fas fa-circle-notch"></i> Doughnut Chart
+                    </button>
+                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('line')">
+                        <i class="fas fa-chart-line"></i> Line Chart
+                    </button>
+                    </div>
+                `;
+            
+            chatMessages.appendChild(buttonsDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        async function requestChart(chartType) {
+            if (!currentSessionId) {
+                addMessageToChat('assistant', 'Sorry, I need to start a new conversation to generate a chart.');
+                return;
+            }
+            
+            // Add user message
+            addMessageToChat('user', `Yes, I want a ${chartType} chart`);
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/generate-chart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({
+                        chart_type: chartType,
+                        session_id: currentSessionId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                removeTypingIndicator();
+                
+                if (data.success) {
+                    // Add AI response with chart
+                    addMessageToChat('assistant', `Here's your ${chartType} chart!`);
+                    
+                    // Add chart to chat
+                    const chatMessages = document.getElementById('chatMessages');
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = 'chart-message';
+                    chartDiv.innerHTML = data.chart_html;
+                    chatMessages.appendChild(chartDiv);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Chart is now a simple image - no JavaScript needed!
+                    console.log('Chart HTML inserted:', data.chart_html);
+                    
+                    
+                    // Remove chart suggestion buttons
+                    const suggestionButtons = document.querySelector('.chart-suggestion-buttons');
+                    if (suggestionButtons) {
+                        suggestionButtons.remove();
+                    }
+                } else {
+                    addMessageToChat('assistant', `Sorry, I couldn't generate the chart: ${data.error}`);
+                }
+            } catch (error) {
+                removeTypingIndicator();
+                addMessageToChat('assistant', `Sorry, I encountered an error: ${error.message}`);
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing voice input system...');
+            
+            // Initialize speech recognition
+            initSpeechRecognition();
+            
+            // Set initial language
+            setTimeout(() => {
+                setInitialLanguage();
+            }, 100);
+            
+            // Voice button event listener
+            const voiceBtn = document.getElementById('voiceBtn');
+            if (voiceBtn) {
+                voiceBtn.addEventListener('click', toggleVoiceRecording);
+                console.log('Voice button event listener added');
+            }
+            
+            // Language toggle button event listener
+            const langToggleBtn = document.getElementById('langToggleBtn');
+            if (langToggleBtn) {
+                langToggleBtn.addEventListener('click', toggleLanguage);
+                console.log('Language toggle button event listener added');
+                
+                // Set initial button text based on current language
+                if (currentLanguage === 'ar-SA') {
+                    langToggleBtn.innerHTML = '<i class="fas fa-language"></i> ع';
+                } else {
+                    langToggleBtn.innerHTML = '<i class="fas fa-language"></i> EN';
+                }
+            } else {
+                console.error('Language toggle button not found');
+            }
+            
+            // Chat history button event listener
+            const toggleHistoryBtn = document.getElementById('toggleHistoryBtn');
+            if (toggleHistoryBtn) {
+                toggleHistoryBtn.addEventListener('click', toggleChatHistory);
+                console.log('Chat history button event listener added');
+            }
+            
+            // Close history button event listener
+            const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+            if (closeHistoryBtn) {
+                closeHistoryBtn.addEventListener('click', () => {
+                    document.getElementById('chatHistoryPanel').style.display = 'none';
+                });
+                console.log('Close history button event listener added');
+            }
+            
+            // Send button event listener
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', sendMessage);
+                console.log('Send button event listener added');
+            } else {
+                console.error('Send button not found');
+            }
+            
+            // Enter key support for textarea
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                console.log('Chat input found and event listener added');
+                chatInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            } else {
+                console.error('Chat input not found!');
             }
         });
     </script>
 </body>
 </html>
+

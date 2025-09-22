@@ -91,6 +91,49 @@
             margin-bottom: 2rem;
         }
         
+        .data-analysis-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .analysis-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+        
+        .analysis-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .analysis-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0.75rem 0.75rem 0 0;
+            padding: 1rem;
+            margin: 0;
+        }
+        
+        .analysis-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .analysis-card h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        
         .form-label {
             font-weight: 600;
             color: #374151;
@@ -261,6 +304,13 @@
 
     <!-- Main Content -->
     <div class="container main-container">
+        <!-- Back to Dashboard Button -->
+        <div class="back-to-dashboard mb-3">
+            <a href="/user-dashboard" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+        
         <!-- Page Header -->
         <div class="page-header">
             <h1 class="page-title">
@@ -313,6 +363,74 @@
                     </button>
                 </div>
             </form>
+        </div>
+
+        <!-- Data Analysis Section -->
+        <div class="data-analysis-section mt-5">
+            <div class="section-header">
+                <h3><i class="fas fa-chart-bar me-2"></i>Data Analysis & Insights</h3>
+                <p class="text-muted">Get analytical insights from your knowledge base data</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-pie me-2"></i>Document Statistics</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-outline-primary w-100" onclick="analyzeDocumentStats()">
+                                <i class="fas fa-calculator me-2"></i>Analyze Document Distribution
+                            </button>
+                            <small class="text-muted d-block mt-2">Get insights on document types, dates, and patterns</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-search-plus me-2"></i>Content Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-outline-success w-100" onclick="analyzeContentPatterns()">
+                                <i class="fas fa-brain me-2"></i>Analyze Content Patterns
+                            </button>
+                            <small class="text-muted d-block mt-2">Discover trends and patterns in document content</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-timeline me-2"></i>Temporal Analysis</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-outline-info w-100" onclick="analyzeTemporalData()">
+                                <i class="fas fa-clock me-2"></i>Analyze Time Trends
+                            </button>
+                            <small class="text-muted d-block mt-2">Understand how your data changes over time</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-key me-2"></i>Key Insights</h5>
+                        </div>
+                        <div class="card-body">
+                            <button class="btn btn-outline-warning w-100" onclick="generateKeyInsights()">
+                                <i class="fas fa-lightbulb me-2"></i>Generate Key Insights
+                            </button>
+                            <small class="text-muted d-block mt-2">Get AI-powered insights from your data</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Loading Spinner -->
@@ -499,6 +617,112 @@
             };
             
             Plotly.newPlot('chartContainer', [trace], layout, {responsive: true});
+        }
+        
+        // Data Analysis Functions
+        async function analyzeDocumentStats() {
+            try {
+                showAnalysisLoading('Document Statistics');
+                const response = await fetch('/api/knowledge-base/analyze/document-stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAnalysisResults('Document Statistics', data.analysis);
+                } else {
+                    showAnalysisError('Failed to analyze document statistics');
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showAnalysisError('Error analyzing document statistics');
+            }
+        }
+        
+        async function analyzeContentPatterns() {
+            try {
+                showAnalysisLoading('Content Patterns');
+                const response = await fetch('/api/knowledge-base/analyze/content-patterns');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAnalysisResults('Content Patterns', data.analysis);
+                } else {
+                    showAnalysisError('Failed to analyze content patterns');
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showAnalysisError('Error analyzing content patterns');
+            }
+        }
+        
+        async function analyzeTemporalData() {
+            try {
+                showAnalysisLoading('Temporal Analysis');
+                const response = await fetch('/api/knowledge-base/analyze/temporal-data');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAnalysisResults('Temporal Analysis', data.analysis);
+                } else {
+                    showAnalysisError('Failed to analyze temporal data');
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showAnalysisError('Error analyzing temporal data');
+            }
+        }
+        
+        async function generateKeyInsights() {
+            try {
+                showAnalysisLoading('Key Insights');
+                const response = await fetch('/api/knowledge-base/analyze/key-insights');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAnalysisResults('Key Insights', data.analysis);
+                } else {
+                    showAnalysisError('Failed to generate key insights');
+                }
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showAnalysisError('Error generating key insights');
+            }
+        }
+        
+        function showAnalysisLoading(analysisType) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.style.display = 'block';
+            
+            const dataResults = document.getElementById('dataResults');
+            dataResults.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Analyzing ${analysisType}...</p>
+                </div>
+            `;
+        }
+        
+        function displayAnalysisResults(title, analysis) {
+            const dataResults = document.getElementById('dataResults');
+            dataResults.innerHTML = `
+                <div class="analysis-results">
+                    <h4><i class="fas fa-chart-bar me-2"></i>${title}</h4>
+                    <div class="analysis-content">
+                        ${analysis}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showAnalysisError(message) {
+            const dataResults = document.getElementById('dataResults');
+            dataResults.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${message}
+                </div>
+            `;
         }
     </script>
     </div>

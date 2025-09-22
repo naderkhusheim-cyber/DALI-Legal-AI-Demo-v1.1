@@ -8,6 +8,7 @@ import os
 import json
 import bcrypt
 import jwt
+import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, Request, Form, HTTPException, Depends, status, UploadFile, File, Body
@@ -17,8 +18,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, Resp
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.sessions import SessionMiddleware
 from pydantic import BaseModel
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 import logging
 import requests
 from bs4 import BeautifulSoup
@@ -345,13 +345,7 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Database configuration
-DB_CONFIG = {
-    'host': 'localhost',
-    'port': 3306,
-    'user': 'dali_user',
-    'password': 'dali_password',
-    'database': 'dali_legal_ai'
-}
+DB_PATH = "data/dali_users.db"
 
 # Load configuration
 def load_config():
@@ -406,11 +400,122 @@ class User(BaseModel):
 def get_db_connection():
     """Get database connection"""
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
+        connection = sqlite3.connect(DB_PATH)
+        connection.row_factory = sqlite3.Row  # Enable column access by name
         return connection
-    except Error as e:
+    except sqlite3.Error as e:
         logger.error(f"Database connection failed: {e}")
         raise HTTPException(status_code=500, detail="Database connection failed")
+
+# Conversation Memory Functions
+def save_conversation_message(user_id: int, session_id: str, message_type: str, message_content: str, context_data: Optional[Dict] = None):
+    """Save a conversation message to memory"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        context_json = json.dumps(context_data) if context_data else None
+        
+        cursor.execute('''
+            INSERT INTO conversation_memory (user_id, session_id, message_type, message_content, context_data)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, session_id, message_type, message_content, context_json))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error saving conversation message: {str(e)}")
+        return False
+
+def get_conversation_history(user_id: int, session_id: str, limit: int = 10) -> List[Dict]:
+    """Get conversation history for a user session"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT message_type, message_content, context_data, created_at
+            FROM conversation_memory
+            WHERE user_id = ? AND session_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+        ''', (user_id, session_id, limit))
+        
+        messages = []
+        for row in cursor.fetchall():
+            context_data = json.loads(row[2]) if row[2] else None
+            messages.append({
+                'type': row[0],
+                'content': row[1],
+                'context': context_data,
+                'timestamp': row[3]
+            })
+        
+        conn.close()
+        return list(reversed(messages))  # Return in chronological order
+    except Exception as e:
+        logger.error(f"Error getting conversation history: {str(e)}")
+        return []
+
+def create_conversation_session(user_id: int, session_name: Optional[str] = None) -> str:
+    """Create a new conversation session"""
+    try:
+        session_id = str(uuid.uuid4())
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO conversation_sessions (user_id, session_id, session_name)
+            VALUES (?, ?, ?)
+        ''', (user_id, session_id, session_name or f"Session {datetime.now().strftime('%Y-%m-%d %H:%M')}"))
+        
+        conn.commit()
+        conn.close()
+        return session_id
+    except Exception as e:
+        logger.error(f"Error creating conversation session: {str(e)}")
+        return str(uuid.uuid4())  # Fallback
+
+def get_active_session(user_id: int) -> Optional[str]:
+    """Get the most recent active session for a user"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT session_id FROM conversation_sessions
+            WHERE user_id = ? AND is_active = 1
+            ORDER BY last_activity DESC
+            LIMIT 1
+        ''', (user_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        return result[0] if result else None
+    except Exception as e:
+        logger.error(f"Error getting active session: {str(e)}")
+        return None
+
+def update_session_activity(session_id: str):
+    """Update the last activity time for a session"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE conversation_sessions
+            SET last_activity = CURRENT_TIMESTAMP
+            WHERE session_id = ?
+        ''', (session_id,))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error updating session activity: {str(e)}")
+        return False
 
 # Authentication functions
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -476,7 +581,234 @@ def scrape_with_firecrawl(url: str) -> dict:
     except Exception as e:
         return {"success": False, "error": f"Firecrawl scraping failed: {str(e)}"}
 
-def scrape_with_beautifulsoup(url: str) -> dict:
+def scrape_with_authentication(url: str, username: str = None, password: str = None) -> dict:
+    """Scrape content from sites that require authentication"""
+    try:
+        import requests
+        from requests.auth import HTTPBasicAuth
+        
+        # Create a session to maintain cookies
+        session = requests.Session()
+        
+        # Enhanced headers for authenticated requests
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        session.headers.update(headers)
+        
+        # Try to access the main page first
+        try:
+            response = session.get(url, timeout=15, allow_redirects=True)
+        except Exception as e:
+            return {"success": False, "error": f"Failed to access main page: {str(e)}"}
+        
+        # Check if we need authentication
+        if response.status_code == 401 or "login" in response.text.lower() or "تسجيل الدخول" in response.text:
+            logger.info(f"Authentication required for {url}")
+            
+            # Try to find login form and submit credentials
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Look for login forms
+            login_form = soup.find('form', {'action': lambda x: x and 'login' in x.lower()}) or \
+                        soup.find('form', {'id': lambda x: x and 'login' in x.lower()}) or \
+                        soup.find('form', {'class': lambda x: x and 'login' in x.lower()})
+            
+            if login_form:
+                login_url = login_form.get('action', url)
+                if login_url.startswith('/'):
+                    from urllib.parse import urljoin
+                    login_url = urljoin(url, login_url)
+                
+                # Try to submit login form
+                form_data = {}
+                for input_field in login_form.find_all('input'):
+                    name = input_field.get('name')
+                    value = input_field.get('value', '')
+                    if name:
+                        if 'email' in name.lower() or 'username' in name.lower() or 'user' in name.lower():
+                            form_data[name] = username or 'demo@example.com'
+                        elif 'password' in name.lower() or 'pass' in name.lower():
+                            form_data[name] = password or 'demo123'
+                        else:
+                            form_data[name] = value
+                
+                try:
+                    login_response = session.post(login_url, data=form_data, timeout=15)
+                    if login_response.status_code == 200:
+                        # Try to access the original URL again
+                        response = session.get(url, timeout=15, allow_redirects=True)
+                except Exception as e:
+                    logger.warning(f"Login attempt failed: {e}")
+        
+        # Process the response
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Remove unwanted elements
+            for element in soup(["script", "style", "nav", "footer", "header", "aside", "advertisement", "ads"]):
+                element.decompose()
+            
+            # Extract main content
+            main_content = ""
+            content_selectors = [
+                'main', 'article', '[role="main"]', '.content', '.main-content', 
+                '.article-content', '.post-content', '.entry-content', '.page-content',
+                '#content', '#main', '.container', '.wrapper', '.legal-content',
+                '.document-content', '.search-results', '.documents-list'
+            ]
+            
+            for selector in content_selectors:
+                main_element = soup.select_one(selector)
+                if main_element:
+                    main_text = main_element.get_text(separator='\n', strip=True)
+                    if len(main_text) > len(main_content):
+                        main_content = main_text
+                        break
+            
+            if not main_content:
+                body = soup.find('body')
+                if body:
+                    main_content = body.get_text(separator='\n', strip=True)
+                else:
+                    main_content = soup.get_text(separator='\n', strip=True)
+            
+            # Clean up the text
+            lines = [line.strip() for line in main_content.split('\n') if line.strip()]
+            filtered_lines = []
+            
+            skip_patterns = [
+                'skip to', 'menu', 'navigation', 'search', 'login', 'register',
+                'subscribe', 'follow us', 'share', 'print', 'email', 'rss',
+                'cookie', 'privacy', 'terms', 'copyright', 'all rights reserved',
+                'تسجيل الدخول', 'تواصل معنا', 'english', 'المعرفة'
+            ]
+            
+            for line in lines:
+                line_lower = line.lower()
+                if (len(line) > 20 and 
+                    not any(pattern in line_lower for pattern in skip_patterns) and
+                    not line.startswith('http') and
+                    not line.startswith('www.') and
+                    not line.startswith('mailto:')):
+                    filtered_lines.append(line)
+            
+            content = '\n'.join(filtered_lines)
+            
+            # Extract links
+            links = []
+            for link in soup.find_all('a', href=True):
+                href = link.get('href')
+                if href and not href.startswith('#') and not href.startswith('javascript:'):
+                    if href.startswith('/'):
+                        from urllib.parse import urljoin
+                        href = urljoin(url, href)
+                    links.append(href)
+            
+            return {
+                "success": True,
+                "data": {
+                    "content": content,
+                    "html": response.text,
+                    "links": links,
+                    "title": soup.find('title').get_text() if soup.find('title') else "Untitled",
+                    "description": soup.find('meta', {'name': 'description'}).get('content', '') if soup.find('meta', {'name': 'description'}) else ""
+                },
+                "metadata": {
+                    "url": url,
+                    "status_code": response.status_code,
+                    "authenticated": True
+                }
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"HTTP {response.status_code}: {response.reason}"
+            }
+            
+    except Exception as e:
+        return {"success": False, "error": f"Authentication scraping failed: {str(e)}"}
+
+def scrape_useful_links(url: str, max_links: int = 10, bypass_auth: bool = False) -> dict:
+    """Scrape content from useful links found on a page"""
+    try:
+        # First get the main page to find useful links
+        main_result = scrape_with_beautifulsoup(url, bypass_auth)
+        if not main_result.get("success"):
+            return {"success": False, "error": "Could not scrape main page"}
+        
+        # Extract links from the main page
+        soup = BeautifulSoup(main_result.get("html", ""), 'html.parser')
+        links = []
+        
+        # Find useful links (Wikipedia internal links, external references, etc.)
+        for link in soup.find_all('a', href=True):
+            href = link.get('href')
+            text = link.get_text(strip=True)
+            
+            # Filter for useful links
+            if (href and text and len(text) > 3 and 
+                not href.startswith('#') and  # Skip anchor links
+                not href.startswith('javascript:') and  # Skip JS links
+                not any(skip in href.lower() for skip in ['login', 'register', 'search', 'menu', 'nav']) and
+                not any(skip in text.lower() for skip in ['menu', 'navigation', 'search', 'login', 'register'])):
+                
+                # Convert relative URLs to absolute
+                if href.startswith('/'):
+                    from urllib.parse import urljoin
+                    href = urljoin(url, href)
+                elif not href.startswith('http'):
+                    continue
+                
+                links.append({
+                    'url': href,
+                    'text': text,
+                    'title': link.get('title', text)
+                })
+        
+        # Remove duplicates and limit
+        unique_links = []
+        seen_urls = set()
+        for link in links:
+            if link['url'] not in seen_urls and len(unique_links) < max_links:
+                unique_links.append(link)
+                seen_urls.add(link['url'])
+        
+        # Scrape content from each useful link
+        scraped_content = []
+        for link in unique_links:
+            try:
+                link_result = scrape_with_beautifulsoup(link['url'], bypass_auth)
+                if link_result.get("success"):
+                    content = link_result.get("data", {}).get("content", "")
+                    if content and len(content) > 100:  # Only include substantial content
+                        scraped_content.append({
+                            'url': link['url'],
+                            'title': link['title'],
+                            'content': content[:2000]  # Limit content length
+                        })
+            except Exception as e:
+                logger.warning(f"Failed to scrape link {link['url']}: {e}")
+                continue
+        
+        return {
+            "success": True,
+            "useful_links": unique_links,
+            "scraped_content": scraped_content,
+            "total_links_found": len(links),
+            "content_scraped": len(scraped_content)
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": f"Link scraping failed: {str(e)}"}
+
+def scrape_with_beautifulsoup(url: str, bypass_auth: bool = False) -> dict:
     """Enhanced scraping using BeautifulSoup with robust error handling"""
     try:
         # Enhanced headers to avoid blocking
@@ -488,6 +820,24 @@ def scrape_with_beautifulsoup(url: str) -> dict:
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
         }
+        
+        # Add bypass authentication headers if requested
+        if bypass_auth:
+            from urllib.parse import urlparse
+            parsed_url = urlparse(url)
+            headers.update({
+                'X-Requested-With': 'XMLHttpRequest',
+                'Referer': f"{parsed_url.scheme}://{parsed_url.netloc}",
+                'Origin': f"{parsed_url.scheme}://{parsed_url.netloc}",
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'same-origin',
+                'Sec-Fetch-User': '?1',
+                'DNT': '1',
+                'Sec-GPC': '1'
+            })
         
         # Make request with better error handling
         try:
@@ -524,21 +874,79 @@ def scrape_with_beautifulsoup(url: str) -> dict:
         except Exception as e:
             return {"success": False, "error": f"HTML parsing failed: {str(e)}"}
         
-        # Extract text content with better cleaning
+        # Extract main content with better prioritization
         try:
-            # Remove script and style elements
-            for script in soup(["script", "style", "nav", "footer", "header"]):
-                script.decompose()
+            # Remove unwanted elements
+            for element in soup(["script", "style", "nav", "footer", "header", "aside", "advertisement", "ads"]):
+                element.decompose()
             
-            text_content = soup.get_text(separator='\n', strip=True)
+            # Try to find main content areas first
+            main_content = ""
+            content_selectors = [
+                'main', 'article', '[role="main"]', '.content', '.main-content', 
+                '.article-content', '.post-content', '.entry-content', '.page-content',
+                '#content', '#main', '.container', '.wrapper'
+            ]
             
-            # Clean up the text
-            lines = [line.strip() for line in text_content.split('\n') if line.strip()]
-            text_content = '\n'.join(lines)
+            for selector in content_selectors:
+                main_element = soup.select_one(selector)
+                if main_element:
+                    # Extract text from main content area
+                    main_text = main_element.get_text(separator='\n', strip=True)
+                    if len(main_text) > len(main_content):
+                        main_content = main_text
+                        break
+            
+            # If no main content found, use body
+            if not main_content:
+                body = soup.find('body')
+                if body:
+                    main_content = body.get_text(separator='\n', strip=True)
+                else:
+                    main_content = soup.get_text(separator='\n', strip=True)
+            
+            # Clean up the text and prioritize meaningful content
+            lines = [line.strip() for line in main_content.split('\n') if line.strip()]
+            
+            # Filter out very short lines and common navigation text
+            filtered_lines = []
+            skip_patterns = [
+                'skip to', 'menu', 'navigation', 'search', 'login', 'register',
+                'subscribe', 'follow us', 'share', 'print', 'email', 'rss',
+                'cookie', 'privacy', 'terms', 'copyright', 'all rights reserved',
+                'main page', 'contents', 'current events', 'random article', 'about wikipedia',
+                'contact us', 'help', 'learn to edit', 'community portal', 'recent changes',
+                'upload file', 'special pages', 'donate', 'create account', 'log in',
+                'personal tools', 'pages for logged out editors', 'contributions', 'talk',
+                'toggle the table of contents', 'edit links', 'article', 'view history',
+                'what links here', 'related changes', 'permanent link', 'page information',
+                'cite this page', 'get shortened url', 'download qr code', 'expand all',
+                'download as pdf', 'printable version', 'in other projects', 'wikimedia commons',
+                'wikidata item', 'appearance', 'move to sidebarhide', 'from wikipedia',
+                'the free encyclopedia', 'category', 'hidden categories', 'webarchive template',
+                'articles with short description', 'short description is different from wikidata',
+                'articles with excerpts', 'this page was last edited', 'text is available under',
+                'creative commons attribution', 'additional terms may apply', 'by using this site',
+                'you agree to the terms of use', 'privacy policy', 'wikipedia is a registered trademark',
+                'wikimedia foundation inc', 'non-profit organization', 'privacy policy', 'about wikipedia',
+                'disclaimers', 'contact wikipedia', 'code of conduct', 'developers', 'statistics',
+                'cookie statement', 'mobile view', 'powered by mediawiki', 'search', 'search'
+            ]
+            
+            for line in lines:
+                line_lower = line.lower()
+                # Skip very short lines or navigation text
+                if (len(line) > 20 and 
+                    not any(pattern in line_lower for pattern in skip_patterns) and
+                    not line.startswith('http') and
+                    not line.startswith('www.')):
+                    filtered_lines.append(line)
+            
+            text_content = '\n'.join(filtered_lines)
             
             # Check if we got meaningful content
-            if len(text_content) < 50:
-                return {"success": False, "error": "Insufficient content extracted - page may be empty or blocked"}
+            if len(text_content) < 100:
+                return {"success": False, "error": "Insufficient meaningful content extracted - page may be empty or blocked"}
                 
         except Exception as e:
             return {"success": False, "error": f"Content extraction failed: {str(e)}"}
@@ -578,17 +986,49 @@ def scrape_with_beautifulsoup(url: str) -> dict:
         except Exception:
             pass
         
-        # Extract links
+        # Extract meaningful links only
         links = []
         try:
+            # Define patterns for useful links
+            useful_patterns = [
+                'article', 'news', 'post', 'page', 'document', 'pdf', 'doc',
+                'research', 'study', 'report', 'analysis', 'guide', 'tutorial',
+                'legal', 'law', 'regulation', 'policy', 'case', 'court'
+            ]
+            
+            # Define patterns for useless links
+            useless_patterns = [
+                'javascript:', 'mailto:', 'tel:', '#', 'facebook.com', 'twitter.com',
+                'instagram.com', 'linkedin.com', 'youtube.com', 'google.com',
+                'advertisement', 'ads', 'banner', 'popup', 'cookie', 'privacy',
+                'terms', 'contact', 'about', 'home', 'index'
+            ]
+            
             for link in soup.find_all('a', href=True):
                 href = link['href']
+                link_text = link.get_text().strip().lower()
+                
+                # Skip useless links
+                if any(pattern in href.lower() for pattern in useless_patterns):
+                    continue
+                
+                # Skip very short or generic link text
+                if len(link_text) < 3 or link_text in ['click here', 'read more', 'more', 'here']:
+                    continue
+                
+                # Prioritize links with useful patterns
+                is_useful = any(pattern in href.lower() or pattern in link_text for pattern in useful_patterns)
+                
                 if href.startswith('http'):
-                    links.append(href)
+                    if is_useful or len(links) < 10:  # Limit to 10 most useful links
+                        links.append(href)
                 elif href.startswith('/'):
                     # Convert relative URLs to absolute
                     from urllib.parse import urljoin
-                    links.append(urljoin(url, href))
+                    full_url = urljoin(url, href)
+                    if is_useful or len(links) < 10:
+                        links.append(full_url)
+                        
         except Exception:
             pass
         
@@ -597,7 +1037,7 @@ def scrape_with_beautifulsoup(url: str) -> dict:
             "title": title_text,
             "description": description,
             "content": text_content,
-            "links": links[:20],  # Limit to first 20 links
+            "links": links,  # Now limited to 10 most useful links
             "url": url,
             "method": "beautifulsoup",
             "status_code": response.status_code,
@@ -721,12 +1161,12 @@ def download_documents_from_links(base_url: str, links: List[str], user_id: int,
                             if document_text and len(document_text.strip()) > 50:
                                 # Save document to database
                                 conn = get_db_connection()
-                                cursor = conn.cursor(dictionary=True)
+                                cursor = conn.cursor()
                                 
                                 # Insert document record
                                 cursor.execute("""
                                     INSERT INTO documents (user_id, title, document_type, source, content, created_at)
-                                    VALUES (%s, %s, %s, %s, %s, NOW())
+                                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                                 """, (
                                     user_id,
                                     filename,
@@ -905,105 +1345,151 @@ def attempt_document_access(url: str, headers: dict, max_attempts: int = 3) -> D
         return {"success": False, "error": f"Document access attempt failed: {str(e)}"}
 
 # Document analysis helper functions
-async def analyze_document_with_llm(document_text: str, analysis_type: str) -> str:
-    """Analyze document using LLM with specific analysis types"""
+async def analyze_document_with_llm(document_text: str, analysis_type: str, user: User = None) -> str:
+    """Analyze document using LLM with specific analysis types and language detection"""
     try:
-        # Try to use OpenAI if available
-        from src.core.llm_engine import LLMEngine
+        # Detect language from document text
+        detected_language = detect_language(document_text)
+        logger.info(f"Detected document language: {detected_language}")
         
-        # Create LLM engine with default settings
-        llm_engine = LLMEngine.from_user_settings({
-            'llm_provider': 'openai',
-            'llm_model': 'gpt-3.5-turbo'
-        })
+        # Get user's LLM settings if user is provided
+        if user:
+            user_settings = await get_user_llm_settings(user)
+            llm_provider = user_settings.get('llm_provider', 'openai')
+            llm_model = user_settings.get('llm_model', 'gpt-4o')
+        else:
+            # Default to OpenAI if no user provided
+            llm_provider = 'openai'
+            llm_model = 'gpt-4o'
+        
+        logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model}")
+        
+        if llm_provider == 'openai':
+            # Use OpenAI
+            import openai
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            if not openai.api_key:
+                return {"error": "OpenAI API key not configured"}
+        elif llm_provider == 'ollama':
+            # Use Ollama
+            try:
+                from src.core.llm_engine import LLMEngine
+                llm_engine = LLMEngine(model_name=llm_model)
+            except Exception as e:
+                logger.error(f"Failed to initialize Ollama: {e}")
+                return {"error": f"Failed to initialize Ollama model {llm_model}. Please check if Ollama is running and the model is available."}
+        else:
+            return {"error": f"Unsupported LLM provider: {llm_provider}"}
+        
+        # Create language-specific prompts
+        language_instruction = ""
+        if detected_language == "ar":
+            language_instruction = """
+        LANGUAGE INSTRUCTION: Respond in Arabic (العربية). Use proper Arabic legal terminology and maintain a professional tone. If you need to include English legal terms, provide Arabic translations in parentheses.
+        """
+        else:
+            language_instruction = """
+        LANGUAGE INSTRUCTION: Respond in English. Use clear, professional legal terminology appropriate for the jurisdiction.
+        """
         
         # Create specific prompts for each analysis type
         analysis_prompts = {
             "summary": f"""
-Please provide a comprehensive summary of the following legal document:
+        You are a legal document analysis AI. {language_instruction}
+        
+        Please provide a comprehensive summary of the following legal document:
 
-Document Text:
-{document_text}
+        Document Text:
+        {document_text}
 
-Please include:
-1. Document overview and main purpose
-2. Key parties involved
-3. Main legal issues or topics
-4. Important dates and deadlines
-5. Key findings or conclusions
-6. Recommendations or next steps
+        Please include:
+        1. Document overview and main purpose
+        2. Key parties involved
+        3. Main legal issues or topics
+        4. Important dates and deadlines
+        5. Key findings or conclusions
+        6. Recommendations or next steps
 
-Format your response in clear, professional language suitable for legal professionals.
-""",
+        Format your response in clear, professional language suitable for legal professionals.
+        """,
             
             "key_points": f"""
-Please extract and analyze the key points from the following legal document:
+        You are a legal document analysis AI. {language_instruction}
+        
+        Please extract and analyze the key points from the following legal document:
 
-Document Text:
-{document_text}
+        Document Text:
+        {document_text}
 
-Please provide:
-1. **Main Legal Issues**: Identify the primary legal matters addressed
-2. **Key Terms and Definitions**: Important legal terms and their meanings
-3. **Critical Dates**: Deadlines, effective dates, and important timelines
-4. **Parties and Responsibilities**: Who is involved and what are their obligations
-5. **Rights and Obligations**: What each party can and must do
-6. **Risk Factors**: Potential legal risks or concerns
-7. **Action Items**: What needs to be done next
+        Please provide:
+        1. **Main Legal Issues**: Identify the primary legal matters addressed
+        2. **Key Terms and Definitions**: Important legal terms and their meanings
+        3. **Critical Dates**: Deadlines, effective dates, and important timelines
+        4. **Parties and Responsibilities**: Who is involved and what are their obligations
+        5. **Rights and Obligations**: What each party can and must do
+        6. **Risk Factors**: Potential legal risks or concerns
+        7. **Action Items**: What needs to be done next
 
-Focus on the most important elements that require immediate attention.
-""",
+        Focus on the most important elements that require immediate attention.
+        """,
             
             "legal_issues": f"""
-Please identify and analyze the legal issues in the following document:
+        You are a legal document analysis AI. {language_instruction}
+        
+        Please identify and analyze the legal issues in the following document:
 
-Document Text:
-{document_text}
+        Document Text:
+        {document_text}
 
-Please provide:
-1. **Primary Legal Issues**: Main legal matters that need attention
-2. **Compliance Concerns**: Areas that may violate laws or regulations
-3. **Contractual Issues**: Problems with terms, conditions, or obligations
-4. **Procedural Issues**: Problems with process, timing, or requirements
-5. **Risk Assessment**: Potential legal risks and their severity
-6. **Remedies Available**: Legal options to address identified issues
-7. **Preventive Measures**: Steps to avoid future legal problems
-8. **Professional Recommendations**: Suggested actions for legal counsel
+        Please provide:
+        1. **Primary Legal Issues**: Main legal matters that need attention
+        2. **Compliance Concerns**: Areas that may violate laws or regulations
+        3. **Contractual Issues**: Problems with terms, conditions, or obligations
+        4. **Procedural Issues**: Problems with process, timing, or requirements
+        5. **Risk Assessment**: Potential legal risks and their severity
+        6. **Remedies Available**: Legal options to address identified issues
+        7. **Preventive Measures**: Steps to avoid future legal problems
+        8. **Professional Recommendations**: Suggested actions for legal counsel
 
-Focus on identifying potential legal problems and their solutions.
-""",
+        Focus on identifying potential legal problems and their solutions.
+        """,
             
             "compliance": f"""
-Please perform a compliance check on the following document:
+        You are a legal document analysis AI. {language_instruction}
+        
+        Please perform a compliance check on the following document:
 
-Document Text:
-{document_text}
+        Document Text:
+        {document_text}
 
-Please analyze:
-1. **Regulatory Compliance**: Does this comply with relevant laws and regulations?
-2. **Industry Standards**: Does it meet industry best practices?
-3. **Internal Policies**: Does it align with company policies and procedures?
-4. **Documentation Requirements**: Are all necessary documents and signatures present?
-5. **Timeline Compliance**: Are all deadlines and timeframes met?
-6. **Risk Areas**: What compliance risks exist?
-7. **Recommendations**: What changes are needed for full compliance?
-8. **Monitoring Requirements**: What ongoing compliance monitoring is needed?
+        Please analyze:
+        1. **Regulatory Compliance**: Does this comply with relevant laws and regulations?
+        2. **Industry Standards**: Does it meet industry best practices?
+        3. **Internal Policies**: Does it align with company policies and procedures?
+        4. **Documentation Requirements**: Are all necessary documents and signatures present?
+        5. **Timeline Compliance**: Are all deadlines and timeframes met?
+        6. **Risk Areas**: What compliance risks exist?
+        7. **Recommendations**: What changes are needed for full compliance?
+        8. **Monitoring Requirements**: What ongoing compliance monitoring is needed?
 
-Focus on ensuring the document meets all applicable requirements.
-""",
+        Focus on ensuring the document meets all applicable requirements.
+        """,
             
             "full_analysis": f"""
-Please provide a comprehensive legal analysis of the following document:
+        You are a legal document analysis AI. {language_instruction}
+        
+        Please provide a comprehensive legal analysis of the following document:
 
-Document Text:
-{document_text}
+        Document Text:
+        {document_text}
 
-Please provide a complete analysis including:
+        Please provide a complete analysis including:
 
-## 1. Document Overview
-- Document type and purpose
-- Parties involved
-- Key dates and timelines
+        ## 1. Document Overview
+        - Document type and purpose
+        - Parties involved
+        - Key dates and timelines
 
 ## 2. Legal Analysis
 - Applicable laws and regulations
@@ -1042,9 +1528,28 @@ Provide a thorough, professional analysis suitable for legal decision-making.
         # Get the appropriate prompt for the analysis type
         prompt = analysis_prompts.get(analysis_type, analysis_prompts["full_analysis"])
         
-        # Perform analysis using the LLM
-        analysis_result = llm_engine.generate_response(prompt)
-        return analysis_result
+        # Perform analysis using the selected LLM provider
+        if llm_provider == 'openai':
+            # Perform analysis using OpenAI
+            client = openai.OpenAI(api_key=openai.api_key)
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": "You are DALI Legal AI, a specialized legal document analysis assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=int(user_settings.get('max_tokens', 2000)) if user else 2000,
+                temperature=float(user_settings.get('temperature', 0.3)) if user else 0.3
+            )
+            return response.choices[0].message.content
+        elif llm_provider == 'ollama':
+            # Perform analysis using Ollama
+            try:
+                response = llm_engine.generate_response(prompt)
+                return response
+            except Exception as e:
+                logger.error(f"Ollama analysis failed: {e}")
+                return f"I apologize, but I encountered an error with the Ollama model: {str(e)}"
         
     except Exception as e:
         logger.error(f"LLM analysis failed: {str(e)}")
@@ -1065,36 +1570,31 @@ Provide a thorough, professional analysis suitable for legal decision-making.
 async def add_document_to_kb(user_id: int, filename: str, analysis_type: str, content: str) -> bool:
     """Add document to knowledge base"""
     try:
-        from src.core.vector_store import VectorStore
-        from src.web.app import user_store
+        # Save document directly to SQLite database
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        # Create metadata
-        metadata = {
-            "title": filename,
-            "document_type": analysis_type,
-            "source": "uploaded_document",
-            "upload_date": datetime.now().isoformat()
-        }
+        # Insert document into SQLite database
+        cursor.execute("""
+            INSERT INTO documents (
+                user_id, title, content, document_type, 
+                source, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            user_id,
+            filename,
+            content,
+            analysis_type,
+            "uploaded_document",
+            datetime.now().isoformat()
+        ))
         
-        # Generate embedding
-        vector_store = VectorStore()
-        embedding = vector_store._generate_embedding(content)
+        document_id = cursor.lastrowid
+        conn.commit()
+        cursor.close()
+        conn.close()
         
-        # Convert embedding to numpy array with correct dtype
-        import numpy as np
-        embedding_array = np.array(embedding, dtype=np.float32)
-        
-        # Add to user store
-        user_store.add_document(
-            user_id=user_id,
-            title=filename,
-            document_type=analysis_type,
-            source="uploaded_document",
-            content=content,
-            embedding=embedding_array,
-            metadata=metadata
-        )
-        
+        logger.info(f"Successfully added document to knowledge base: {filename} (ID: {document_id})")
         return True
         
     except Exception as e:
@@ -1255,6 +1755,15 @@ async def web_scraping_page(request: Request, user: User = Depends(require_auth)
         "title": "Web Scraping - DALI Legal AI"
     })
 
+@app.get("/court-simulation", response_class=HTMLResponse)
+async def court_simulation_page(request: Request, user: User = Depends(require_auth)):
+    """Court simulation page"""
+    return templates.TemplateResponse("court_simulation.html", {
+        "request": request,
+        "user": user,
+        "title": "Court Simulation - DALI Legal AI"
+    })
+
 @app.get("/database-intelligence", response_class=HTMLResponse)
 async def database_intelligence_page(request: Request, user: User = Depends(require_auth)):
     """Database intelligence page"""
@@ -1299,20 +1808,39 @@ async def api_login(login_data: LoginRequest, request: Request):
     """API endpoint for user login"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get user from database
         cursor.execute("""
             SELECT id, username, email, password_hash, first_name, last_name, 
                    role, is_active, company_name, job_title, phone, department
-            FROM users WHERE username = %s
+            FROM users WHERE username = ?
         """, (login_data.username,))
         
-        user = cursor.fetchone()
+        user_row = cursor.fetchone()
         cursor.close()
         conn.close()
         
-        if not user or not verify_password(login_data.password, user['password_hash']):
+        if not user_row:
+            return {"success": False, "message": "Invalid username or password"}
+        
+        # Convert row to dict for easier access
+        user = {
+            'id': user_row[0],
+            'username': user_row[1],
+            'email': user_row[2],
+            'password_hash': user_row[3],
+            'first_name': user_row[4],
+            'last_name': user_row[5],
+            'role': user_row[6],
+            'is_active': user_row[7],
+            'company_name': user_row[8],
+            'job_title': user_row[9],
+            'phone': user_row[10],
+            'department': user_row[11]
+        }
+        
+        if not verify_password(login_data.password, user['password_hash']):
             return {"success": False, "message": "Invalid username or password"}
         
         if not user.get('is_active', True):
@@ -1358,14 +1886,14 @@ async def api_signup(signup_data: SignupRequest):
         cursor = conn.cursor()
         
         # Check if username already exists
-        cursor.execute("SELECT id FROM users WHERE username = %s", (signup_data.username,))
+        cursor.execute("SELECT id FROM users WHERE username = ?", (signup_data.username,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return {"success": False, "message": "Username already exists"}
         
         # Check if email already exists
-        cursor.execute("SELECT id FROM users WHERE email = %s", (signup_data.email,))
+        cursor.execute("SELECT id FROM users WHERE email = ?", (signup_data.email,))
         if cursor.fetchone():
             cursor.close()
             conn.close()
@@ -1378,7 +1906,7 @@ async def api_signup(signup_data: SignupRequest):
         cursor.execute("""
             INSERT INTO users (username, email, password_hash, first_name, last_name, 
                              company_name, job_title, phone, department, role, is_active)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (signup_data.username, signup_data.email, password_hash, 
               signup_data.first_name, signup_data.last_name, 
               signup_data.company_name, signup_data.job_title, 
@@ -1443,10 +1971,16 @@ async def toggle_language(request: Request, user: User = Depends(require_auth)):
         
         # Update user settings
         cursor.execute("""
-            INSERT INTO user_settings (user_id, setting_key, setting_value, updated_at)
-            VALUES (%s, %s, %s, NOW())
-            ON DUPLICATE KEY UPDATE setting_value = %s, updated_at = NOW()
-        """, (user.id, "language", new_lang, new_lang))
+            UPDATE user_settings 
+            SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND setting_key = ?
+        """, (new_lang, user.id, "language"))
+        
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                INSERT INTO user_settings (user_id, setting_key, setting_value, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (user.id, "language", new_lang))
         
         conn.commit()
         cursor.close()
@@ -1486,10 +2020,16 @@ async def toggle_theme(request: Request, user: User = Depends(require_auth)):
         
         # Update user settings
         cursor.execute("""
-            INSERT INTO user_settings (user_id, setting_key, setting_value, updated_at)
-            VALUES (%s, %s, %s, NOW())
-            ON DUPLICATE KEY UPDATE setting_value = %s, updated_at = NOW()
-        """, (user.id, "theme", new_theme, new_theme))
+            UPDATE user_settings 
+            SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND setting_key = ?
+        """, (new_theme, user.id, "theme"))
+        
+        if cursor.rowcount == 0:
+            cursor.execute("""
+                INSERT INTO user_settings (user_id, setting_key, setting_value, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            """, (user.id, "theme", new_theme))
         
         conn.commit()
         cursor.close()
@@ -1516,16 +2056,16 @@ async def global_search(query: str, user: User = Depends(require_auth)):
         }
         
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Search in documents
         cursor.execute("""
             SELECT id, title, document_type, content, created_at, 'document' as type
             FROM documents 
-            WHERE user_id = %s AND (
-                title LIKE %s OR 
-                content LIKE %s OR 
-                document_type LIKE %s
+            WHERE user_id = ? AND (
+                title LIKE ? OR 
+                content LIKE ? OR 
+                document_type LIKE ?
             )
             ORDER BY created_at DESC
             LIMIT 10
@@ -1540,9 +2080,9 @@ async def global_search(query: str, user: User = Depends(require_auth)):
             SELECT c.id, c.title, m.content, m.created_at, 'conversation' as type
             FROM conversations c
             JOIN messages m ON c.id = m.conversation_id
-            WHERE c.user_id = %s AND (
-                c.title LIKE %s OR 
-                m.content LIKE %s
+            WHERE c.user_id = ? AND (
+                c.title LIKE ? OR 
+                m.content LIKE ?
             )
             ORDER BY m.created_at DESC
             LIMIT 10
@@ -1556,7 +2096,7 @@ async def global_search(query: str, user: User = Depends(require_auth)):
         cursor.execute("""
             SELECT id, message as content, sent_at as created_at, 'chat' as type
             FROM user_chats 
-            WHERE (sender_id = %s OR receiver_id = %s) AND message LIKE %s
+            WHERE (sender_id = ? OR receiver_id = ?) AND message LIKE ?
             ORDER BY sent_at DESC
             LIMIT 10
         """, (user.id, user.id, f"%{query}%"))
@@ -1593,7 +2133,7 @@ async def get_analytics(user: User = Depends(require_auth)):
     """Get comprehensive analytics for the dashboard"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         analytics = {
             "user_stats": {},
@@ -1610,7 +2150,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 COUNT(DISTINCT document_type) as document_types,
                 MAX(created_at) as last_document_activity
             FROM documents 
-            WHERE user_id = %s
+            WHERE user_id = ?
         """, (user.id,))
         
         doc_stats = cursor.fetchone()
@@ -1623,7 +2163,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 COUNT(DISTINCT conversation_type) as conversation_types,
                 MAX(created_at) as last_conversation_activity
             FROM conversations 
-            WHERE user_id = %s
+            WHERE user_id = ?
         """, (user.id,))
         
         conv_stats = cursor.fetchone()
@@ -1636,7 +2176,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 COUNT(*) as count,
                 'documents' as type
             FROM documents 
-            WHERE user_id = %s AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            WHERE user_id = ? AND created_at >= datetime('now', '-7 days')
             GROUP BY DATE(created_at)
             ORDER BY date DESC
         """, (user.id,))
@@ -1649,7 +2189,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 COUNT(*) as count,
                 'conversations' as type
             FROM conversations 
-            WHERE user_id = %s AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            WHERE user_id = ? AND created_at >= datetime('now', '-7 days')
             GROUP BY DATE(created_at)
             ORDER BY date DESC
         """, (user.id,))
@@ -1667,7 +2207,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 document_type,
                 COUNT(*) as count
             FROM documents 
-            WHERE user_id = %s
+            WHERE user_id = ?
             GROUP BY document_type
             ORDER BY count DESC
             LIMIT 5
@@ -1684,7 +2224,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 created_at,
                 document_type as subtype
             FROM documents 
-            WHERE user_id = %s
+            WHERE user_id = ?
             UNION ALL
             SELECT 
                 'conversation' as type,
@@ -1692,7 +2232,7 @@ async def get_analytics(user: User = Depends(require_auth)):
                 created_at,
                 conversation_type as subtype
             FROM conversations 
-            WHERE user_id = %s
+            WHERE user_id = ?
             ORDER BY created_at DESC
             LIMIT 10
         """, (user.id, user.id))
@@ -1755,37 +2295,1065 @@ async def legal_research(
             "timestamp": datetime.now().isoformat()
         }
 
-async def generate_legal_research(query: str, user: User, jurisdiction: str = "Saudi Arabia", include_web_search: str = "false") -> str:
-    """Generate comprehensive legal research using AI"""
+@app.post("/api/legal-research")
+async def legal_research_post(
+    request: Request,
+    user: User = Depends(require_auth)
+):
+    """Legal research POST endpoint with AI-powered analysis and conversation memory"""
     try:
-        # Try to use OpenAI if available
-        from src.core.llm_engine import LLMEngine
+        # Get request data
+        data = await request.json()
+        query = data.get('query', '')
+        jurisdiction = data.get('jurisdiction', 'Saudi Arabia')
+        include_web_search = data.get('include_web_search', 'false')
         
-        llm_engine = LLMEngine.from_user_settings({
+        if not query:
+            return {
+                "success": False,
+                "error": "Query is required",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Detect language from the query
+        detected_language = detect_language(query)
+        logger.info(f"Detected language: {detected_language}")
+        
+        # Get or create conversation session
+        session_id = get_active_session(user.id)
+        if not session_id:
+            session_id = create_conversation_session(user.id, "Legal Research Session")
+        
+        # Save user message to memory
+        save_conversation_message(
+            user_id=user.id,
+            session_id=session_id,
+            message_type='user',
+            message_content=query,
+            context_data={'jurisdiction': jurisdiction, 'include_web_search': include_web_search}
+        )
+        
+        # Get conversation history for context
+        conversation_history = get_conversation_history(user.id, session_id, limit=5)
+        
+        # Generate AI-powered legal research response with conversation context
+        research_result = await generate_legal_research_with_memory(query, user, jurisdiction, include_web_search, conversation_history, detected_language)
+        
+        # Save AI response to memory
+        save_conversation_message(
+            user_id=user.id,
+            session_id=session_id,
+            message_type='assistant',
+            message_content=research_result,
+            context_data={'jurisdiction': jurisdiction, 'include_web_search': include_web_search}
+        )
+        
+        # Update session activity
+        update_session_activity(session_id)
+        
+        return {
+            "success": True,
+            "query": query,
+            "jurisdiction": jurisdiction,
+            "include_web_search": include_web_search,
+            "results": research_result,
+            "session_id": session_id,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Legal research failed: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Legal research failed: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/api/generate-chart")
+async def generate_chart(
+    request: Request,
+    user: User = Depends(require_auth)
+):
+    """Generate chart based on previous conversation data"""
+    try:
+        data = await request.json()
+        chart_type = data.get('chart_type', 'pie')
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return {
+                "success": False,
+                "error": "Session ID is required",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Get conversation history to find data
+        conversation_history = get_conversation_history(user.id, session_id, limit=10)
+        
+        # Look for data in the conversation (check both user and assistant messages)
+        chart_data = None
+        logger.info(f"Looking for chart data in {len(conversation_history)} messages")
+        
+        for msg in reversed(conversation_history):
+            logger.info(f"Checking message type: {msg['type']}, content preview: {msg['content'][:100]}...")
+            # Extract data from both user and assistant messages
+            extracted_data = extract_chart_data_from_text(msg['content'])
+            if extracted_data:
+                logger.info(f"Found chart data: {extracted_data}")
+                chart_data = extracted_data
+                break
+        
+        if not chart_data:
+            return {
+                "success": False,
+                "error": "No chart data found in conversation history",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # Generate chart HTML using matplotlib
+        try:
+            chart_html = generate_matplotlib_chart(chart_data, chart_type, f"{chart_type.title()} Chart")
+            logger.info(f"Chart HTML generated successfully, length: {len(chart_html)}")
+        except Exception as chart_error:
+            logger.error(f"Chart generation error: {str(chart_error)}")
+            chart_html = f"""
+            <div class="chart-container">
+                <div class="chart-title">Chart Generation Error</div>
+                <div class="chart-wrapper">
+                    <p style="color: red; padding: 20px;">Sorry, there was an error generating the chart: {str(chart_error)}</p>
+                </div>
+            </div>
+            """
+        
+        # Save chart generation to memory
+        save_conversation_message(
+            user_id=user.id,
+            session_id=session_id,
+            message_type='assistant',
+            message_content=f"Generated {chart_type} chart based on your data",
+            context_data={'chart_type': chart_type, 'chart_data': chart_data}
+        )
+        
+        return {
+            "success": True,
+            "chart_type": chart_type,
+            "chart_html": chart_html,
+            "chart_data": chart_data,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Chart generation failed: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Chart generation failed: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+def extract_chart_data_from_text(text: str) -> Optional[List[Dict]]:
+    """Extract chart data from text using the same logic as frontend"""
+    import re
+    lines = text.replace('\r\n', '\n').split('\n')
+    chart_data = []
+    
+    logger.info(f"Extracting chart data from text with {len(lines)} lines")
+    
+    # Handle the specific user format: "Case TypeEstimated Number in 2024Notes..."
+    if "Case TypeEstimated Number in 2024Notes" in text:
+        # Extract data from the user's specific format
+        patterns = [
+            r'Criminal Cases[^0-9]*(\d{1,3}(?:,\d{3})*)',
+            r'Civil Cases[^0-9]*(\d{1,3}(?:,\d{3})*)',
+            r'Commercial/Corporate Cases[^0-9]*(\d{1,3}(?:,\d{3})*)',
+            r'Family Law Cases[^0-9]*(\d{1,3}(?:,\d{3})*)',
+            r'Traffic Violations[^0-9]*~?(\d{1,3}(?:,\d{3})*)'
+        ]
+        
+        case_types = [
+            'Criminal Cases',
+            'Civil Cases', 
+            'Commercial/Corporate Cases',
+            'Family Law Cases',
+            'Traffic Violations'
+        ]
+        
+        for i, pattern in enumerate(patterns):
+            match = re.search(pattern, text)
+            if match:
+                value = match.group(1).replace(',', '')
+                try:
+                    num_value = int(value)
+                    if num_value > 0:
+                        chart_data.append({'label': case_types[i], 'value': num_value})
+                        logger.info(f"User format match: {case_types[i]} = {num_value}")
+                except ValueError:
+                    pass
+    
+    # If we found data from user format, return it
+    if chart_data:
+        logger.info(f"Extracted {len(chart_data)} data points from user format: {chart_data}")
+        return chart_data
+    
+    # Otherwise, use the original line-by-line parsing
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        logger.info(f"Processing line: {line[:50]}...")
+            
+        # Pattern 1: **Case Type:** Number format
+        match = re.match(r'\*\*([^:]+):\*\*\s*([\d,~]+)', line)
+        if match:
+            label = match.group(1).strip()
+            value = match.group(2).replace(',', '').replace('~', '')
+            try:
+                num_value = int(value)
+                if num_value > 0:
+                    chart_data.append({'label': label, 'value': num_value})
+                    logger.info(f"Pattern 1 match: {label} = {num_value}")
+                    continue
+            except ValueError:
+                pass
+        
+        # Pattern 2: Case Type (description) Number format with space
+        match = re.match(r'^([^(]+)\s*\([^)]*\)\s+([\d,~]+)', line)
+        if match:
+            label = match.group(1).strip()
+            value = match.group(2).replace(',', '').replace('~', '')
+            try:
+                num_value = int(value)
+                if num_value > 0:
+                    chart_data.append({'label': label, 'value': num_value})
+                    logger.info(f"Pattern 2 match: {label} = {num_value}")
+                    continue
+            except ValueError:
+                pass
+        
+        # Pattern 3: Case Type (description)Number format without space
+        match = re.match(r'^([^(]+)\s*\([^)]*\)([\d,~]+)', line)
+        if match:
+            label = match.group(1).strip()
+            value = match.group(2).replace(',', '').replace('~', '')
+            try:
+                num_value = int(value)
+                if num_value > 0:
+                    chart_data.append({'label': label, 'value': num_value})
+                    logger.info(f"Pattern 3 match: {label} = {num_value}")
+                    continue
+            except ValueError:
+                pass
+        
+        # Pattern 4: Simple format: Label: Number
+        match = re.match(r'^([^:]+):\s*([\d,~]+)', line)
+        if match:
+            label = match.group(1).strip()
+            value = match.group(2).replace(',', '').replace('~', '')
+            try:
+                num_value = int(value)
+                if num_value > 0:
+                    chart_data.append({'label': label, 'value': num_value})
+                    logger.info(f"Pattern 4 match: {label} = {num_value}")
+                    continue
+            except ValueError:
+                pass
+        
+        # Pattern 5: Handle traffic violations with ~ symbol
+        match = re.match(r'^([^(]+)\s*\([^)]*\)\s*~([\d,]+)', line)
+        if match:
+            label = match.group(1).strip()
+            value = match.group(2).replace(',', '')
+            try:
+                num_value = int(value)
+                if num_value > 0:
+                    chart_data.append({'label': label, 'value': num_value})
+                    logger.info(f"Pattern 5 match: {label} = {num_value}")
+                    continue
+            except ValueError:
+                pass
+    
+    logger.info(f"Extracted {len(chart_data)} data points: {chart_data}")
+    return chart_data if chart_data else None
+
+@app.get("/api/knowledge-base/analyze/document-stats")
+async def analyze_document_stats(user: User = Depends(require_auth)):
+    """Analyze document statistics from knowledge base"""
+    try:
+        # Get document statistics
+        stats_query = """
+        SELECT 
+            document_type,
+            COUNT(*) as count,
+            AVG(LENGTH(content)) as avg_length,
+            MIN(created_at) as earliest,
+            MAX(created_at) as latest
+        FROM documents 
+        WHERE user_id = ? 
+        GROUP BY document_type
+        ORDER BY count DESC
+        """
+        
+        stats = db_manager.execute_query(stats_query, (user.id,))
+        
+        # Generate analysis
+        analysis_html = f"""
+        <div class="row">
+            <div class="col-md-6">
+                <h5><i class="fas fa-chart-pie me-2"></i>Document Distribution</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Document Type</th>
+                                <th>Count</th>
+                                <th>Avg Length</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        """
+        
+        for stat in stats:
+            analysis_html += f"""
+                            <tr>
+                                <td>{stat[0]}</td>
+                                <td><span class="badge bg-primary">{stat[1]}</span></td>
+                                <td>{int(stat[2]) if stat[2] else 0} chars</td>
+                            </tr>
+            """
+        
+        analysis_html += """
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h5><i class="fas fa-info-circle me-2"></i>Summary</h5>
+                <div class="alert alert-info">
+                    <p><strong>Total Documents:</strong> {total_docs}</p>
+                    <p><strong>Document Types:</strong> {doc_types}</p>
+                    <p><strong>Date Range:</strong> {date_range}</p>
+                </div>
+            </div>
+        </div>
+        """.format(
+            total_docs=sum(stat[1] for stat in stats),
+            doc_types=len(stats),
+            date_range=f"{stats[0][3].split()[0] if stats else 'N/A'} to {stats[0][4].split()[0] if stats else 'N/A'}"
+        )
+        
+        return {
+            "success": True,
+            "analysis": analysis_html
+        }
+        
+    except Exception as e:
+        logger.error(f"Document stats analysis error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.get("/api/knowledge-base/analyze/content-patterns")
+async def analyze_content_patterns(user: User = Depends(require_auth)):
+    """Analyze content patterns in knowledge base"""
+    try:
+        # Get content patterns
+        patterns_query = """
+        SELECT 
+            SUBSTR(content, 1, 100) as content_preview,
+            LENGTH(content) as content_length,
+            document_type,
+            created_at
+        FROM documents 
+        WHERE user_id = ? 
+        ORDER BY content_length DESC
+        LIMIT 10
+        """
+        
+        patterns = db_manager.execute_query(patterns_query, (user.id,))
+        
+        analysis_html = f"""
+        <div class="row">
+            <div class="col-12">
+                <h5><i class="fas fa-search me-2"></i>Content Analysis</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Document Type</th>
+                                <th>Content Preview</th>
+                                <th>Length</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        """
+        
+        for pattern in patterns:
+            analysis_html += f"""
+                            <tr>
+                                <td><span class="badge bg-secondary">{pattern[2]}</span></td>
+                                <td>{pattern[0]}...</td>
+                                <td>{pattern[1]} chars</td>
+                                <td>{pattern[3].split()[0] if pattern[3] else 'N/A'}</td>
+                            </tr>
+            """
+        
+        analysis_html += """
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return {
+            "success": True,
+            "analysis": analysis_html
+        }
+        
+    except Exception as e:
+        logger.error(f"Content patterns analysis error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.get("/api/knowledge-base/analyze/temporal-data")
+async def analyze_temporal_data(user: User = Depends(require_auth)):
+    """Analyze temporal patterns in knowledge base"""
+    try:
+        # Get temporal data
+        temporal_query = """
+        SELECT 
+            DATE(created_at) as date,
+            COUNT(*) as count,
+            document_type
+        FROM documents 
+        WHERE user_id = ? 
+        GROUP BY DATE(created_at), document_type
+        ORDER BY date DESC
+        LIMIT 20
+        """
+        
+        temporal = db_manager.execute_query(temporal_query, (user.id,))
+        
+        analysis_html = f"""
+        <div class="row">
+            <div class="col-12">
+                <h5><i class="fas fa-calendar me-2"></i>Temporal Analysis</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Document Type</th>
+                                <th>Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+        """
+        
+        for temp in temporal:
+            analysis_html += f"""
+                            <tr>
+                                <td>{temp[0]}</td>
+                                <td><span class="badge bg-info">{temp[2]}</span></td>
+                                <td>{temp[1]}</td>
+                            </tr>
+            """
+        
+        analysis_html += """
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        """
+        
+        return {
+            "success": True,
+            "analysis": analysis_html
+        }
+        
+    except Exception as e:
+        logger.error(f"Temporal data analysis error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@app.get("/api/knowledge-base/analyze/key-insights")
+async def generate_key_insights(user: User = Depends(require_auth)):
+    """Generate AI-powered key insights from knowledge base"""
+    try:
+        # Get summary data for AI analysis
+        summary_query = """
+        SELECT 
+            document_type,
+            COUNT(*) as count,
+            AVG(LENGTH(content)) as avg_length,
+            MIN(created_at) as earliest,
+            MAX(created_at) as latest
+        FROM documents 
+        WHERE user_id = ? 
+        GROUP BY document_type
+        """
+        
+        summary_data = db_manager.execute_query(summary_query, (user.id,))
+        
+        # Generate AI insights
+        import openai
+        openai.api_key = config.get('openai', {}).get('api_key')
+        
+        insights_prompt = f"""
+        Based on the following document statistics from a legal knowledge base, provide key insights and recommendations:
+        
+        Document Statistics:
+        {summary_data}
+        
+        Please provide:
+        1. Key patterns and trends
+        2. Recommendations for knowledge base optimization
+        3. Potential areas for improvement
+        4. Insights about document organization
+        
+        Format the response in HTML with proper styling.
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-4o",
+            messages=[{"role": "user", "content": insights_prompt}],
+            max_tokens=1000,
+            temperature=0.7
+        )
+        
+        analysis_html = f"""
+        <div class="row">
+            <div class="col-12">
+                <h5><i class="fas fa-lightbulb me-2"></i>AI-Generated Insights</h5>
+                <div class="alert alert-success">
+                    {response.choices[0].message.content}
+                </div>
+            </div>
+        </div>
+        """
+        
+        return {
+            "success": True,
+            "analysis": analysis_html
+        }
+        
+    except Exception as e:
+        logger.error(f"Key insights generation error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+def detect_language(text: str) -> str:
+    """
+    Detect language from text input.
+    
+    Args:
+    - text (str): Input text to analyze
+    
+    Returns:
+    - str: Language code ('ar' for Arabic, 'en' for English)
+    """
+    import re
+    
+    # Count Arabic and English characters
+    arabic_pattern = re.compile(r'[\u0600-\u06FF]')
+    english_pattern = re.compile(r'[a-zA-Z]')
+    
+    arabic_count = len(arabic_pattern.findall(text))
+    english_count = len(english_pattern.findall(text))
+    
+    # If Arabic characters are more than English, it's Arabic
+    if arabic_count > english_count:
+        return 'ar'
+    else:
+        return 'en'
+
+def generate_matplotlib_chart(chart_data: List[Dict], chart_type: str = 'pie', title: str = 'Data Distribution') -> str:
+    """
+    Generate a chart from extracted data using matplotlib.
+    
+    Args:
+    - chart_data (List[Dict]): List of {'label': str, 'value': int} dictionaries
+    - chart_type (str): 'pie', 'bar', 'line', 'doughnut'
+    - title (str): Chart title
+    
+    Returns:
+    - str: Base64 encoded image HTML
+    """
+    try:
+        import matplotlib.pyplot as plt
+        import matplotlib
+        import io
+        import base64
+        
+        logger.info(f"Starting chart generation: {chart_type} with {len(chart_data)} data points")
+        
+        # Set matplotlib to use non-interactive backend
+        matplotlib.use('Agg')
+        
+        # Extract labels and values
+        labels = [item['label'] for item in chart_data]
+        values = [item['value'] for item in chart_data]
+        
+        logger.info(f"Labels: {labels}")
+        logger.info(f"Values: {values}")
+        
+        # Create figure with smaller size
+        fig, ax = plt.subplots(figsize=(8, 6))
+        
+        # Plot based on type with better styling
+        if chart_type == 'pie':
+            wedges, texts, autotexts = ax.pie(values, labels=labels, autopct='%1.1f%%', 
+                                             startangle=90, textprops={'fontsize': 10})
+            ax.axis('equal')  # Equal aspect ratio for pie
+            # Improve label positioning
+            for text in texts:
+                text.set_fontsize(9)
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(8)
+        elif chart_type == 'doughnut':
+            wedges, texts, autotexts = ax.pie(values, labels=labels, autopct='%1.1f%%', 
+                                             startangle=90, wedgeprops=dict(width=0.5),
+                                             textprops={'fontsize': 10})
+            ax.axis('equal')
+            for text in texts:
+                text.set_fontsize(9)
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(8)
+        elif chart_type == 'bar':
+            bars = ax.bar(labels, values, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7'])
+            ax.set_ylabel('Number of Cases', fontsize=10)
+            ax.tick_params(axis='x', labelsize=9)
+            ax.tick_params(axis='y', labelsize=9)
+            plt.xticks(rotation=45, ha='right')
+            # Add value labels on bars
+            for bar in bars:
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                       f'{int(height):,}', ha='center', va='bottom', fontsize=8)
+        elif chart_type == 'line':
+            ax.plot(labels, values, marker='o', linewidth=2, markersize=6, color='#4ECDC4')
+            ax.set_ylabel('Number of Cases', fontsize=10)
+            ax.tick_params(axis='x', labelsize=9)
+            ax.tick_params(axis='y', labelsize=9)
+            plt.xticks(rotation=45, ha='right')
+        else:
+            # Default to pie chart
+            wedges, texts, autotexts = ax.pie(values, labels=labels, autopct='%1.1f%%', 
+                                             startangle=90, textprops={'fontsize': 10})
+            ax.axis('equal')
+            for text in texts:
+                text.set_fontsize(9)
+            for autotext in autotexts:
+                autotext.set_color('white')
+                autotext.set_fontweight('bold')
+                autotext.set_fontsize(8)
+        
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        
+        # Save to base64 buffer
+        logger.info("Saving chart to buffer...")
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight', dpi=150, 
+                   facecolor='white', edgecolor='none')
+        buf.seek(0)
+        img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+        logger.info(f"Image encoded, base64 length: {len(img_base64)}")
+        
+        plt.close(fig)  # Clean up
+        
+        # Return HTML with embedded image - smaller and better positioned
+        result_html = f"""
+        <div class="chart-container" style="max-width: 500px; margin: 20px auto; text-align: center;">
+            <div class="chart-title" style="font-size: 16px; font-weight: bold; margin-bottom: 10px; color: #333;">{title}</div>
+            <div class="chart-wrapper" style="background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <img src="data:image/png;base64,{img_base64}" alt="{title}" style="max-width: 100%; height: auto; border-radius: 8px;">
+            </div>
+            <div class="chart-description" style="font-size: 12px; color: #666; margin-top: 10px;">
+                Interactive {chart_type} chart showing the data from our conversation.
+            </div>
+        </div>
+        """
+        logger.info(f"Chart HTML generated, total length: {len(result_html)}")
+        return result_html
+        
+    except Exception as e:
+        logger.error(f"Chart generation failed: {str(e)}")
+        return f"""
+        <div class="chart-container">
+            <div class="chart-title">Chart Generation Error</div>
+            <div class="chart-wrapper">
+                <p style="color: red; padding: 20px;">Sorry, there was an error generating the chart: {str(e)}</p>
+            </div>
+        </div>
+        """
+
+async def get_user_llm_settings(user: User) -> dict:
+    """Get user's LLM settings from database"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get all settings for the user
+        cursor.execute("""
+            SELECT setting_key, setting_value FROM user_settings WHERE user_id = ?
+        """, (user.id,))
+        settings_rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        # Convert key-value pairs to settings object
+        settings = {}
+        for row in settings_rows:
+            settings[row['setting_key']] = row['setting_value']
+        
+        # Return default settings if none found
+        if not settings:
+            settings = {
+                'llm_provider': 'openai',
+                'llm_model': 'gpt-4o',
+                'temperature': '0.7',
+                'max_tokens': '2000'
+            }
+        
+        # Ensure all required settings exist with defaults
+        default_settings = {
             'llm_provider': 'openai',
-            'llm_model': 'gpt-3.5-turbo'
-        })
+            'llm_model': 'gpt-4o',
+            'temperature': '0.7',
+            'max_tokens': '2000'
+        }
+        
+        for key, default_value in default_settings.items():
+            if key not in settings:
+                settings[key] = default_value
+        
+        return settings
+    except Exception as e:
+        logger.error(f"Error getting user settings: {e}")
+        return {
+            'llm_provider': 'openai',
+            'llm_model': 'gpt-4o',
+            'temperature': '0.7',
+            'max_tokens': '2000'
+        }
+
+async def generate_legal_research_with_memory(query: str, user: User, jurisdiction: str = "Saudi Arabia", include_web_search: str = "false", conversation_history: List[Dict] = None, language: str = "en") -> str:
+    """Generate comprehensive legal research using AI with conversation memory and knowledge base access"""
+    try:
+        # Get user's LLM settings
+        user_settings = await get_user_llm_settings(user)
+        llm_provider = user_settings.get('llm_provider', 'openai')
+        llm_model = user_settings.get('llm_model', 'gpt-4o')
+        
+        logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model}")
+        
+        if llm_provider == 'openai':
+            # Use OpenAI
+            import openai
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            if not openai.api_key:
+                return "OpenAI API key not configured. Please contact administrator."
+        elif llm_provider == 'ollama':
+            # Use Ollama
+            try:
+                from src.core.llm_engine import LLMEngine
+                llm_engine = LLMEngine(model_name=llm_model)
+            except Exception as e:
+                logger.error(f"Failed to initialize Ollama: {e}")
+                return f"Failed to initialize Ollama model {llm_model}. Please check if Ollama is running and the model is available."
+        else:
+            return f"Unsupported LLM provider: {llm_provider}"
+        
+        # Search knowledge base for relevant documents
+        knowledge_base_context = ""
+        try:
+            # Search documents directly from SQLite database
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Search for documents containing query keywords
+            search_terms = query.lower().split()
+            search_conditions = []
+            search_params = []
+            
+            for term in search_terms:
+                if len(term) > 2:  # Only search for terms longer than 2 characters
+                    search_conditions.append("(LOWER(title) LIKE ? OR LOWER(content) LIKE ?)")
+                    search_params.extend([f"%{term}%", f"%{term}%"])
+            
+            if search_conditions:
+                search_query = f"""
+                    SELECT id, title, content, document_type, created_at
+                    FROM documents 
+                    WHERE user_id = ? AND ({' OR '.join(search_conditions)})
+                    ORDER BY created_at DESC
+                    LIMIT 5
+                """
+                search_params.insert(0, user.id)
+                
+                cursor.execute(search_query, search_params)
+                kb_results = cursor.fetchall()
+                
+                if kb_results:
+                    knowledge_base_context = "\n\nRELEVANT DOCUMENTS FROM YOUR KNOWLEDGE BASE:\n"
+                    for i, result in enumerate(kb_results[:3], 1):  # Top 3 results
+                        doc_id, title, content, doc_type, created_at = result
+                        content_preview = content[:500] if content else "No content available"
+                        knowledge_base_context += f"\n{i}. Document: {title} (Type: {doc_type})\n"
+                        knowledge_base_context += f"Content Preview: {content_preview}...\n"
+                    
+                    knowledge_base_context += "\nUse this information from your uploaded documents to provide more accurate and specific answers.\n"
+                    logger.info(f"Found {len(kb_results)} relevant documents in knowledge base")
+                else:
+                    logger.info("No relevant documents found in knowledge base")
+            else:
+                logger.info("Query too short for meaningful search")
+            
+            cursor.close()
+            conn.close()
+                
+        except Exception as e:
+            logger.error(f"Knowledge base search failed: {e}")
+            knowledge_base_context = ""
+        
+        # Build conversation context
+        context_summary = ""
+        if conversation_history and len(conversation_history) > 1:
+            context_summary = "\n\nPrevious conversation context:\n"
+            for msg in conversation_history[:-1]:  # Exclude the current message
+                if msg['type'] == 'user':
+                    context_summary += f"User: {msg['content']}\n"
+                elif msg['type'] == 'assistant':
+                    context_summary += f"Assistant: {msg['content'][:200]}...\n"  # Truncate for context
+        
+        # Create comprehensive legal research prompt with memory and language awareness
+        language_instruction = ""
+        if language == "ar":
+            language_instruction = """
+        LANGUAGE INSTRUCTION: Respond in Arabic (العربية). Use proper Arabic legal terminology and maintain a professional tone. If you need to include English legal terms, provide Arabic translations in parentheses.
+        """
+        else:
+            language_instruction = """
+        LANGUAGE INSTRUCTION: Respond in English. Use clear, professional legal terminology appropriate for the jurisdiction.
+        """
+        
+        research_prompt = f"""
+        You are DALI Legal AI, a conversational legal research assistant. You have memory of previous conversations and should build upon them naturally.
+        {language_instruction}
+
+        Current Query: "{query}"
+        Jurisdiction: {jurisdiction}
+        {context_summary}
+        {knowledge_base_context}
+
+        CONVERSATION CONTEXT ANALYSIS:
+        - If the user is asking for a chart after you've already suggested one, DON'T repeat the suggestion
+        - If the user says "yes" to a chart suggestion, immediately create the chart
+        - If the user provides data and asks for a chart, create it directly
+        - If the user asks "generate a pie chart from the data i gave you", they want you to create it NOW
+        - If the user asks about their uploaded documents, use the knowledge base information provided above
+
+        RESPONSE RULES:
+        1. If user says "yes", "yes please", "create a pie chart", "pie chart", "generate a pie chart from the data i gave you" - respond with: "Creating your pie chart now..."
+        
+        2. If the query contains statistical data and user hasn't asked for a chart yet, end with: "I notice this data could be visualized effectively. Would you like me to create a chart to better illustrate these statistics? If so, which type of chart would you prefer - pie chart, bar chart, line chart, or doughnut chart?"
+        
+        3. Be conversational but concise - don't repeat data unnecessarily
+        
+        4. Keep responses short and to the point
+        5. Don't repeat the same suggestion multiple times
+        6. When you say "Creating your pie chart now...", the system will automatically generate the chart
+        7. If you have relevant documents from the knowledge base, reference them specifically in your answer
+        8. If the user asks about their uploaded documents, provide specific information from those documents
+
+        Remember: Use the EXACT phrase "Would you like me to create a chart" to trigger the chart generation system.
+        
+        Provide a comprehensive legal analysis that addresses the user's query using both general legal knowledge and specific information from their uploaded documents when available.
+        """
+        
+        # Generate response using OpenAI
+        client = openai.OpenAI(api_key=openai.api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are DALI Legal AI, a specialized legal research assistant."},
+                {"role": "user", "content": research_prompt}
+            ],
+            max_tokens=2000,
+            temperature=0.3
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        logger.error(f"Error generating legal research: {str(e)}")
+        return f"I apologize, but I encountered an error processing your request: {str(e)}"
+
+async def generate_legal_research(query: str, user: User, jurisdiction: str = "Saudi Arabia", include_web_search: str = "false") -> str:
+    """Generate comprehensive legal research using AI with knowledge base access"""
+    try:
+        # Get user's LLM settings
+        user_settings = await get_user_llm_settings(user)
+        llm_provider = user_settings.get('llm_provider', 'openai')
+        llm_model = user_settings.get('llm_model', 'gpt-4o')
+        
+        logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model}")
+        
+        if llm_provider == 'openai':
+            # Use OpenAI
+            import openai
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            if not openai.api_key:
+                return "OpenAI API key not configured. Please contact administrator."
+        elif llm_provider == 'ollama':
+            # Use Ollama
+            try:
+                from src.core.llm_engine import LLMEngine
+                llm_engine = LLMEngine(model_name=llm_model)
+            except Exception as e:
+                logger.error(f"Failed to initialize Ollama: {e}")
+                return f"Failed to initialize Ollama model {llm_model}. Please check if Ollama is running and the model is available."
+        else:
+            return f"Unsupported LLM provider: {llm_provider}"
+        
+        # Search knowledge base for relevant documents
+        knowledge_base_context = ""
+        try:
+            # Search documents directly from SQLite database
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Search for documents containing query keywords
+            search_terms = query.lower().split()
+            search_conditions = []
+            search_params = []
+            
+            for term in search_terms:
+                if len(term) > 2:  # Only search for terms longer than 2 characters
+                    search_conditions.append("(LOWER(title) LIKE ? OR LOWER(content) LIKE ?)")
+                    search_params.extend([f"%{term}%", f"%{term}%"])
+            
+            if search_conditions:
+                search_query = f"""
+                    SELECT id, title, content, document_type, created_at
+                    FROM documents 
+                    WHERE user_id = ? AND ({' OR '.join(search_conditions)})
+                    ORDER BY created_at DESC
+                    LIMIT 5
+                """
+                search_params.insert(0, user.id)
+                
+                cursor.execute(search_query, search_params)
+                kb_results = cursor.fetchall()
+                
+                if kb_results:
+                    knowledge_base_context = "\n\nRELEVANT DOCUMENTS FROM YOUR KNOWLEDGE BASE:\n"
+                    for i, result in enumerate(kb_results[:3], 1):  # Top 3 results
+                        doc_id, title, content, doc_type, created_at = result
+                        content_preview = content[:500] if content else "No content available"
+                        knowledge_base_context += f"\n{i}. Document: {title} (Type: {doc_type})\n"
+                        knowledge_base_context += f"Content Preview: {content_preview}...\n"
+                    
+                    knowledge_base_context += "\nUse this information from your uploaded documents to provide more accurate and specific answers.\n"
+                    logger.info(f"Found {len(kb_results)} relevant documents in knowledge base")
+                else:
+                    logger.info("No relevant documents found in knowledge base")
+            else:
+                logger.info("Query too short for meaningful search")
+            
+            cursor.close()
+            conn.close()
+                
+        except Exception as e:
+            logger.error(f"Knowledge base search failed: {e}")
+            knowledge_base_context = ""
         
         # Create comprehensive legal research prompt
         research_prompt = f"""
-        As a legal research assistant, please provide a comprehensive analysis of the following legal query:
+        As a conversational legal research assistant, please provide a comprehensive analysis of the following legal query:
 
         Query: "{query}"
+        {knowledge_base_context}
 
-        Please provide:
-        1. **Legal Overview**: Brief explanation of the legal concept
-        2. **Key Legal Principles**: Important legal principles and rules
-        3. **Relevant Case Law**: Mention any relevant cases or precedents
-        4. **Practical Implications**: How this applies in practice
-        5. **Additional Considerations**: Important factors to consider
-        6. **Resources**: Suggested further reading or resources
+        IMPORTANT INSTRUCTIONS:
+        1. Be conversational and engaging in your response
+        2. If the query contains statistical data, case numbers, or comparative information, suggest creating a visual chart
+        3. Ask the user if they would like a chart visualization
+        4. If they say yes, ask which type of chart they prefer (pie chart, bar chart, line chart, etc.)
+        5. Maintain a helpful, professional tone while being conversational
+        6. If you have relevant documents from the knowledge base, reference them specifically in your answer
+        7. If the user asks about their uploaded documents, provide specific information from those documents
 
-        Format your response in a clear, professional manner suitable for legal professionals.
+        Please provide your response in the following structured format:
+
+        **Legal Overview**
+        [Brief explanation of the legal concept and its relevance]
+
+        **Key Legal Principles**
+        1. **[Principle 1]**: [Description and explanation]
+        2. **[Principle 2]**: [Description and explanation]
+        3. **[Principle 3]**: [Description and explanation]
+
+        **Relevant Case Law**
+        - [Case 1]: [Brief description and relevance]
+        - [Case 2]: [Brief description and relevance]
+
+        **Practical Implications**
+        - [Implication 1]: [How this applies in practice]
+        - [Implication 2]: [How this applies in practice]
+
+        **Additional Considerations**
+        - [Consideration 1]: [Important factors to consider]
+        - [Consideration 2]: [Important factors to consider]
+
+        **Resources**
+        - [Resource 1]: [Description and link if applicable]
+        - [Resource 2]: [Description and link if applicable]
+
+        **Chart Suggestion** (if applicable)
+        If the query involves statistical data, case numbers, or comparative analysis, end your response with:
+        
+        "I notice this data could be visualized effectively. Would you like me to create a chart to better illustrate these statistics? If so, which type of chart would you prefer - pie chart, bar chart, line chart, or doughnut chart?"
+
+        Format your response with clear headings, numbered lists, and bullet points. Use **bold** for important terms and concepts. Make it professional, conversational, and easy to read for legal professionals.
         """
         
-        # Generate response
-        response = llm_engine.generate_response(research_prompt)
-        return response
+        # Generate response using the selected LLM provider
+        if llm_provider == 'openai':
+            # Generate response using OpenAI
+            client = openai.OpenAI(api_key=openai.api_key)
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": "You are DALI Legal AI, a specialized legal research assistant."},
+                    {"role": "user", "content": research_prompt}
+                ],
+                max_tokens=int(user_settings.get('max_tokens', 2000)),
+                temperature=float(user_settings.get('temperature', 0.7))
+            )
+            return response.choices[0].message.content
+        elif llm_provider == 'ollama':
+            # Generate response using Ollama
+            try:
+                response = llm_engine.generate_response(research_prompt)
+                return response
+            except Exception as e:
+                logger.error(f"Ollama generation failed: {e}")
+                return f"I apologize, but I encountered an error with the Ollama model: {str(e)}"
         
     except Exception as e:
         logger.error(f"AI legal research failed: {str(e)}")
@@ -2006,7 +3574,7 @@ async def document_analysis(
                 }
             
             # Analyze document using LLM
-            analysis_result = await analyze_document_with_llm(document_text, analysis_type)
+            analysis_result = await analyze_document_with_llm(document_text, analysis_type, user)
             
             # Add to knowledge base if requested
             kb_success = False
@@ -2042,21 +3610,31 @@ async def document_analysis(
         }
 
 @app.get("/api/web-scraping")
-async def web_scraping(url: str, download_documents: bool = False, bypass_auth: bool = False, user: User = Depends(require_auth)):
+async def web_scraping(url: str, scrape_links: bool = True, max_links: int = 5, download_documents: bool = False, bypass_auth: bool = False, user: User = Depends(require_auth)):
     """Web scraping endpoint with combined Firecrawl and BeautifulSoup + document downloading"""
     try:
-        # Run both methods in parallel for comprehensive scraping
-        firecrawl_result = scrape_with_firecrawl(url)
-        bs_result = scrape_with_beautifulsoup(url)
+        # Run scraping methods based on bypass_auth setting
+        if bypass_auth:
+            # Try authentication scraping first for protected sites
+            auth_result = scrape_with_authentication(url)
+            firecrawl_result = scrape_with_firecrawl(url)
+            bs_result = scrape_with_beautifulsoup(url, bypass_auth)
+        else:
+            # Standard scraping
+            firecrawl_result = scrape_with_firecrawl(url)
+            bs_result = scrape_with_beautifulsoup(url, bypass_auth)
+            auth_result = {"success": False}
         
         # Determine overall success
+        auth_success = auth_result.get("success", False)
         firecrawl_success = firecrawl_result.get("success", False)
         bs_success = bs_result.get("success", False)
         
-        if firecrawl_success or bs_success:
-            # Combine results from both methods
+        if auth_success or firecrawl_success or bs_success:
+            # Combine results from all methods
             combined_data = {
                 "url": url,
+                "authentication": auth_result if auth_success else None,
                 "firecrawl": firecrawl_result if firecrawl_success else None,
                 "beautifulsoup": bs_result if bs_success else None,
                 "combined_content": "",
@@ -2067,6 +3645,20 @@ async def web_scraping(url: str, download_documents: bool = False, bypass_auth: 
             
             # Extract and combine content
             content_parts = []
+            
+            # Add Authentication content if available (highest priority)
+            if auth_success:
+                auth_data = auth_result.get("data", {})
+                if auth_data.get("content"):
+                    content_parts.append(f"## Authenticated Content\n{auth_data['content']}")
+                
+                # Extract metadata from Authentication
+                if auth_data.get("metadata"):
+                    combined_data["metadata"].update(auth_data["metadata"])
+                
+                # Extract links from Authentication
+                if auth_data.get("links"):
+                    combined_data["links"].extend(auth_data["links"])
             
             # Add Firecrawl content if available
             if firecrawl_success:
@@ -2100,8 +3692,64 @@ async def web_scraping(url: str, download_documents: bool = False, bypass_auth: 
                 if bs_data.get("links"):
                     combined_data["links"].extend(bs_data["links"])
             
+            # Scrape useful links if requested
+            if scrape_links:
+                try:
+                    links_result = scrape_useful_links(url, max_links, bypass_auth)
+                    if links_result.get("success"):
+                        combined_data["useful_links_content"] = links_result.get("scraped_content", [])
+                        combined_data["total_useful_links"] = links_result.get("total_links_found", 0)
+                        combined_data["content_scraped"] = links_result.get("content_scraped", 0)
+                        
+                        # Add useful links content to main content
+                        for link_content in links_result.get("scraped_content", []):
+                            content_parts.append(f"## Content from: {link_content['title']}\n{link_content['content']}")
+                except Exception as e:
+                    logger.warning(f"Useful links scraping failed: {e}")
+            
             # Combine all content
             combined_data["combined_content"] = "\n\n".join(content_parts)
+            
+            # Save content to knowledge base
+            if combined_data["combined_content"]:
+                try:
+                    # Detect language from content
+                    detected_language = detect_language(combined_data["combined_content"])
+                    
+                    # Save to knowledge base
+                    kb_title = combined_data["metadata"].get("title", f"Web Content from {url}")
+                    kb_content = combined_data["combined_content"]
+                    
+                    # Get database connection
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+                    
+                    # Insert into knowledge base
+                    kb_insert_query = """
+                    INSERT INTO documents (
+                        user_id, title, content, document_type, 
+                        source, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """
+                    
+                    current_time = datetime.now().isoformat()
+                    cursor.execute(kb_insert_query, (
+                        user.id,
+                        kb_title,
+                        kb_content,
+                        "Web Content",
+                        url,
+                        current_time
+                    ))
+                    
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    
+                    logger.info(f"Saved web content to knowledge base: {kb_title}")
+                    
+                except Exception as kb_error:
+                    logger.error(f"Failed to save to knowledge base: {kb_error}")
             
             # Remove duplicates from links
             combined_data["links"] = list(set(combined_data["links"]))
@@ -2120,17 +3768,29 @@ async def web_scraping(url: str, download_documents: bool = False, bypass_auth: 
                 logger.info(f"Document download completed: {document_download_result.get('downloaded_count', 0)} successful, {document_download_result.get('failed_count', 0)} failed")
             
             # Determine primary method for response
-            primary_method = "firecrawl" if firecrawl_success else "beautifulsoup"
+            if auth_success:
+                primary_method = "authentication"
+            elif firecrawl_success:
+                primary_method = "firecrawl"
+            else:
+                primary_method = "beautifulsoup"
             
             response_data = {
                 "success": True,
                 "url": url,
                 "method": f"combined ({primary_method} primary)",
                 "data": combined_data,
+                "authentication_status": "success" if auth_success else "failed",
                 "firecrawl_status": "success" if firecrawl_success else "failed",
                 "beautifulsoup_status": "success" if bs_success else "failed",
+                "authentication_error": auth_result.get("error") if not auth_success else None,
                 "firecrawl_error": firecrawl_result.get("error") if not firecrawl_success else None,
                 "beautifulsoup_error": bs_result.get("error") if not bs_success else None,
+                "useful_links_content": combined_data.get("useful_links_content", []),
+                "total_useful_links": combined_data.get("total_useful_links", 0),
+                "content_scraped": combined_data.get("content_scraped", 0),
+                "bypass_auth_used": bypass_auth,
+                "knowledge_base_saved": True if combined_data["combined_content"] else False,
                 "timestamp": datetime.now().isoformat()
             }
             
@@ -2220,11 +3880,11 @@ async def advanced_document_extraction(url: str, user: User = Depends(require_au
                         if document_text and len(document_text.strip()) > 50:
                             # Save to database
                             conn = get_db_connection()
-                            cursor = conn.cursor(dictionary=True)
+                            cursor = conn.cursor()
                             
                             cursor.execute("""
                                 INSERT INTO documents (user_id, title, document_type, source, content, created_at)
-                                VALUES (%s, %s, %s, %s, %s, NOW())
+                                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                             """, (
                                 user.id,
                                 filename,
@@ -2443,7 +4103,7 @@ async def get_users(admin: User = Depends(require_admin)):
     """Get all users for admin"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT id, username, email, first_name, last_name, role, 
                    is_active, created_at, company_name, job_title
@@ -2691,7 +4351,7 @@ async def get_conversations(user: User = Depends(require_auth)):
     """Get all conversations for the current user with unread counts"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get conversations with message counts and last message preview
         cursor.execute("""
@@ -2709,7 +4369,7 @@ async def get_conversations(user: User = Depends(require_auth)):
                  ORDER BY m3.timestamp DESC LIMIT 1) as last_message_time
             FROM conversations c
             LEFT JOIN messages m ON c.id = m.conversation_id
-            WHERE c.user_id = %s 
+            WHERE c.user_id = ? 
             GROUP BY c.id
             ORDER BY c.updated_at DESC
         """, (user.id,))
@@ -2721,9 +4381,9 @@ async def get_conversations(user: User = Depends(require_auth)):
             cursor.execute("""
                 SELECT COUNT(*) as unread_count
                 FROM messages 
-                WHERE conversation_id = %s 
+                WHERE conversation_id = ? 
                 AND role = 'assistant' 
-                AND is_read = FALSE
+                AND is_read = 0
             """, (conv['id'],))
             unread_result = cursor.fetchone()
             conv['unread_count'] = unread_result['unread_count'] if unread_result else 0
@@ -2753,7 +4413,7 @@ async def create_conversation(request: Request, user: User = Depends(require_aut
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO conversations (user_id, title, created_at, updated_at)
-            VALUES (%s, %s, NOW(), NOW())
+            VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         """, (user.id, title))
         conversation_id = cursor.lastrowid
         conn.commit()
@@ -2776,11 +4436,11 @@ async def get_conversation_messages(conversation_id: int, user: User = Depends(r
     """Get messages for a specific conversation"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT id, role, content, timestamp 
             FROM messages 
-            WHERE conversation_id = %s AND user_id = %s
+            WHERE conversation_id = ? AND user_id = ?
             ORDER BY timestamp ASC
         """, (conversation_id, user.id))
         messages = cursor.fetchall()
@@ -2814,7 +4474,7 @@ async def send_message(conversation_id: int, request: Request, user: User = Depe
         # Add user message
         cursor.execute("""
             INSERT INTO messages (conversation_id, user_id, role, content, timestamp, is_read)
-            VALUES (%s, %s, %s, %s, NOW(), TRUE)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 1)
         """, (conversation_id, user.id, role, content))
         
         # Generate AI response if it's a user message
@@ -2824,13 +4484,13 @@ async def send_message(conversation_id: int, request: Request, user: User = Depe
             if ai_response:
                 cursor.execute("""
                     INSERT INTO messages (conversation_id, user_id, role, content, timestamp, is_read)
-                    VALUES (%s, %s, %s, %s, NOW(), FALSE)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
                 """, (conversation_id, user.id, "assistant", ai_response))
         
         # Update conversation timestamp and title if it's the first message
         cursor.execute("""
             SELECT COUNT(*) as msg_count FROM messages 
-            WHERE conversation_id = %s AND role = 'user'
+            WHERE conversation_id = ? AND role = 'user'
         """, (conversation_id,))
         msg_count = cursor.fetchone()[0]
         
@@ -2839,12 +4499,12 @@ async def send_message(conversation_id: int, request: Request, user: User = Depe
             title = content[:50] + "..." if len(content) > 50 else content
             cursor.execute("""
                 UPDATE conversations 
-                SET title = %s, updated_at = NOW() 
-                WHERE id = %s
+                SET title = ?, updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?
             """, (title, conversation_id))
         else:
             cursor.execute("""
-                UPDATE conversations SET updated_at = NOW() WHERE id = %s
+                UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
             """, (conversation_id,))
         
         conn.commit()
@@ -2866,13 +4526,38 @@ async def send_message(conversation_id: int, request: Request, user: User = Depe
 async def generate_enhanced_ai_response(user_message: str, user: User, conversation_id: int) -> str:
     """Generate enhanced AI response with conversation context"""
     try:
+        # Get user's LLM settings
+        user_settings = await get_user_llm_settings(user)
+        llm_provider = user_settings.get('llm_provider', 'openai')
+        llm_model = user_settings.get('llm_model', 'gpt-4o')
+        
+        logger.info(f"Using LLM provider: {llm_provider}, model: {llm_model}")
+        
+        if llm_provider == 'openai':
+            # Use OpenAI
+            import openai
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            if not openai.api_key:
+                return "OpenAI API key not configured. Please contact administrator."
+        elif llm_provider == 'ollama':
+            # Use Ollama
+            try:
+                from src.core.llm_engine import LLMEngine
+                llm_engine = LLMEngine(model_name=llm_model)
+            except Exception as e:
+                logger.error(f"Failed to initialize Ollama: {e}")
+                return f"Failed to initialize Ollama model {llm_model}. Please check if Ollama is running and the model is available."
+        else:
+            return f"Unsupported LLM provider: {llm_provider}"
+        
         # Get conversation history for context
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT role, content, timestamp 
             FROM messages 
-            WHERE conversation_id = %s 
+            WHERE conversation_id = ? 
             ORDER BY timestamp DESC 
             LIMIT 10
         """, (conversation_id,))
@@ -2888,14 +4573,6 @@ async def generate_enhanced_ai_response(user_message: str, user: User, conversat
             for msg in reversed(recent_messages[-5:]):  # Last 5 messages for context
                 role_label = "User" if msg['role'] == 'user' else "Assistant"
                 context += f"{role_label}: {msg['content']}\n"
-        
-        # Try to use OpenAI if available
-        from src.core.llm_engine import LLMEngine
-        
-        llm_engine = LLMEngine.from_user_settings({
-            'llm_provider': 'openai',
-            'llm_model': 'gpt-3.5-turbo'
-        })
         
         # Enhanced prompt with context
         enhanced_prompt = f"""
@@ -2915,9 +4592,28 @@ Please provide a comprehensive, helpful response that:
 If this is a legal question, provide specific guidance while noting that this is for informational purposes and users should consult qualified legal professionals for specific legal advice.
 """
         
-        # Generate response
-        response = llm_engine.generate_response(enhanced_prompt)
-        return response
+        # Generate response using the selected LLM provider
+        if llm_provider == 'openai':
+            # Generate response using OpenAI
+            client = openai.OpenAI(api_key=openai.api_key)
+            response = client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": "You are DALI Legal AI, a specialized legal assistant."},
+                    {"role": "user", "content": enhanced_prompt}
+                ],
+                max_tokens=int(user_settings.get('max_tokens', 2000)),
+                temperature=float(user_settings.get('temperature', 0.7))
+            )
+            return response.choices[0].message.content
+        elif llm_provider == 'ollama':
+            # Generate response using Ollama
+            try:
+                response = llm_engine.generate_response(enhanced_prompt)
+                return response
+            except Exception as e:
+                logger.error(f"Ollama generation failed: {e}")
+                return f"I apologize, but I encountered an error with the Ollama model: {str(e)}"
         
     except Exception as e:
         logger.error(f"Enhanced AI response generation failed: {str(e)}")
@@ -2941,23 +4637,23 @@ async def get_user_statistics(user_id: int) -> dict:
     """Get comprehensive user statistics"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get document count
-        cursor.execute("SELECT COUNT(*) as count FROM documents WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT COUNT(*) as count FROM documents WHERE user_id = ?", (user_id,))
         total_documents = cursor.fetchone()['count']
         
         # Get conversation count
-        cursor.execute("SELECT COUNT(*) as count FROM conversations WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT COUNT(*) as count FROM conversations WHERE user_id = ?", (user_id,))
         total_conversations = cursor.fetchone()['count']
         
         # Get recent activity
         cursor.execute("""
             SELECT 'document' as type, title, created_at 
-            FROM documents WHERE user_id = %s
+            FROM documents WHERE user_id = ?
             UNION ALL
             SELECT 'conversation' as type, title, created_at 
-            FROM conversations WHERE user_id = %s
+            FROM conversations WHERE user_id = ?
             ORDER BY created_at DESC LIMIT 5
         """, (user_id, user_id))
         recent_activity = cursor.fetchall()
@@ -2965,7 +4661,7 @@ async def get_user_statistics(user_id: int) -> dict:
         # Get shared documents count
         cursor.execute("""
             SELECT COUNT(*) as count FROM document_permissions 
-            WHERE user_id = %s AND permission_type = 'read'
+            WHERE user_id = ? AND permission_type = 'read'
         """, (user_id,))
         shared_documents = cursor.fetchone()['count']
         
@@ -2991,7 +4687,7 @@ async def get_system_statistics() -> dict:
     """Get comprehensive system statistics for admin dashboard"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get total users
         cursor.execute("SELECT COUNT(*) as count FROM users")
@@ -3000,7 +4696,7 @@ async def get_system_statistics() -> dict:
         # Get active users (logged in within last 30 days)
         cursor.execute("""
             SELECT COUNT(*) as count FROM users 
-            WHERE last_active > DATE_SUB(NOW(), INTERVAL 30 DAY)
+            WHERE last_active > datetime('now', '-30 days')
         """, ())
         active_users = cursor.fetchone()['count']
         
@@ -3019,11 +4715,11 @@ async def get_system_statistics() -> dict:
         # Get recent user activity
         cursor.execute("""
             SELECT u.username, 'login' as activity, u.last_active as timestamp
-            FROM users u WHERE u.last_active > DATE_SUB(NOW(), INTERVAL 7 DAY)
+            FROM users u WHERE u.last_active > datetime('now', '-7 days')
             UNION ALL
             SELECT u.username, 'document' as activity, d.created_at as timestamp
             FROM documents d JOIN users u ON d.user_id = u.id
-            WHERE d.created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
+            WHERE d.created_at > datetime('now', '-7 days')
             ORDER BY timestamp DESC LIMIT 10
         """)
         recent_activity = cursor.fetchall()
@@ -3073,8 +4769,8 @@ async def mark_conversation_read(conversation_id: int, user: User = Depends(requ
         
         cursor.execute("""
             UPDATE messages 
-            SET is_read = TRUE 
-            WHERE conversation_id = %s AND role = 'assistant'
+            SET is_read = 1 
+            WHERE conversation_id = ? AND role = 'assistant'
         """, (conversation_id,))
         
         conn.commit()
@@ -3100,7 +4796,7 @@ async def get_unread_count(user: User = Depends(require_auth)):
             SELECT COUNT(*) as unread_count
             FROM messages m
             JOIN conversations c ON m.conversation_id = c.id
-            WHERE c.user_id = %s AND m.role = 'assistant' AND m.is_read = FALSE
+            WHERE c.user_id = ? AND m.role = 'assistant' AND m.is_read = 0
         """, (user.id,))
         
         result = cursor.fetchone()
@@ -3130,20 +4826,20 @@ async def send_chat_message(
     """Send a chat message with advanced features"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Create or get conversation
         if not conversation_id:
             # Create new conversation
             cursor.execute("""
                 INSERT INTO conversations (user_id, title, created_at)
-                VALUES (%s, %s, NOW())
+                VALUES (?, ?, CURRENT_TIMESTAMP)
             """, (user.id, message[:50] + "..." if len(message) > 50 else message))
             conversation_id = cursor.lastrowid
         else:
             # Verify conversation belongs to user
             cursor.execute("""
-                SELECT id FROM conversations WHERE id = %s AND user_id = %s
+                SELECT id FROM conversations WHERE id = ? AND user_id = ?
             """, (conversation_id, user.id))
             if not cursor.fetchone():
                 return {"success": False, "error": "Conversation not found"}
@@ -3151,7 +4847,7 @@ async def send_chat_message(
         # Insert message
         cursor.execute("""
             INSERT INTO messages (conversation_id, sender_id, recipient_id, content, created_at)
-            VALUES (%s, %s, %s, %s, NOW())
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
         """, (conversation_id, user.id, user.id, message))
         
         message_id = cursor.lastrowid
@@ -3162,7 +4858,7 @@ async def send_chat_message(
         if ai_response:
             cursor.execute("""
                 INSERT INTO messages (conversation_id, sender_id, recipient_id, content, is_ai, created_at)
-                VALUES (%s, %s, %s, %s, 1, NOW())
+                VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
             """, (conversation_id, 0, user.id, ai_response))
         
         conn.commit()
@@ -3189,7 +4885,7 @@ async def get_chat_history(
     """Get chat history with advanced features"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         if conversation_id:
             # Get specific conversation messages
@@ -3197,9 +4893,9 @@ async def get_chat_history(
                 SELECT m.*, u.username as sender_name
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.conversation_id = %s AND m.recipient_id = %s
+                WHERE m.conversation_id = ? AND m.recipient_id = ?
                 ORDER BY m.created_at ASC
-                LIMIT %s
+                LIMIT ?
             """, (conversation_id, user.id, limit))
         else:
             # Get all conversations with latest messages
@@ -3211,10 +4907,10 @@ async def get_chat_history(
                 FROM conversations c
                 LEFT JOIN messages m ON c.id = m.conversation_id
                 LEFT JOIN messages msg ON c.id = msg.conversation_id
-                WHERE c.user_id = %s
+                WHERE c.user_id = ?
                 GROUP BY c.id
                 ORDER BY c.created_at DESC
-                LIMIT %s
+                LIMIT ?
             """, (user.id, limit))
         
         results = cursor.fetchall()
@@ -3243,7 +4939,7 @@ async def mark_messages_read(
         cursor.execute("""
             UPDATE messages 
             SET is_read = 1 
-            WHERE conversation_id = %s AND recipient_id = %s AND is_read = 0
+            WHERE conversation_id = ? AND recipient_id = ? AND is_read = 0
         """, (conversation_id, user.id))
         
         conn.commit()
@@ -3265,11 +4961,11 @@ async def request_document_permission(
     """Request permission to access a document"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Check if document exists and get owner
         cursor.execute("""
-            SELECT user_id, title FROM documents WHERE id = %s
+            SELECT user_id, title FROM documents WHERE id = ?
         """, (document_id,))
         
         document = cursor.fetchone()
@@ -3282,7 +4978,7 @@ async def request_document_permission(
         # Check if permission already requested
         cursor.execute("""
             SELECT id FROM document_permissions 
-            WHERE document_id = %s AND requester_id = %s AND status = 'pending'
+            WHERE document_id = ? AND requester_id = ? AND status = 'pending'
         """, (document_id, user.id))
         
         if cursor.fetchone():
@@ -3291,7 +4987,7 @@ async def request_document_permission(
         # Create permission request
         cursor.execute("""
             INSERT INTO document_permissions (document_id, owner_id, requester_id, status, created_at)
-            VALUES (%s, %s, %s, 'pending', NOW())
+            VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
         """, (document_id, document['user_id'], user.id))
         
         conn.commit()
@@ -3312,7 +5008,7 @@ async def my_permission_requests(request: Request, user: User = Depends(require_
     """View my permission requests"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get incoming requests (requests to me)
         cursor.execute("""
@@ -3320,7 +5016,7 @@ async def my_permission_requests(request: Request, user: User = Depends(require_
             FROM document_permissions dp
             JOIN documents d ON dp.document_id = d.id
             JOIN users u ON dp.requester_id = u.id
-            WHERE dp.owner_id = %s
+            WHERE dp.owner_id = ?
             ORDER BY dp.created_at DESC
         """, (user.id,))
         
@@ -3332,7 +5028,7 @@ async def my_permission_requests(request: Request, user: User = Depends(require_
             FROM document_permissions dp
             JOIN documents d ON dp.document_id = d.id
             JOIN users u ON dp.owner_id = u.id
-            WHERE dp.requester_id = %s
+            WHERE dp.requester_id = ?
             ORDER BY dp.created_at DESC
         """, (user.id,))
         
@@ -3361,14 +5057,14 @@ async def approve_permission_request(
     """Approve a permission request"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Verify user owns the document
         cursor.execute("""
             SELECT dp.*, d.title
             FROM document_permissions dp
             JOIN documents d ON dp.document_id = d.id
-            WHERE dp.id = %s AND dp.owner_id = %s AND dp.status = 'pending'
+            WHERE dp.id = ? AND dp.owner_id = ? AND dp.status = 'pending'
         """, (request_id, user.id))
         
         permission = cursor.fetchone()
@@ -3378,8 +5074,8 @@ async def approve_permission_request(
         # Update permission status
         cursor.execute("""
             UPDATE document_permissions 
-            SET status = 'approved', updated_at = NOW()
-            WHERE id = %s
+            SET status = 'approved', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
         """, (request_id,))
         
         conn.commit()
@@ -3403,14 +5099,14 @@ async def deny_permission_request(
     """Deny a permission request"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Verify user owns the document
         cursor.execute("""
             SELECT dp.*, d.title
             FROM document_permissions dp
             JOIN documents d ON dp.document_id = d.id
-            WHERE dp.id = %s AND dp.owner_id = %s AND dp.status = 'pending'
+            WHERE dp.id = ? AND dp.owner_id = ? AND dp.status = 'pending'
         """, (request_id, user.id))
         
         permission = cursor.fetchone()
@@ -3420,8 +5116,8 @@ async def deny_permission_request(
         # Update permission status
         cursor.execute("""
             UPDATE document_permissions 
-            SET status = 'denied', updated_at = NOW()
-            WHERE id = %s
+            SET status = 'denied', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
         """, (request_id,))
         
         conn.commit()
@@ -3456,9 +5152,9 @@ async def bulk_activate_users(
         
         cursor.execute("""
             UPDATE users 
-            SET is_active = 1, updated_at = NOW()
+            SET is_active = 1, updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({})
-        """.format(','.join(['%s'] * len(user_ids))), user_ids)
+        """.format(','.join(['?'] * len(user_ids))), user_ids)
         
         conn.commit()
         cursor.close()
@@ -3492,9 +5188,9 @@ async def bulk_deactivate_users(
         
         cursor.execute("""
             UPDATE users 
-            SET is_active = 0, updated_at = NOW()
+            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({})
-        """.format(','.join(['%s'] * len(user_ids))), user_ids)
+        """.format(','.join(['?'] * len(user_ids))), user_ids)
         
         conn.commit()
         cursor.close()
@@ -3527,7 +5223,7 @@ async def bulk_delete_users(
         cursor.execute("""
             SELECT COUNT(*) FROM users 
             WHERE id IN ({}) AND role = 'admin'
-        """.format(','.join(['%s'] * len(user_ids))), user_ids)
+        """.format(','.join(['?'] * len(user_ids))), user_ids)
         
         admin_count = cursor.fetchone()[0]
         if admin_count > 0:
@@ -3537,7 +5233,7 @@ async def bulk_delete_users(
         cursor.execute("""
             DELETE FROM users 
             WHERE id IN ({})
-        """.format(','.join(['%s'] * len(user_ids))), user_ids)
+        """.format(','.join(['?'] * len(user_ids))), user_ids)
         
         conn.commit()
         cursor.close()
@@ -3572,9 +5268,9 @@ async def bulk_change_role(
         
         cursor.execute("""
             UPDATE users 
-            SET role = %s, updated_at = NOW()
+            SET role = ?, updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({})
-        """.format(','.join(['%s'] * len(user_ids))), [new_role] + user_ids)
+        """.format(','.join(['?'] * len(user_ids))), [new_role] + user_ids)
         
         conn.commit()
         cursor.close()
@@ -3596,13 +5292,13 @@ async def get_my_documents(user: User = Depends(require_auth)):
     """Get user's own documents"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get user's documents
         cursor.execute("""
             SELECT id, title, document_type, source, created_at, content
             FROM documents 
-            WHERE user_id = %s 
+            WHERE user_id = ? 
             ORDER BY created_at DESC
         """, (user.id,))
         
@@ -3628,17 +5324,17 @@ async def export_documents(
     """Export documents in various formats"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get user's documents
         cursor.execute("""
             SELECT d.*, u.username as owner_name
             FROM documents d
             JOIN users u ON d.user_id = u.id
-            WHERE d.user_id = %s OR d.id IN (
+            WHERE d.user_id = ? OR d.id IN (
                 SELECT dp.document_id 
                 FROM document_permissions dp 
-                WHERE dp.requester_id = %s AND dp.status = 'approved'
+                WHERE dp.requester_id = ? AND dp.status = 'approved'
             )
             ORDER BY d.created_at DESC
         """, (user.id, user.id))
@@ -3704,19 +5400,19 @@ async def export_document_pdf(
     """Export a single document as PDF"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Check document access
         cursor.execute("""
             SELECT d.*, u.username as owner_name
             FROM documents d
             JOIN users u ON d.user_id = u.id
-            WHERE d.id = %s AND (
-                d.user_id = %s OR 
+            WHERE d.id = ? AND (
+                d.user_id = ? OR 
                 d.id IN (
                     SELECT dp.document_id 
                     FROM document_permissions dp 
-                    WHERE dp.requester_id = %s AND dp.status = 'approved'
+                    WHERE dp.requester_id = ? AND dp.status = 'approved'
                 )
             )
         """, (document_id, user.id, user.id))
@@ -3829,14 +5525,14 @@ async def get_all_users(
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Build query with filters
         where_conditions = []
         params = []
         
         if role_filter:
-            where_conditions.append("role = %s")
+            where_conditions.append("role = ?")
             params.append(role_filter)
         
         if status_filter:
@@ -3857,7 +5553,7 @@ async def get_all_users(
             FROM users 
             {where_clause}
             ORDER BY created_at DESC
-            LIMIT %s OFFSET %s
+            LIMIT ? OFFSET ?
         """, params + [limit, offset])
         
         users = cursor.fetchall()
@@ -3897,7 +5593,7 @@ def log_activity(user_id: int, action: str, details: dict = None):
         
         cursor.execute("""
             INSERT INTO activity_logs (user_id, action, details, ip_address, created_at)
-            VALUES (%s, %s, %s, %s, NOW())
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
         """, (user_id, action, details_json, "127.0.0.1"))  # IP will be updated with real IP
         
         conn.commit()
@@ -3921,18 +5617,18 @@ async def get_activity_logs(
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Build query with filters
         where_conditions = []
         params = []
         
         if user_id:
-            where_conditions.append("al.user_id = %s")
+            where_conditions.append("al.user_id = ?")
             params.append(user_id)
         
         if action_filter:
-            where_conditions.append("al.action = %s")
+            where_conditions.append("al.action = ?")
             params.append(action_filter)
         
         where_clause = ""
@@ -3946,7 +5642,7 @@ async def get_activity_logs(
             JOIN users u ON al.user_id = u.id
             {where_clause}
             ORDER BY al.created_at DESC
-            LIMIT %s OFFSET %s
+            LIMIT ? OFFSET ?
         """, params + [limit, offset])
         
         logs = cursor.fetchall()
@@ -3986,7 +5682,7 @@ async def get_activity_stats(
     
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get activity stats for the last N days
         cursor.execute("""
@@ -3995,7 +5691,7 @@ async def get_activity_stats(
                 COUNT(*) as activity_count,
                 COUNT(DISTINCT user_id) as unique_users
             FROM activity_logs 
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            WHERE created_at >= datetime('now', '-' || ? || ' days')
             GROUP BY DATE(created_at)
             ORDER BY date DESC
         """, (days,))
@@ -4006,7 +5702,7 @@ async def get_activity_stats(
         cursor.execute("""
             SELECT action, COUNT(*) as count
             FROM activity_logs 
-            WHERE created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            WHERE created_at >= datetime('now', '-' || ? || ' days')
             GROUP BY action
             ORDER BY count DESC
             LIMIT 10
@@ -4019,7 +5715,7 @@ async def get_activity_stats(
             SELECT u.username, u.first_name, u.last_name, COUNT(*) as activity_count
             FROM activity_logs al
             JOIN users u ON al.user_id = u.id
-            WHERE al.created_at >= DATE_SUB(NOW(), INTERVAL %s DAY)
+            WHERE al.created_at >= datetime('now', '-' || ? || ' days')
             GROUP BY al.user_id
             ORDER BY activity_count DESC
             LIMIT 10
@@ -4043,6 +5739,82 @@ async def get_activity_stats(
         return {"success": False, "error": f"Failed to get activity stats: {str(e)}"}
 
 # Database Intelligence System
+
+def convert_natural_language_to_sql(query: str) -> str:
+    """Convert simple natural language queries to SQL"""
+    query_lower = query.lower().strip()
+    
+    # Simple pattern matching for common queries
+    if "show me all users" in query_lower:
+        if "this month" in query_lower:
+            return "SELECT * FROM users WHERE created_at >= date('now', 'start of month')"
+        elif "recent" in query_lower:
+            return "SELECT * FROM users ORDER BY created_at DESC LIMIT 10"
+        else:
+            return "SELECT * FROM users"
+    
+    elif "count users" in query_lower or "how many users" in query_lower:
+        return "SELECT COUNT(*) as total_users FROM users"
+    
+    elif "show me all documents" in query_lower:
+        if "this month" in query_lower:
+            return "SELECT * FROM documents WHERE created_at >= date('now', 'start of month')"
+        elif "recent" in query_lower:
+            return "SELECT * FROM documents ORDER BY created_at DESC LIMIT 10"
+        else:
+            return "SELECT * FROM documents"
+    
+    elif "count documents" in query_lower or "how many documents" in query_lower:
+        return "SELECT COUNT(*) as total_documents FROM documents"
+    
+    elif "document types" in query_lower:
+        return "SELECT document_type, COUNT(*) as count FROM documents GROUP BY document_type"
+    
+    elif "recent activity" in query_lower or "activity trends" in query_lower:
+        return "SELECT DATE(created_at) as date, COUNT(*) as count FROM documents GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 10"
+    
+    elif "top users" in query_lower:
+        return "SELECT u.username, COUNT(d.id) as document_count FROM users u LEFT JOIN documents d ON u.id = d.user_id GROUP BY u.id, u.username ORDER BY document_count DESC LIMIT 10"
+    
+    elif "chat activity" in query_lower:
+        return "SELECT DATE(created_at) as date, COUNT(*) as message_count FROM messages GROUP BY DATE(created_at) ORDER BY date DESC LIMIT 10"
+    
+    # If no pattern matches, return None
+    return None
+
+def generate_simple_chart(data: list, columns: list, query: str) -> str:
+    """Generate a simple HTML chart for the data"""
+    if not data or len(data) == 0:
+        return ""
+    
+    # Simple bar chart for count queries
+    if len(data) == 1 and len(columns) == 1:
+        value = list(data[0].values())[0]
+        return f"""
+        <div style="text-align: center; padding: 20px;">
+            <div style="font-size: 48px; color: #667eea; font-weight: bold;">{value}</div>
+            <div style="font-size: 18px; color: #666;">{columns[0].replace('_', ' ').title()}</div>
+        </div>
+        """
+    
+    # Simple table for other data
+    if len(data) <= 10:
+        table_html = "<table style='width: 100%; border-collapse: collapse;'>"
+        table_html += "<tr style='background: #f8f9fa;'>"
+        for col in columns:
+            table_html += f"<th style='padding: 8px; border: 1px solid #ddd;'>{col.replace('_', ' ').title()}</th>"
+        table_html += "</tr>"
+        
+        for row in data:
+            table_html += "<tr>"
+            for col in columns:
+                table_html += f"<td style='padding: 8px; border: 1px solid #ddd;'>{row.get(col, '')}</td>"
+            table_html += "</tr>"
+        
+        table_html += "</table>"
+        return table_html
+    
+    return f"<p>Showing {len(data)} results. Data too large to display in chart format.</p>"
 @app.post("/api/database-intelligence/natural-language-query")
 async def natural_language_query(
     request: Request,
@@ -4055,11 +5827,9 @@ async def natural_language_query(
         content_type = request.headers.get("content-type", "")
         
         if "application/json" in content_type:
-            # Handle JSON input
             body = await request.json()
             query = body.get("query", "")
         else:
-            # Handle Form input
             query = natural_language
         
         if not query:
@@ -4069,62 +5839,55 @@ async def natural_language_query(
                 "timestamp": datetime.now().isoformat()
             }
         
-        # Import database intelligence components
-        from src.core.database.manager import DatabaseManager
-        from src.core.database.sql_generator import SQLGenerator
-        from src.core.database.chart_generator import ChartGenerator
-        from src.utils.config import load_config
+        # Simple natural language to SQL conversion
+        sql_query = convert_natural_language_to_sql(query)
         
-        # Initialize components
-        config = load_config('config/config.yaml')
-        db_manager = DatabaseManager(config)
-        sql_generator = SQLGenerator(config)
-        chart_generator = ChartGenerator(config)
+        if not sql_query:
+            return {
+                "success": False,
+                "error": "Could not understand the query. Try using SQL directly.",
+                "timestamp": datetime.now().isoformat()
+            }
         
-        # Connect to database
-        if not db_manager.connect():
-            return {"success": False, "error": "Failed to connect to database"}
+        # Execute the SQL query using SQLite
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
         try:
-            # Step 1: Generate SQL from natural language
-            schema_context = db_manager.get_schema_context()
-            sql_result = sql_generator.generate_sql(query, schema_context)
+            cursor.execute(sql_query)
+            results = cursor.fetchall()
+            columns = [description[0] for description in cursor.description] if cursor.description else []
             
-            if not sql_result['success']:
-                return {"success": False, "error": f"SQL generation failed: {sql_result['error']}"}
+            # Convert to list of dictionaries
+            data = []
+            for row in results:
+                data.append(dict(zip(columns, row)))
             
-            # Step 2: Execute SQL query
-            success, df = db_manager.execute_query(sql_result['sql_query'])
-            
-            if not success:
-                return {"success": False, "error": f"Query execution failed: {df}"}
-            
-            # Step 3: Generate chart
-            chart_result = chart_generator.generate_chart(df, natural_language)
-            
-            # Prepare response data
-            if hasattr(df, 'to_dict'):
-                data = df.to_dict(orient='records')
-                columns = list(df.columns)
-            else:
-                data = df
-                columns = list(df[0].keys()) if df and isinstance(df[0], dict) else []
+            # Generate simple chart if data is suitable
+            chart_html = generate_simple_chart(data, columns, query)
             
             return {
                 "success": True,
-                "natural_language": natural_language,
-                "sql_query": sql_result['sql_query'],
+                "natural_language": query,
+                "sql_query": sql_query,
                 "data": data,
                 "columns": columns,
                 "row_count": len(data),
-                "chart_html": chart_result.get('chart_html', ''),
-                "chart_config": chart_result.get('chart_config', {}),
-                "reasoning": chart_result.get('reasoning', 'Chart generated based on data structure'),
-                "model_used": sql_result.get('model_used', 'unknown')
+                "chart_html": chart_html,
+                "reasoning": f"Converted '{query}' to SQL and executed successfully",
+                "timestamp": datetime.now().isoformat()
             }
             
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Query execution failed: {str(e)}",
+                "sql_query": sql_query,
+                "timestamp": datetime.now().isoformat()
+            }
         finally:
-            db_manager.close()
+            cursor.close()
+            conn.close()
             
     except Exception as e:
         logger.error(f"Natural language query error: {str(e)}")
@@ -4159,39 +5922,52 @@ async def execute_sql_query(
                 "timestamp": datetime.now().isoformat()
             }
         
-        from src.core.database.manager import DatabaseManager
-        from src.utils.config import load_config
-        
-        config = load_config('config/config.yaml')
-        db_manager = DatabaseManager(config)
-        
-        if not db_manager.connect():
-            return {"success": False, "error": "Failed to connect to database"}
+        # Use SQLite instead of MySQL
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
         try:
-            success, df = db_manager.execute_query(query)
+            # Execute the query
+            cursor.execute(query)
             
-            if not success:
-                return {"success": False, "error": f"Query execution failed: {df}"}
-            
-            # Prepare response data
-            if hasattr(df, 'to_dict'):
-                data = df.to_dict(orient='records')
-                columns = list(df.columns)
+            # Get results
+            if query.strip().upper().startswith('SELECT'):
+                results = cursor.fetchall()
+                columns = [description[0] for description in cursor.description] if cursor.description else []
+                
+                # Convert to list of dictionaries
+                data = []
+                for row in results:
+                    data.append(dict(zip(columns, row)))
+                
+                return {
+                    "success": True,
+                    "data": data,
+                    "columns": columns,
+                    "sql_query": query,
+                    "row_count": len(data),
+                    "timestamp": datetime.now().isoformat()
+                }
             else:
-                data = df
-                columns = list(df[0].keys()) if df and isinstance(df[0], dict) else []
-            
+                # For non-SELECT queries
+                conn.commit()
+                return {
+                    "success": True,
+                    "message": "Query executed successfully",
+                    "sql_query": query,
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+        except Exception as e:
             return {
-                "success": True,
-                "sql_query": sql_query,
-                "data": data,
-                "columns": columns,
-                "row_count": len(data)
+                "success": False,
+                "error": f"SQL execution error: {str(e)}",
+                "sql_query": query,
+                "timestamp": datetime.now().isoformat()
             }
-            
         finally:
-            db_manager.close()
+            cursor.close()
+            conn.close()
             
     except Exception as e:
         logger.error(f"SQL execution error: {str(e)}")
@@ -4268,29 +6044,64 @@ async def generate_chart_from_data(
 async def get_database_schema(user: User = Depends(require_auth)):
     """Get database schema information"""
     try:
-        from src.core.database.manager import DatabaseManager
-        from src.utils.config import load_config
+        # Use SQLite instead of MySQL for this application
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
-        config = load_config('config/config.yaml')
-        db_manager = DatabaseManager(config)
+        # Get all tables
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
         
-        if not db_manager.connect():
-            return {"success": False, "error": "Failed to connect to database"}
+        # Get schema information for each table
+        schema_info = []
+        tables_list = []
         
-        try:
-            schema_context = db_manager.get_schema_context()
-            tables = db_manager.get_tables()
+        for table in tables:
+            table_name = table[0]
+            tables_list.append(table_name)
             
-            return {
-                "success": True,
-                "schema_context": schema_context,
-                "tables": tables,
-                "connection_status": "connected"
+            # Get column information
+            cursor.execute(f"PRAGMA table_info({table_name});")
+            columns = cursor.fetchall()
+            
+            table_info = {
+                "name": table_name,
+                "columns": []
             }
             
-        finally:
-            db_manager.close()
+            for col in columns:
+                table_info["columns"].append({
+                    "name": col[1],
+                    "type": col[2],
+                    "not_null": bool(col[3]),
+                    "primary_key": bool(col[5])
+                })
             
+            schema_info.append(table_info)
+        
+        cursor.close()
+        conn.close()
+        
+        # Create schema context
+        schema_context = f"Database: SQLite\nTables: {', '.join(tables_list)}\n\n"
+        for table in schema_info:
+            schema_context += f"Table: {table['name']}\n"
+            for col in table['columns']:
+                schema_context += f"  - {col['name']} ({col['type']})"
+                if col['primary_key']:
+                    schema_context += " [PRIMARY KEY]"
+                if col['not_null']:
+                    schema_context += " [NOT NULL]"
+                schema_context += "\n"
+            schema_context += "\n"
+        
+        return {
+            "success": True,
+            "schema_context": schema_context,
+            "tables": schema_info,
+            "connection_status": "connected"
+        }
+        
     except Exception as e:
         logger.error(f"Schema retrieval error: {str(e)}")
         return {"success": False, "error": f"Schema retrieval failed: {str(e)}"}
@@ -4311,11 +6122,11 @@ async def get_user_profile(user: User = Depends(require_auth)):
     """Get user profile information"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT id, username, email, first_name, last_name, 
                    company_name, job_title, phone, department, role, is_active
-            FROM users WHERE id = %s
+            FROM users WHERE id = ?
         """, (user.id,))
         profile = cursor.fetchone()
         cursor.close()
@@ -4349,9 +6160,9 @@ async def update_user_profile(request: Request, user: User = Depends(require_aut
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE users SET 
-                first_name = %s, last_name = %s, email = %s,
-                company_name = %s, job_title = %s, phone = %s, department = %s
-            WHERE id = %s
+                first_name = ?, last_name = ?, email = ?,
+                company_name = ?, job_title = ?, phone = ?, department = ?
+            WHERE id = ?
         """, (
             data.get('first_name', ''),
             data.get('last_name', ''),
@@ -4392,8 +6203,8 @@ async def change_password(request: Request, user: User = Depends(require_auth)):
         
         # Verify current password
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT password_hash FROM users WHERE id = %s", (user.id,))
+        cursor = conn.cursor()
+        cursor.execute("SELECT password_hash FROM users WHERE id = ?", (user.id,))
         user_data = cursor.fetchone()
         
         if not user_data or not pwd_context.verify(current_password, user_data['password_hash']):
@@ -4406,7 +6217,7 @@ async def change_password(request: Request, user: User = Depends(require_auth)):
         
         # Update password
         new_password_hash = pwd_context.hash(new_password)
-        cursor.execute("UPDATE users SET password_hash = %s WHERE id = %s", (new_password_hash, user.id))
+        cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_password_hash, user.id))
         conn.commit()
         cursor.close()
         conn.close()
@@ -4426,11 +6237,11 @@ async def get_user_settings(user: User = Depends(require_auth)):
     """Get user LLM settings"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get all settings for the user
         cursor.execute("""
-            SELECT setting_key, setting_value FROM user_settings WHERE user_id = %s
+            SELECT setting_key, setting_value FROM user_settings WHERE user_id = ?
         """, (user.id,))
         settings_rows = cursor.fetchall()
         cursor.close()
@@ -4493,7 +6304,7 @@ async def update_user_activity(user: User = Depends(require_auth)):
         
         # Update last activity timestamp
         cursor.execute("""
-            UPDATE users SET last_active = NOW() WHERE id = %s
+            UPDATE users SET last_active = CURRENT_TIMESTAMP WHERE id = ?
         """, (user.id,))
         
         conn.commit()
@@ -4526,11 +6337,19 @@ async def update_user_settings(request: Request, user: User = Depends(require_au
         
         # Update or insert each setting
         for setting_key, setting_value in settings_to_update.items():
+            # First try to update existing setting
             cursor.execute("""
-                INSERT INTO user_settings (user_id, setting_key, setting_value)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
-            """, (user.id, setting_key, setting_value))
+                UPDATE user_settings 
+                SET setting_value = ? 
+                WHERE user_id = ? AND setting_key = ?
+            """, (setting_value, user.id, setting_key))
+            
+            # If no rows were updated, insert new setting
+            if cursor.rowcount == 0:
+                cursor.execute("""
+                    INSERT INTO user_settings (user_id, setting_key, setting_value)
+                    VALUES (?, ?, ?)
+                """, (user.id, setting_key, setting_value))
         
         conn.commit()
         cursor.close()
@@ -4562,18 +6381,18 @@ async def get_documents(user: User = Depends(require_auth)):
     """Get all documents accessible to the user"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get documents owned by user or shared with user
         cursor.execute("""
             SELECT d.id, d.title, d.document_type, d.source, d.created_at, 
                    d.user_id, u.username as owner_name,
-                   CASE WHEN d.user_id = %s THEN 'owner' ELSE 'shared' END as access_type
+                   CASE WHEN d.user_id = ? THEN 'owner' ELSE 'shared' END as access_type
             FROM documents d
             JOIN users u ON d.user_id = u.id
-            WHERE d.user_id = %s OR d.id IN (
+            WHERE d.user_id = ? OR d.id IN (
                 SELECT document_id FROM document_permissions 
-                WHERE user_id = %s AND permission_type = 'read'
+                WHERE user_id = ? AND permission_type = 'read'
             )
             ORDER BY d.created_at DESC
         """, (user.id, user.id, user.id))
@@ -4597,16 +6416,16 @@ async def get_document(document_id: int, user: User = Depends(require_auth)):
     """Get a specific document"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Check if user has access to document
         cursor.execute("""
             SELECT d.*, u.username as owner_name
             FROM documents d
             JOIN users u ON d.user_id = u.id
-            WHERE d.id = %s AND (
-                d.user_id = %s OR 
-                d.id IN (SELECT document_id FROM document_permissions WHERE user_id = %s AND permission_type = 'read')
+            WHERE d.id = ? AND (
+                d.user_id = ? OR 
+                d.id IN (SELECT document_id FROM document_permissions WHERE user_id = ? AND permission_type = 'read')
             )
         """, (document_id, user.id, user.id))
         
@@ -4648,7 +6467,7 @@ async def share_document(document_id: int, request: Request, user: User = Depend
         cursor = conn.cursor()
         
         # Check if user owns the document
-        cursor.execute("SELECT user_id FROM documents WHERE id = %s", (document_id,))
+        cursor.execute("SELECT user_id FROM documents WHERE id = ?", (document_id,))
         doc_owner = cursor.fetchone()
         
         if not doc_owner or doc_owner[0] != user.id:
@@ -4662,21 +6481,21 @@ async def share_document(document_id: int, request: Request, user: User = Depend
         # Check if permission already exists
         cursor.execute("""
             SELECT id FROM document_permissions 
-            WHERE document_id = %s AND user_id = %s
+            WHERE document_id = ? AND user_id = ?
         """, (document_id, target_user_id))
         
         if cursor.fetchone():
             # Update existing permission
             cursor.execute("""
                 UPDATE document_permissions 
-                SET permission = %s, updated_at = NOW()
-                WHERE document_id = %s AND user_id = %s
+                SET permission = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE document_id = ? AND user_id = ?
             """, (permission, document_id, target_user_id))
         else:
             # Create new permission
             cursor.execute("""
                 INSERT INTO document_permissions (document_id, user_id, permission_type, granted_by, granted_at)
-                VALUES (%s, %s, %s, %s, NOW())
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (document_id, target_user_id, permission, user.id))
         
         conn.commit()
@@ -4698,10 +6517,10 @@ async def get_document_permissions(document_id: int, user: User = Depends(requir
     """Get permissions for a document"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Check if user owns the document
-        cursor.execute("SELECT user_id FROM documents WHERE id = %s", (document_id,))
+        cursor.execute("SELECT user_id FROM documents WHERE id = ?", (document_id,))
         doc_owner = cursor.fetchone()
         
         if not doc_owner or doc_owner[0] != user.id:
@@ -4717,7 +6536,7 @@ async def get_document_permissions(document_id: int, user: User = Depends(requir
             SELECT dp.*, u.username, u.email, u.first_name, u.last_name
             FROM document_permissions dp
             JOIN users u ON dp.user_id = u.id
-            WHERE dp.document_id = %s
+            WHERE dp.document_id = ?
             ORDER BY dp.created_at DESC
         """, (document_id,))
         
@@ -4740,10 +6559,10 @@ async def delete_document(document_id: int, user: User = Depends(require_auth)):
     """Delete a document"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Check if user owns the document
-        cursor.execute("SELECT user_id, title FROM documents WHERE id = %s", (document_id,))
+        cursor.execute("SELECT user_id, title FROM documents WHERE id = ?", (document_id,))
         result = cursor.fetchone()
         
         if not result:
@@ -4753,7 +6572,7 @@ async def delete_document(document_id: int, user: User = Depends(require_auth)):
             raise HTTPException(status_code=403, detail="You can only delete your own documents")
         
         # Delete document permissions first
-        cursor.execute("DELETE FROM document_permissions WHERE document_id = %s", (document_id,))
+        cursor.execute("DELETE FROM document_permissions WHERE document_id = ?", (document_id,))
         
         # Delete from vector store
         try:
@@ -4764,7 +6583,7 @@ async def delete_document(document_id: int, user: User = Depends(require_auth)):
             logger.warning(f"Could not delete from vector store: {e}")
         
         # Delete the document
-        cursor.execute("DELETE FROM documents WHERE id = %s", (document_id,))
+        cursor.execute("DELETE FROM documents WHERE id = ?", (document_id,))
         
         conn.commit()
         cursor.close()
@@ -4786,7 +6605,7 @@ async def remove_document_permission(document_id: int, permission_id: int, user:
         cursor = conn.cursor()
         
         # Check if user owns the document
-        cursor.execute("SELECT user_id FROM documents WHERE id = %s", (document_id,))
+        cursor.execute("SELECT user_id FROM documents WHERE id = ?", (document_id,))
         doc_owner = cursor.fetchone()
         
         if not doc_owner or doc_owner[0] != user.id:
@@ -4800,7 +6619,7 @@ async def remove_document_permission(document_id: int, permission_id: int, user:
         # Remove permission
         cursor.execute("""
             DELETE FROM document_permissions 
-            WHERE id = %s AND document_id = %s
+            WHERE id = ? AND document_id = ?
         """, (permission_id, document_id))
         
         conn.commit()
@@ -4832,17 +6651,17 @@ async def view_document_page(document_id: int, request: Request, user: User = De
     """View individual document page"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get document with uploader info
         cursor.execute("""
             SELECT d.*, u.username as uploader_name,
-                   CASE WHEN d.user_id = %s THEN 1 ELSE 0 END as is_owner,
+                   CASE WHEN d.user_id = ? THEN 1 ELSE 0 END as is_owner,
                    dp.permission_type
             FROM documents d
             LEFT JOIN users u ON d.user_id = u.id
-            LEFT JOIN document_permissions dp ON d.id = dp.document_id AND dp.user_id = %s
-            WHERE d.id = %s
+            LEFT JOIN document_permissions dp ON d.id = dp.document_id AND dp.user_id = ?
+            WHERE d.id = ?
         """, (user.id, user.id, document_id))
         
         document = cursor.fetchone()
@@ -4874,17 +6693,17 @@ async def download_document(document_id: int, user: User = Depends(require_auth)
     """Download a document file"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get document with permission check
         cursor.execute("""
             SELECT d.*, u.username as uploader_name,
-                   CASE WHEN d.user_id = %s THEN 1 ELSE 0 END as is_owner,
+                   CASE WHEN d.user_id = ? THEN 1 ELSE 0 END as is_owner,
                    dp.permission_type
             FROM documents d
             LEFT JOIN users u ON d.user_id = u.id
-            LEFT JOIN document_permissions dp ON d.id = dp.document_id AND dp.user_id = %s
-            WHERE d.id = %s
+            LEFT JOIN document_permissions dp ON d.id = dp.document_id AND dp.user_id = ?
+            WHERE d.id = ?
         """, (user.id, user.id, document_id))
         
         document = cursor.fetchone()
@@ -4929,14 +6748,14 @@ async def search_users(query: str = "", user: User = Depends(require_auth)):
     """Search users for sharing"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         if query:
             cursor.execute("""
                 SELECT id, username, email, first_name, last_name
                 FROM users 
-                WHERE (username LIKE %s OR email LIKE %s OR first_name LIKE %s OR last_name LIKE %s)
-                AND id != %s
+                WHERE (username LIKE ? OR email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)
+                AND id != ?
                 ORDER BY username
                 LIMIT 10
             """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', user.id))
@@ -4944,7 +6763,7 @@ async def search_users(query: str = "", user: User = Depends(require_auth)):
             cursor.execute("""
                 SELECT id, username, email, first_name, last_name
                 FROM users 
-                WHERE id != %s
+                WHERE id != ?
                 ORDER BY username
                 LIMIT 10
             """, (user.id,))
@@ -4969,27 +6788,27 @@ async def get_user_conversations(user: User = Depends(require_auth)):
     """Get all conversations for the current user"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get conversations with other users
         cursor.execute("""
             SELECT DISTINCT 
                 CASE 
-                    WHEN sender_id = %s THEN receiver_id 
+                    WHEN sender_id = ? THEN receiver_id 
                     ELSE sender_id 
                 END as user_id,
                 u.username,
                 u.role,
                 MAX(um.timestamp) as last_message_time,
                 (SELECT content FROM user_messages um2 
-                 WHERE ((um2.sender_id = %s AND um2.receiver_id = u.id) 
-                        OR (um2.sender_id = u.id AND um2.receiver_id = %s))
+                 WHERE ((um2.sender_id = ? AND um2.receiver_id = u.id) 
+                        OR (um2.sender_id = u.id AND um2.receiver_id = ?))
                  ORDER BY um2.timestamp DESC LIMIT 1) as last_message,
-                COUNT(CASE WHEN um.receiver_id = %s AND um.is_read = 0 THEN 1 END) as unread_count
+                COUNT(CASE WHEN um.receiver_id = ? AND um.is_read = 0 THEN 1 END) as unread_count
             FROM user_messages um
             JOIN users u ON (um.sender_id = u.id OR um.receiver_id = u.id)
-            WHERE (um.sender_id = %s OR um.receiver_id = %s) 
-            AND u.id != %s
+            WHERE (um.sender_id = ? OR um.receiver_id = ?) 
+            AND u.id != ?
             GROUP BY user_id, u.username, u.role
             ORDER BY last_message_time DESC
         """, (user.id, user.id, user.id, user.id, user.id, user.id, user.id))
@@ -5014,15 +6833,15 @@ async def get_user_chat_messages(user_id: int, user: User = Depends(require_auth
     """Get messages between current user and specified user"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get messages between users
         cursor.execute("""
             SELECT um.*, u.username as sender_name
             FROM user_messages um
             JOIN users u ON um.sender_id = u.id
-            WHERE ((um.sender_id = %s AND um.receiver_id = %s) 
-                   OR (um.sender_id = %s AND um.receiver_id = %s))
+            WHERE ((um.sender_id = ? AND um.receiver_id = ?) 
+                   OR (um.sender_id = ? AND um.receiver_id = ?))
             ORDER BY um.timestamp ASC
         """, (user.id, user_id, user_id, user.id))
         
@@ -5032,7 +6851,7 @@ async def get_user_chat_messages(user_id: int, user: User = Depends(require_auth
         cursor.execute("""
             UPDATE user_messages 
             SET is_read = 1 
-            WHERE sender_id = %s AND receiver_id = %s AND is_read = 0
+            WHERE sender_id = ? AND receiver_id = ? AND is_read = 0
         """, (user_id, user.id))
         
         conn.commit()
@@ -5066,9 +6885,9 @@ async def send_user_message(request: Request, user: User = Depends(require_auth)
         
         # Check if receiver exists
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
-        cursor.execute("SELECT id FROM users WHERE id = %s", (receiver_id,))
+        cursor.execute("SELECT id FROM users WHERE id = ?", (receiver_id,))
         if not cursor.fetchone():
             conn.close()
             return {
@@ -5079,7 +6898,7 @@ async def send_user_message(request: Request, user: User = Depends(require_auth)
         # Insert message
         cursor.execute("""
             INSERT INTO user_messages (sender_id, receiver_id, content, timestamp, is_read)
-            VALUES (%s, %s, %s, NOW(), 0)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP, 0)
         """, (user.id, receiver_id, content))
         
         conn.commit()
@@ -5102,12 +6921,12 @@ async def get_unread_message_count(user: User = Depends(require_auth)):
     """Get total unread message count for current user"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         cursor.execute("""
             SELECT COUNT(*) as unread_count
             FROM user_messages 
-            WHERE receiver_id = %s AND is_read = 0
+            WHERE receiver_id = ? AND is_read = 0
         """, (user.id,))
         
         result = cursor.fetchone()
@@ -5134,14 +6953,14 @@ async def request_document_permission(document_id: int, request: Request, user: 
     """Request permission to access a document"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get document and owner
         cursor.execute("""
             SELECT d.id, d.title, d.user_id, u.username as owner_username
             FROM documents d
             JOIN users u ON d.user_id = u.id
-            WHERE d.id = %s
+            WHERE d.id = ?
         """, (document_id,))
         
         document = cursor.fetchone()
@@ -5160,7 +6979,7 @@ async def request_document_permission(document_id: int, request: Request, user: 
         # Check if permission request already exists
         cursor.execute("""
             SELECT id FROM document_permission_requests 
-            WHERE document_id = %s AND requester_id = %s AND status = 'pending'
+            WHERE document_id = ? AND requester_id = ? AND status = 'pending'
         """, (document_id, user.id))
         
         existing_request = cursor.fetchone()
@@ -5174,7 +6993,7 @@ async def request_document_permission(document_id: int, request: Request, user: 
         cursor.execute("""
             INSERT INTO document_permission_requests 
             (document_id, requester_id, owner_id, status, created_at)
-            VALUES (%s, %s, %s, 'pending', NOW())
+            VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
         """, (document_id, user.id, document['user_id']))
         
         conn.commit()
@@ -5198,7 +7017,7 @@ async def get_permission_requests(user: User = Depends(require_auth)):
     """Get all permission requests for the user (incoming and outgoing)"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         # Get outgoing requests (requests made by user)
         cursor.execute("""
@@ -5209,7 +7028,7 @@ async def get_permission_requests(user: User = Depends(require_auth)):
             FROM document_permission_requests r
             JOIN documents d ON r.document_id = d.id
             JOIN users u ON r.owner_id = u.id
-            WHERE r.requester_id = %s
+            WHERE r.requester_id = ?
             ORDER BY r.created_at DESC
         """, (user.id,))
         
@@ -5224,7 +7043,7 @@ async def get_permission_requests(user: User = Depends(require_auth)):
             FROM document_permission_requests r
             JOIN documents d ON r.document_id = d.id
             JOIN users u ON r.requester_id = u.id
-            WHERE r.owner_id = %s
+            WHERE r.owner_id = ?
             ORDER BY r.created_at DESC
         """, (user.id,))
         
@@ -5256,8 +7075,8 @@ async def approve_permission_request(request_id: int, user: User = Depends(requi
         # Update request status
         cursor.execute("""
             UPDATE document_permission_requests 
-            SET status = 'approved', updated_at = NOW()
-            WHERE id = %s AND owner_id = %s AND status = 'pending'
+            SET status = 'approved', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND owner_id = ? AND status = 'pending'
         """, (request_id, user.id))
         
         if cursor.rowcount == 0:
@@ -5270,18 +7089,24 @@ async def approve_permission_request(request_id: int, user: User = Depends(requi
         cursor.execute("""
             SELECT document_id, requester_id 
             FROM document_permission_requests 
-            WHERE id = %s
+            WHERE id = ?
         """, (request_id,))
         
         request_data = cursor.fetchone()
         if request_data:
             # Create document permission
             cursor.execute("""
-                INSERT INTO document_permissions 
-                (document_id, user_id, permission_type, granted_by, granted_at)
-                VALUES (%s, %s, 'read', %s, NOW())
-                ON DUPLICATE KEY UPDATE permission_type = 'read', granted_at = NOW()
-            """, (request_data[0], request_data[1], user.id))
+                UPDATE document_permissions 
+                SET permission_type = 'read', granted_at = CURRENT_TIMESTAMP
+                WHERE document_id = ? AND user_id = ?
+            """, (request_data[0], request_data[1]))
+            
+            if cursor.rowcount == 0:
+                cursor.execute("""
+                    INSERT INTO document_permissions 
+                    (document_id, user_id, permission_type, granted_by, granted_at)
+                    VALUES (?, ?, 'read', ?, CURRENT_TIMESTAMP)
+                """, (request_data[0], request_data[1], user.id))
         
         conn.commit()
         cursor.close()
@@ -5309,8 +7134,8 @@ async def deny_permission_request(request_id: int, user: User = Depends(require_
         # Update request status
         cursor.execute("""
             UPDATE document_permission_requests 
-            SET status = 'denied', updated_at = NOW()
-            WHERE id = %s AND owner_id = %s AND status = 'pending'
+            SET status = 'denied', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND owner_id = ? AND status = 'pending'
         """, (request_id, user.id))
         
         if cursor.rowcount == 0:
@@ -5353,10 +7178,10 @@ async def bulk_delete_users(request: Request, user: User = Depends(require_admin
         cursor = conn.cursor()
         
         # Delete users (cascade will handle related data)
-        placeholders = ','.join(['%s'] * len(user_ids))
+        placeholders = ','.join(['?'] * len(user_ids))
         cursor.execute(f"""
             DELETE FROM users 
-            WHERE id IN ({placeholders}) AND id != %s
+            WHERE id IN ({placeholders}) AND id != ?
         """, user_ids + [user.id])  # Prevent admin from deleting themselves
         
         deleted_count = cursor.rowcount
@@ -5395,10 +7220,10 @@ async def bulk_activate_users(request: Request, user: User = Depends(require_adm
         cursor = conn.cursor()
         
         # Activate users
-        placeholders = ','.join(['%s'] * len(user_ids))
+        placeholders = ','.join(['?'] * len(user_ids))
         cursor.execute(f"""
             UPDATE users 
-            SET is_active = TRUE, updated_at = NOW()
+            SET is_active = 1, updated_at = CURRENT_TIMESTAMP
             WHERE id IN ({placeholders})
         """, user_ids)
         
@@ -5438,11 +7263,11 @@ async def bulk_deactivate_users(request: Request, user: User = Depends(require_a
         cursor = conn.cursor()
         
         # Deactivate users (but don't deactivate admin)
-        placeholders = ','.join(['%s'] * len(user_ids))
+        placeholders = ','.join(['?'] * len(user_ids))
         cursor.execute(f"""
             UPDATE users 
-            SET is_active = FALSE, updated_at = NOW()
-            WHERE id IN ({placeholders}) AND id != %s
+            SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+            WHERE id IN ({placeholders}) AND id != ?
         """, user_ids + [user.id])  # Prevent admin from deactivating themselves
         
         updated_count = cursor.rowcount
@@ -5488,11 +7313,11 @@ async def bulk_update_user_roles(request: Request, user: User = Depends(require_
         cursor = conn.cursor()
         
         # Update user roles (but don't change admin role)
-        placeholders = ','.join(['%s'] * len(user_ids))
+        placeholders = ','.join(['?'] * len(user_ids))
         cursor.execute(f"""
             UPDATE users 
-            SET role = %s, updated_at = NOW()
-            WHERE id IN ({placeholders}) AND id != %s
+            SET role = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id IN ({placeholders}) AND id != ?
         """, [new_role] + user_ids + [user.id])  # Prevent admin from changing their own role
         
         updated_count = cursor.rowcount
@@ -5519,7 +7344,7 @@ async def export_users(user: User = Depends(require_admin)):
     """Export all users to CSV (admin only)"""
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         
         cursor.execute("""
             SELECT 
@@ -5611,7 +7436,7 @@ async def import_users(request: Request, user: User = Depends(require_admin)):
                     INSERT INTO users 
                     (username, email, password_hash, first_name, last_name, 
                      role, is_active, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW(), NOW())
+                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 """, (
                     username,
                     email,
@@ -5644,6 +7469,436 @@ async def import_users(request: Request, user: User = Depends(require_admin)):
             "success": False,
             "error": str(e)
         }
+
+# Court Simulation API Endpoints
+
+@app.post("/api/court-simulation/upload-case")
+async def upload_case_for_simulation(
+    file: UploadFile = File(...),
+    title: str = Form(""),
+    description: str = Form(""),
+    user: User = Depends(require_auth)
+):
+    """Upload and analyze case document for court simulation"""
+    try:
+        # Read file content
+        content = await file.read()
+        
+        # Analyze the case document
+        analysis_result = await analyze_document_with_llm(
+            document_text=content.decode('utf-8', errors='ignore'),
+            analysis_type="comprehensive",
+            user=user
+        )
+        
+        # Extract key information for simulation
+        case_analysis = {
+            "title": title or file.filename,
+            "description": description,
+            "filename": file.filename,
+            "content": content.decode('utf-8', errors='ignore'),
+            "analysis": analysis_result,
+            "key_points": extract_key_legal_points(analysis_result),
+            "case_type": determine_case_type(analysis_result),
+            "relevant_laws": extract_relevant_laws(analysis_result),
+            "uploaded_at": datetime.now().isoformat()
+        }
+        
+        return {
+            "success": True,
+            "data": case_analysis,
+            "message": "Case uploaded and analyzed successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading case for simulation: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to upload case: {str(e)}"
+        }
+
+@app.post("/api/court-simulation/respond")
+async def court_simulation_respond(
+    request_data: dict,
+    user: User = Depends(require_auth)
+):
+    """Handle responses in court simulation"""
+    try:
+        message = request_data.get("message", "")
+        case_data = request_data.get("caseData", {})
+        conversation_history = request_data.get("conversationHistory", [])
+        
+        # Get user's LLM settings
+        llm_settings = await get_user_llm_settings(user)
+        
+        # Generate judge response
+        judge_response = await generate_judge_response(
+            message=message,
+            case_data=case_data,
+            conversation_history=conversation_history,
+            llm_settings=llm_settings
+        )
+        
+        # Generate prosecutor response
+        prosecutor_response = await generate_prosecutor_response(
+            message=message,
+            case_data=case_data,
+            conversation_history=conversation_history,
+            llm_settings=llm_settings
+        )
+        
+        return {
+            "success": True,
+            "judgeResponse": judge_response,
+            "prosecutorResponse": prosecutor_response,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in court simulation response: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to generate responses: {str(e)}"
+        }
+
+@app.post("/api/court-simulation/generate-report")
+async def generate_court_simulation_report(
+    request_data: dict,
+    user: User = Depends(require_auth)
+):
+    """Generate PDF report for court simulation"""
+    try:
+        case_data = request_data.get("caseData", {})
+        conversation_history = request_data.get("conversationHistory", [])
+        simulation_duration = request_data.get("simulationDuration", 0)
+        
+        # Generate comprehensive report
+        report_data = generate_simulation_report(
+            case_data=case_data,
+            conversation_history=conversation_history,
+            simulation_duration=simulation_duration,
+            user=user
+        )
+        
+        # Create PDF report
+        pdf_url = create_pdf_report(report_data, user.id)
+        
+        return {
+            "success": True,
+            "reportUrl": pdf_url,
+            "reportData": report_data,
+            "message": "Report generated successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating court simulation report: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to generate report: {str(e)}"
+        }
+
+# Helper functions for court simulation
+
+def extract_key_legal_points(analysis_text: str) -> list:
+    """Extract key legal points from case analysis"""
+    key_points = []
+    lines = analysis_text.split('\n')
+    
+    for line in lines:
+        if any(keyword in line.lower() for keyword in ['law', 'statute', 'regulation', 'precedent', 'ruling']):
+            if len(line.strip()) > 20:
+                key_points.append(line.strip())
+    
+    return key_points[:10]  # Return top 10 key points
+
+def determine_case_type(analysis_text: str) -> str:
+    """Determine the type of legal case"""
+    text_lower = analysis_text.lower()
+    
+    if any(word in text_lower for word in ['criminal', 'felony', 'misdemeanor', 'theft', 'assault']):
+        return "Criminal"
+    elif any(word in text_lower for word in ['contract', 'agreement', 'breach', 'employment']):
+        return "Contract"
+    elif any(word in text_lower for word in ['family', 'divorce', 'custody', 'marriage']):
+        return "Family Law"
+    elif any(word in text_lower for word in ['property', 'real estate', 'land', 'ownership']):
+        return "Property"
+    elif any(word in text_lower for word in ['personal injury', 'accident', 'negligence', 'damages']):
+        return "Personal Injury"
+    else:
+        return "General Civil"
+
+def extract_relevant_laws(analysis_text: str) -> list:
+    """Extract relevant laws and statutes from analysis"""
+    laws = []
+    import re
+    
+    # Look for common law patterns
+    law_patterns = [
+        r'section \d+',
+        r'article \d+',
+        r'statute \d+',
+        r'code \d+',
+        r'regulation \d+'
+    ]
+    
+    for pattern in law_patterns:
+        matches = re.findall(pattern, analysis_text, re.IGNORECASE)
+        laws.extend(matches)
+    
+    return list(set(laws))[:5]  # Return unique laws, max 5
+
+async def generate_judge_response(
+    message: str,
+    case_data: dict,
+    conversation_history: list,
+    llm_settings: dict
+) -> str:
+    """Generate AI judge response"""
+    
+    judge_prompt = f"""
+    You are an experienced judge presiding over a court simulation. You are fair, impartial, and focused on legal procedure and evidence.
+
+    CASE INFORMATION:
+    Title: {case_data.get('title', 'Unknown Case')}
+    Type: {case_data.get('case_type', 'General')}
+    Key Points: {', '.join(case_data.get('key_points', [])[:3])}
+
+    DEFENSE ATTORNEY'S STATEMENT:
+    "{message}"
+
+    CONVERSATION HISTORY:
+    {format_conversation_history(conversation_history[-5:])}
+
+    As the judge, respond with:
+    1. Acknowledgment of the statement
+    2. Relevant legal questions or clarifications
+    3. Procedural guidance
+    4. Focus on evidence and legal standards
+
+    Keep responses professional, concise (2-3 sentences), and focused on legal procedure.
+    """
+    
+    # Use the appropriate LLM
+    llm_provider = llm_settings.get('llm_provider', 'openai')
+    llm_model = llm_settings.get('llm_model', 'gpt-4o')
+    
+    if llm_provider == 'openai':
+        try:
+            import openai
+            response = await openai.ChatCompletion.acreate(
+                model=llm_model,
+                messages=[{"role": "user", "content": judge_prompt}],
+                max_tokens=200,
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error(f"OpenAI error in judge response: {e}")
+            return "Your Honor acknowledges your statement. Please continue with your argument."
+    else:
+        # Use Ollama
+        try:
+            from src.core.llm_engine import LLMEngine
+            llm_engine = LLMEngine(model_name=llm_model)
+            response = llm_engine.generate_response(judge_prompt)
+            return response.strip()
+        except Exception as e:
+            logger.error(f"Ollama error in judge response: {e}")
+            return "Your Honor acknowledges your statement. Please continue with your argument."
+
+async def generate_prosecutor_response(
+    message: str,
+    case_data: dict,
+    conversation_history: list,
+    llm_settings: dict
+) -> str:
+    """Generate AI prosecutor response"""
+    
+    prosecutor_prompt = f"""
+    You are a skilled prosecutor in a court simulation. You are focused on presenting the case against the defendant and challenging the defense's arguments.
+
+    CASE INFORMATION:
+    Title: {case_data.get('title', 'Unknown Case')}
+    Type: {case_data.get('case_type', 'General')}
+    Key Points: {', '.join(case_data.get('key_points', [])[:3])}
+
+    DEFENSE ATTORNEY'S STATEMENT:
+    "{message}"
+
+    CONVERSATION HISTORY:
+    {format_conversation_history(conversation_history[-5:])}
+
+    As the prosecutor, respond with:
+    1. Challenge to the defense argument
+    2. Questions about evidence or testimony
+    3. Legal precedents that support your case
+    4. Focus on weaknesses in the defense
+
+    Keep responses professional, assertive (2-3 sentences), and focused on building your case.
+    """
+    
+    # Use the appropriate LLM
+    llm_provider = llm_settings.get('llm_provider', 'openai')
+    llm_model = llm_settings.get('llm_model', 'gpt-4o')
+    
+    if llm_provider == 'openai':
+        try:
+            import openai
+            response = await openai.ChatCompletion.acreate(
+                model=llm_model,
+                messages=[{"role": "user", "content": prosecutor_prompt}],
+                max_tokens=200,
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error(f"OpenAI error in prosecutor response: {e}")
+            return "The prosecution challenges that argument. Can you provide evidence to support your claim?"
+    else:
+        # Use Ollama
+        try:
+            from src.core.llm_engine import LLMEngine
+            llm_engine = LLMEngine(model_name=llm_model)
+            response = llm_engine.generate_response(prosecutor_prompt)
+            return response.strip()
+        except Exception as e:
+            logger.error(f"Ollama error in prosecutor response: {e}")
+            return "The prosecution challenges that argument. Can you provide evidence to support your claim?"
+
+def format_conversation_history(history: list) -> str:
+    """Format conversation history for prompts"""
+    formatted = []
+    for entry in history[-5:]:  # Last 5 entries
+        formatted.append(f"{entry.get('sender', 'Unknown')}: {entry.get('message', '')}")
+    return '\n'.join(formatted)
+
+def generate_simulation_report(
+    case_data: dict,
+    conversation_history: list,
+    simulation_duration: int,
+    user: User
+) -> dict:
+    """Generate comprehensive simulation report data"""
+    
+    # Analyze conversation
+    defense_messages = [msg for msg in conversation_history if msg.get('sender') == 'defense']
+    judge_messages = [msg for msg in conversation_history if msg.get('sender') == 'judge']
+    prosecutor_messages = [msg for msg in conversation_history if msg.get('sender') == 'prosecutor']
+    
+    # Calculate metrics
+    total_messages = len(conversation_history)
+    defense_participation = len(defense_messages)
+    avg_response_length = sum(len(msg.get('message', '')) for msg in defense_messages) / max(defense_participation, 1)
+    
+    # Generate recommendations
+    recommendations = generate_recommendations(case_data, conversation_history)
+    
+    # Find similar cases
+    similar_cases = find_similar_cases(case_data)
+    
+    report_data = {
+        "case_info": {
+            "title": case_data.get('title', 'Unknown Case'),
+            "type": case_data.get('case_type', 'General'),
+            "description": case_data.get('description', ''),
+            "key_points": case_data.get('key_points', []),
+            "relevant_laws": case_data.get('relevant_laws', [])
+        },
+        "simulation_metrics": {
+            "duration_minutes": simulation_duration // 60,
+            "total_messages": total_messages,
+            "defense_participation": defense_participation,
+            "judge_questions": len(judge_messages),
+            "prosecutor_challenges": len(prosecutor_messages),
+            "avg_response_length": round(avg_response_length, 1)
+        },
+        "performance_analysis": {
+            "strengths": analyze_strengths(conversation_history),
+            "weaknesses": analyze_weaknesses(conversation_history),
+            "improvement_areas": identify_improvement_areas(conversation_history)
+        },
+        "recommendations": recommendations,
+        "similar_cases": similar_cases,
+        "generated_at": datetime.now().isoformat(),
+        "user": {
+            "name": user.first_name + " " + user.last_name,
+            "email": user.email
+        }
+    }
+    
+    return report_data
+
+def generate_recommendations(case_data: dict, conversation_history: list) -> list:
+    """Generate recommendations based on simulation"""
+    recommendations = []
+    
+    defense_messages = [msg for msg in conversation_history if msg.get('sender') == 'defense']
+    
+    if len(defense_messages) < 3:
+        recommendations.append("Consider providing more detailed responses to strengthen your arguments")
+    
+    if any('evidence' in msg.get('message', '').lower() for msg in defense_messages):
+        recommendations.append("Good focus on evidence - continue emphasizing factual support")
+    else:
+        recommendations.append("Consider incorporating more evidence-based arguments")
+    
+    recommendations.append("Review similar cases to strengthen your legal precedents")
+    recommendations.append("Practice responding to challenging questions from the prosecution")
+    
+    return recommendations
+
+def find_similar_cases(case_data: dict) -> list:
+    """Find similar cases from knowledge base"""
+    return [
+        {
+            "title": "Similar Case Example 1",
+            "outcome": "Defendant acquitted",
+            "key_factors": ["Strong evidence", "Witness testimony"],
+            "lessons": "Focus on witness credibility"
+        },
+        {
+            "title": "Similar Case Example 2", 
+            "outcome": "Settlement reached",
+            "key_factors": ["Documentation", "Expert testimony"],
+            "lessons": "Prepare expert witnesses thoroughly"
+        }
+    ]
+
+def analyze_strengths(conversation_history: list) -> list:
+    """Analyze strengths from conversation"""
+    strengths = []
+    defense_messages = [msg for msg in conversation_history if msg.get('sender') == 'defense']
+    
+    if len(defense_messages) > 0:
+        strengths.append("Active participation in proceedings")
+        strengths.append("Responsive to questions")
+    
+    return strengths
+
+def analyze_weaknesses(conversation_history: list) -> list:
+    """Analyze weaknesses from conversation"""
+    weaknesses = []
+    defense_messages = [msg for msg in conversation_history if msg.get('sender') == 'defense']
+    
+    if len(defense_messages) < 2:
+        weaknesses.append("Limited participation")
+    
+    return weaknesses
+
+def identify_improvement_areas(conversation_history: list) -> list:
+    """Identify areas for improvement"""
+    areas = []
+    areas.append("Practice responding to challenging questions")
+    areas.append("Develop stronger legal arguments")
+    areas.append("Prepare for unexpected questions")
+    
+    return areas
+
+def create_pdf_report(report_data: dict, user_id: int) -> str:
+    """Create PDF report file"""
+    report_filename = f"court_simulation_report_{user_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return f"/reports/{report_filename}"
 
 if __name__ == "__main__":
     # Create necessary directories

@@ -379,6 +379,51 @@
                         </div>
                     </div>
                     
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="scrapeLinks" checked>
+                                <label class="form-check-label" for="scrapeLinks">
+                                    <i class="fas fa-link me-2"></i>Scrape useful links content
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="maxLinks" class="form-label">
+                                    <i class="fas fa-hashtag me-2"></i>Max links to scrape
+                                </label>
+                                <select class="form-control" id="maxLinks">
+                                    <option value="3">3 links</option>
+                                    <option value="5" selected>5 links</option>
+                                    <option value="10">10 links</option>
+                                    <option value="15">15 links</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="bypassAuth">
+                                <label class="form-check-label" for="bypassAuth">
+                                    <i class="fas fa-shield-alt me-2"></i>Bypass authentication
+                                </label>
+                                <small class="text-muted d-block">Try to access protected/login-required sites</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="downloadDocuments">
+                                <label class="form-check-label" for="downloadDocuments">
+                                    <i class="fas fa-download me-2"></i>Download documents
+                                </label>
+                                <small class="text-muted d-block">Automatically download PDF, DOCX, TXT and other documents found on the page</small>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-globe me-2"></i>Start Scraping
@@ -412,6 +457,9 @@
             e.preventDefault();
             
             const url = document.getElementById('scrapingUrl').value;
+            const scrapeLinks = document.getElementById('scrapeLinks').checked;
+            const maxLinks = parseInt(document.getElementById('maxLinks').value);
+            const bypassAuth = document.getElementById('bypassAuth').checked;
             
             // Validate URL
             try {
@@ -427,7 +475,14 @@
             
             try {
                 const downloadDocuments = document.getElementById('downloadDocuments').checked;
-                const response = await fetch(`/api/web-scraping?url=${encodeURIComponent(url)}&download_documents=${downloadDocuments}`);
+                const params = new URLSearchParams({
+                    url: url,
+                    scrape_links: scrapeLinks,
+                    max_links: maxLinks,
+                    bypass_auth: bypassAuth,
+                    download_documents: downloadDocuments
+                });
+                const response = await fetch(`/api/web-scraping?${params}`);
                 const data = await response.json();
                 
                 // Hide loading spinner
@@ -470,11 +525,53 @@
                     </div>
                 `;
                 
-                // Show status of both methods
-                if (data.firecrawl_status || data.beautifulsoup_status) {
+                // Show knowledge base save status
+                if (data.knowledge_base_saved) {
+                    resultHtml += `
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-database me-2"></i>
+                            <strong>Content Saved to Knowledge Base!</strong> The scraped content has been automatically added to your knowledge base for future queries.
+                        </div>
+                    `;
+                }
+                
+                // Show useful links information
+                if (data.total_useful_links > 0) {
+                    resultHtml += `
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-link me-2"></i>
+                            <strong>Useful Links Processed!</strong> Found ${data.total_useful_links} useful links and scraped content from ${data.content_scraped} of them.
+                        </div>
+                    `;
+                }
+                
+                // Show bypass authentication status
+                if (data.bypass_auth_used) {
+                    resultHtml += `
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            <strong>Bypass Authentication Used!</strong> Attempted to access protected content using enhanced headers and techniques.
+                        </div>
+                    `;
+                }
+                
+                // Show status of all methods
+                if (data.authentication_status || data.firecrawl_status || data.beautifulsoup_status) {
                     resultHtml += `
                         <div class="row mt-3">
-                            <div class="col-md-6">
+                            ${data.authentication_status ? `
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6><i class="fas fa-shield-alt me-2"></i>Authentication</h6>
+                                        <span class="badge ${data.authentication_status === 'success' ? 'bg-success' : 'bg-danger'}">
+                                            ${data.authentication_status === 'success' ? 'Success' : 'Failed'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-body text-center">
                                         <h6><i class="fas fa-cloud me-2"></i>Firecrawl</h6>
@@ -484,7 +581,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="card">
                                     <div class="card-body text-center">
                                         <h6><i class="fas fa-code me-2"></i>BeautifulSoup</h6>
@@ -553,6 +650,34 @@
                             </div>
                         </div>
                     `;
+                }
+                
+                // Display useful links content
+                if (data.useful_links_content && data.useful_links_content.length > 0) {
+                    resultHtml += `
+                        <div class="mt-3">
+                            <h6><i class="fas fa-external-link-alt me-2"></i>Content from Useful Links (${data.useful_links_content.length}):</h6>
+                    `;
+                    
+                    data.useful_links_content.forEach((linkContent, index) => {
+                        resultHtml += `
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-file-alt me-2"></i>
+                                        <a href="${linkContent.url}" target="_blank" class="text-decoration-none">${linkContent.title}</a>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="content-preview" style="max-height: 300px; overflow-y: auto;">
+                                        <pre style="white-space: pre-wrap; font-size: 0.9rem; margin: 0;">${linkContent.content}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    resultHtml += `</div>`;
                 }
                 
                 // Show document download results if available

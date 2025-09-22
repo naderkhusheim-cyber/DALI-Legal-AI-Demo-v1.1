@@ -1,0 +1,100 @@
+.main-header {
+    background: linear-gradient(135deg, #1f4e79 0%, #2c5f2d 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+.metric-card {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid #c5a572;
+    margin: 0.5rem 0;
+}
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 0.75rem;
+    border-radius: 5px;
+    border: 1px solid #c3e6cb;
+}
+.error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 0.75rem;
+    border-radius: 5px;
+    border: 1px solid #f5c6cb;
+}
+.sidebar-logo {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(135deg, #1f4e79 0%, #2c5f2d 100%);
+    color: white;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+/* ChatGPT-style chat bubbles for main chat interface */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px 0;
+    max-width: 700px;
+    margin: 0 auto;
+}
+.message {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 0;
+}
+.user-message {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+.assistant-message {
+    flex-direction: row;
+    justify-content: flex-start;
+}
+.message-bubble {
+    max-width: 70%;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    word-break: break-word;
+}
+.user-message .message-bubble {
+    background: linear-gradient(135deg, #1f4e79 0%, #2c5f2d 100%);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    margin-left: 0.5rem;
+}
+.assistant-message .message-bubble {
+    background: #f7f7f8;
+    color: #222;
+    border-bottom-left-radius: 6px;
+    margin-right: 0.5rem;
+    border: 1px solid #e5e5e5;
+}
+.message-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #e3eaf2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #1f4e79;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+}
+.user-message .message-avatar {
+    background: #1f4e79;
+    color: #fff;
+}

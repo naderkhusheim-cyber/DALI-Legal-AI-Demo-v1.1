@@ -221,27 +221,26 @@
                     <form id="aiSettingsForm">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="llmProvider" class="form-label">LLM Provider</label>
-                                <select class="form-control" id="llmProvider" name="llm_provider">
-                                    <option value="openai">OpenAI (Cloud)</option>
+                                <label for="llmProvider" class="form-label">AI Model Provider</label>
+                                <select class="form-control" id="llmProvider" name="llm_provider" onchange="updateModelOptions()">
+                                    <option value="openai">ChatGPT (OpenAI)</option>
                                     <option value="ollama">Ollama (Local)</option>
                                 </select>
                                 <small class="form-text text-muted">
-                                    <span class="status-indicator status-online" id="openaiStatus"></span> OpenAI: Cloud-based AI
+                                    <span class="status-indicator status-online" id="openaiStatus"></span> ChatGPT: Cloud-based AI with latest models
                                     <br>
-                                    <span class="status-indicator status-offline" id="ollamaStatus"></span> Ollama: Local AI server
+                                    <span class="status-indicator status-offline" id="ollamaStatus"></span> Ollama: Local AI server for privacy
                                 </small>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="llmModel" class="form-label">Model</label>
+                                <label for="llmModel" class="form-label">Model Selection</label>
                                 <select class="form-control" id="llmModel" name="llm_model">
-                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    <option value="gpt-4o">GPT-4o (Latest)</option>
                                     <option value="gpt-4">GPT-4</option>
-                                    <option value="llama3.2:1b">Llama 3.2 1B</option>
-                                    <option value="llama3.2:3b">Llama 3.2 3B</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
                                 </select>
                                 <small class="form-text text-muted" id="modelDescription">
-                                    Select your preferred AI model for analysis
+                                    GPT-4o: Most advanced model with multimodal capabilities
                                 </small>
                             </div>
                         </div>
@@ -597,6 +596,53 @@
                 modelDescription.textContent = 'Local AI models running on your machine (privacy-focused)';
             }
         });
+
+        // Update model options based on provider selection
+        function updateModelOptions() {
+            const provider = document.getElementById('llmProvider').value;
+            const modelSelect = document.getElementById('llmModel');
+            const description = document.getElementById('modelDescription');
+            
+            // Clear existing options
+            modelSelect.innerHTML = '';
+            
+            if (provider === 'openai') {
+                // OpenAI models
+                const openaiModels = [
+                    { value: 'gpt-4o', text: 'GPT-4o (Latest)', desc: 'Most advanced model with multimodal capabilities' },
+                    { value: 'gpt-4', text: 'GPT-4', desc: 'High-quality reasoning and analysis' },
+                    { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo', desc: 'Fast and efficient for most tasks' }
+                ];
+                
+                openaiModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.text;
+                    modelSelect.appendChild(option);
+                });
+                
+                description.textContent = openaiModels[0].desc;
+                modelSelect.value = 'gpt-4o';
+                
+            } else if (provider === 'ollama') {
+                // Ollama models
+                const ollamaModels = [
+                    { value: 'llama3.2:3b', text: 'Llama 3.2 3B', desc: 'Balanced performance and speed' },
+                    { value: 'llama3.2:1b', text: 'Llama 3.2 1B', desc: 'Fastest model for quick responses' },
+                    { value: 'llama3:8b', text: 'Llama 3 8B', desc: 'Higher quality but slower' }
+                ];
+                
+                ollamaModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.value;
+                    option.textContent = model.text;
+                    modelSelect.appendChild(option);
+                });
+                
+                description.textContent = ollamaModels[0].desc;
+                modelSelect.value = 'llama3.2:3b';
+            }
+        }
 
         // Load current settings
         async function loadCurrentSettings() {
