@@ -9,1522 +9,1053 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --accent-color: #10b981;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --text-muted: #9ca3af;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-dark: #1f2937;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            color: #374151;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
-        
-        .main-content-wrapper {
-            width: 100%;
-            min-height: 100vh;
-            background: #f8fafc;
-            padding: 1rem;
-        }
-        
+
         /* Navigation */
         .navbar {
-            background: var(--primary-gradient);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: var(--shadow-lg);
             padding: 1rem 0;
         }
-        
+
         .navbar-brand {
             font-size: 1.8rem;
             font-weight: 800;
             color: white !important;
             text-decoration: none;
         }
-        
+
         .navbar-nav .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
             font-weight: 500;
             margin: 0 1rem;
             transition: all 0.3s ease;
         }
-        
+
         .navbar-nav .nav-link:hover {
             color: white !important;
             transform: translateY(-2px);
         }
-        
-        /* Main Content */
+
+        /* Back to Dashboard Button */
+        .back-to-dashboard {
+            margin-bottom: 2rem;
+        }
+
+        .back-to-dashboard a {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .back-to-dashboard a:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            color: var(--primary-color);
+        }
+
+        /* Main Layout */
         .main-container {
             min-height: calc(100vh - 80px);
             padding: 2rem 0;
-            position: relative;
-            z-index: 0;
         }
-        
+
         .page-header {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 20px;
-            padding: 2rem;
+            padding: 3rem 2rem;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-lg);
+            text-align: center;
         }
-        
+
         .page-title {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: 800;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
-        
+
         .page-subtitle {
-            color: #6b7280;
-            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
             margin-bottom: 0;
         }
-        
-        /* Chat Interface Styles */
+
+        /* Chat Interface - Redesigned */
         .chat-container {
-            background: white;
+            background: var(--bg-primary);
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            height: 80vh;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
+            box-shadow: var(--shadow-xl);
+            min-height: 70vh;
+            max-height: 85vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: height 0.5s ease;
-            position: relative;
-            z-index: 1;
         }
-        
-        .chat-container.expanded {
-            height: 85vh;
-        }
-        
+
         .chat-header {
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
-            padding: 1.5rem 2rem;
+            padding: 2rem;
             border-radius: 20px 20px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        
-        .chat-history-toggle {
-            margin-left: auto;
-        }
-        
-        .chat-history-panel {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            margin: 1rem;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .chat-history-header {
-            background: #e9ecef;
-            padding: 1rem;
-            border-radius: 10px 10px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #dee2e6;
-        }
-        
-        .chat-history-list {
-            padding: 1rem;
-        }
-        
-        .history-item {
-            padding: 0.75rem;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .history-item:hover {
-            background: #e3f2fd;
-            border-color: #667eea;
-        }
-        
-        .history-item-title {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.25rem;
-        }
-        
-        .history-item-preview {
-            font-size: 0.875rem;
-            color: #666;
-            margin-bottom: 0.25rem;
-        }
-        
-        .history-item-date {
-            font-size: 0.75rem;
-            color: #999;
-        }
-        
+
         .chat-title {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
         }
-        
+
         .chat-subtitle {
             font-size: 1rem;
             opacity: 0.9;
         }
-        
+
+        .chat-history-toggle {
+            margin-left: auto;
+        }
+
+        .btn-history {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-history:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+
+        /* Chat Messages Area */
         .chat-messages {
             flex: 1;
-            padding: 1.5rem;
+            padding: 2rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
             min-height: 0;
-            max-height: calc(80vh - 200px);
         }
-        
-        .welcome-message {
+
+        .message {
             display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            padding: 1rem;
-            background: #f8fafc;
-            border-radius: 15px;
-            border-left: 4px solid #667eea;
-            max-height: 200px;
-            overflow-y: auto;
+            margin-bottom: 1.5rem;
+            animation: fadeInUp 0.5s ease;
         }
-        
-        .welcome-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 80%;
+            padding: 1.5rem 2rem;
+            border-radius: 20px;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
-            font-size: 1.5rem;
-            flex-shrink: 0;
+            border-bottom-right-radius: 8px;
         }
-        
-        .welcome-text h4 {
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
+
+        .message.assistant .message-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 8px;
         }
-        
-        .welcome-text p {
-            color: #6b7280;
-            margin-bottom: 0.5rem;
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            text-align: right;
         }
-        
-        .welcome-text ul {
-            color: #6b7280;
-            margin-left: 1rem;
+
+        .message.assistant .message-time {
+            text-align: left;
         }
-        
+
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .welcome-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .suggestion-chip {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .suggestion-chip:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Chat Input Area */
         .chat-input-container {
-            padding: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            background: #f8fafc;
+            padding: 2rem;
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
             position: relative;
             z-index: 10;
-            display: block !important;
-            visibility: visible !important;
-            min-height: 200px;
-            flex-shrink: 0;
-            margin-top: auto;
         }
-        
-        .chat-input-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        
+
         .chat-input-group {
             display: flex;
+            gap: 1rem;
             align-items: flex-end;
-            gap: 0.5rem;
-            width: 100%;
-            visibility: visible !important;
         }
-        
-        .chat-input {
-            border: 2px solid #e5e7eb;
-            border-radius: 20px;
-            padding: 1.5rem;
-            resize: none;
-            font-size: 1.1rem;
-            line-height: 1.6;
-            transition: all 0.3s ease;
+
+        .chat-input-wrapper {
             flex: 1;
-            min-height: 100px;
-            max-height: 300px;
-            font-family: inherit;
-            background: white !important;
-            color: #333 !important;
-            display: block !important;
-            visibility: visible !important;
+            position: relative;
         }
-        
+
+        .chat-input {
+            width: 100%;
+            min-height: 60px;
+            max-height: 200px;
+            padding: 1rem 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            font-size: 1rem;
+            resize: none;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
         .chat-input:focus {
-            border-color: #667eea;
+            outline: none;
+            border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
-        
-        .chat-send-btn {
-            background: var(--primary-gradient);
+
+        .chat-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
             transition: all 0.3s ease;
-            flex-shrink: 0;
+            min-width: 120px;
         }
-        
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            color: white;
+        }
+
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Voice and Language Controls */
         .voice-btn {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 10px;
             transition: all 0.3s ease;
-            flex-shrink: 0;
-            margin-right: 0.5rem;
+            cursor: pointer;
         }
-        
+
         .voice-btn:hover {
-            background: #e9ecef;
-            border-color: #667eea;
-            transform: scale(1.05);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
-        
+
         .voice-btn.recording {
-            background: #dc3545;
-            border-color: #dc3545;
+            background: #ef4444;
+            border-color: #ef4444;
             color: white;
-            animation: pulse 1.5s infinite;
+            animation: pulse 1s infinite;
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
+
         #langToggleBtn {
-            background: #6c757d;
-            border-color: #6c757d;
-            color: white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        #langToggleBtn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            margin: 1.5rem 0;
+            text-align: center;
+            background: var(--bg-primary);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Loading States */
+        .loading-spinner {
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-            margin-right: 0.5rem;
+            padding: 2rem;
+            color: var(--text-muted);
         }
-        
-        #langToggleBtn:hover {
-            background: #5a6268;
-            border-color: #5a6268;
-            color: white;
-            transform: scale(1.05);
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
         }
-        
-        .chat-send-btn:hover {
-            transform: scale(1.05);
+
+        /* Chat History Panel */
+        .chat-history-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100%;
+            background: var(--bg-primary);
+            border-left: 1px solid var(--border-color);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
         }
-        
-        .chat-send-btn:active {
-            transform: scale(0.95);
+
+        .chat-history-panel.open {
+            transform: translateX(0);
         }
-        
-        .chat-options {
+
+        .chat-history-header {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
         }
-        
-        .chat-options .form-check-label {
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        
-        .chat-options .form-select {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 0.5rem;
-            font-size: 0.9rem;
-        }
-        
-        /* Message styles */
-        .message {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .message.user {
-            flex-direction: row-reverse;
-        }
-        
-        .message-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
-        
-        .message.user .message-avatar {
-            background: var(--primary-gradient);
-            color: white;
-        }
-        
-        .message.assistant .message-avatar {
-            background: #e5e7eb;
-            color: #6b7280;
-        }
-        
-        .message-content {
-            max-width: 70%;
-            padding: 1rem 1.5rem;
-            border-radius: 15px;
-            position: relative;
-        }
-        
-        .message.user .message-content {
-            background: var(--primary-gradient);
-            color: white;
-            border-radius: 15px 15px 5px 15px;
-        }
-        
-        .message.assistant .message-content {
-            background: #f8fafc;
-            color: #1a1a1a;
-            border: 1px solid #e5e7eb;
-            border-radius: 15px 15px 15px 5px;
-        }
-        
-        .message-time {
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-top: 0.5rem;
-        }
-        
-        /* Chart suggestion buttons */
-        .chart-suggestion-buttons {
-            margin: 1rem 0;
+
+        .chat-history-list {
             padding: 1rem;
-            background: #f8fafc;
-            border-radius: 15px;
-            border: 1px solid #e5e7eb;
         }
-        
-        .chart-suggestion-text {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-        
-        .chart-buttons {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        .chart-btn {
-            border: 2px solid #667eea;
-            color: #667eea;
-            background: white;
-            border-radius: 10px;
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
+
+        .history-item {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
             transition: all 0.3s ease;
         }
-        
-        .chart-btn:hover {
-            background: #667eea;
-            color: white;
+
+        .history-item:hover {
+            background: var(--bg-secondary);
+            border-color: var(--primary-color);
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
-        
-        .chart-btn i {
-            margin-right: 0.5rem;
+
+        .history-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
         }
-        
-        /* Typing indicator */
-        .typing-indicator .message-content {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
+
+        .history-item-preview {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
         }
-        
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-            align-items: center;
+
+        .history-item-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
         }
-        
-        .typing-dots span {
-            width: 8px;
-            height: 8px;
-            background: #667eea;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        
-        .typing-dots span:nth-child(1) {
-            animation-delay: -0.32s;
-        }
-        
-        .typing-dots span:nth-child(2) {
-            animation-delay: -0.16s;
-        }
-        
-        @keyframes typing {
-            0%, 80%, 100% {
-                transform: scale(0.8);
-                opacity: 0.5;
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
             }
-            40% {
-                transform: scale(1);
+            to {
                 opacity: 1;
+                transform: translateY(0);
             }
         }
-        
-        /* Chart message */
-        .chart-message {
-            margin: 1rem 0;
-            padding: 1rem;
-            background: white;
-            border-radius: 15px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        
-        /* Responsive */
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Responsive Design */
         @media (max-width: 768px) {
             .page-title {
                 font-size: 2rem;
             }
-            
-            .main-container {
-                padding: 1rem 0;
+
+            .page-subtitle {
+                font-size: 1rem;
             }
-            
-            .page-header {
-                padding: 1.5rem;
+
+            .chat-container {
+                min-height: 60vh;
+                max-height: 75vh;
+            }
+
+            .message-content {
+                max-width: 90%;
+            }
+
+            .chat-input-group {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .chat-actions {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .suggestion-chips {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .chat-history-panel {
+                width: 100%;
             }
         }
-        
-        /* Chart Styles */
-        .chart-container {
-            margin: 1rem 0;
-            text-align: center;
-        }
-        
-        .chart-wrapper {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        
-        .chart-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-        
-        .chart-description {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 0.5rem;
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1f2937;
+                --bg-secondary: #111827;
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --text-muted: #9ca3af;
+                --border-color: #374151;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Main Content -->
-    <div class="main-content-wrapper">
-        <!-- Navigation -->
-        <nav class="navbar navbar-expand-lg">
-            <div class="container">
-                <div class="navbar-left">
-                    <a class="navbar-brand" href="/user-dashboard">
-                        <i class="fas fa-balance-scale me-2"></i>DALI Legal AI
-                    </a>
-                </div>
-                
-                <div class="navbar-right">
-                    <div class="navbar-nav">
-                        <div class="nav-item">
-                            <a class="nav-link" href="/logout">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-    <!-- Main Content -->
-    <div class="container main-container">
-        <!-- Back to Dashboard Button -->
-        <div class="back-to-dashboard mb-3">
-            <a href="/user-dashboard" class="btn btn-outline-primary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/user-dashboard">
+                <i class="fas fa-balance-scale me-2"></i>DALI Legal AI
             </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/user-dashboard">
+                    <i class="fas fa-home me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="/settings">
+                    <i class="fas fa-cog me-1"></i>Settings
+                </a>
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>Logout
+                </a>
+            </div>
         </div>
+    </nav>
 
-        <!-- Chat Interface -->
-        <div class="chat-container">
+    <!-- Main Content -->
+    <div class="main-container">
+        <div class="container">
+            <!-- Back to Dashboard -->
+            <div class="back-to-dashboard">
+                <a href="/user-dashboard">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1 class="page-title">Legal Research</h1>
+                <p class="page-subtitle">Ask questions about Saudi Arabian law and get intelligent answers</p>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="chat-container" id="chatContainer">
                 <!-- Chat Header -->
                 <div class="chat-header">
-                    <div class="chat-title">
-                        <i class="fas fa-gavel me-2"></i>
-                        Legal Research Assistant
-                        </div>
+                    <div>
+                        <h2 class="chat-title">Legal Research Assistant</h2>
+                        <p class="chat-subtitle">Powered by AI • Available 24/7</p>
+                    </div>
                     <div class="chat-history-toggle">
-                        <button class="btn btn-sm btn-outline-secondary" id="toggleHistoryBtn">
-                            <i class="fas fa-history me-1"></i>Chat History
+                        <button class="btn btn-history" id="toggleHistoryBtn">
+                            <i class="fas fa-history me-2"></i>History
                         </button>
                     </div>
-                        </div>
-                
-                <!-- Chat History Panel -->
-                <div class="chat-history-panel" id="chatHistoryPanel" style="display: none;">
-                    <div class="chat-history-header">
-                        <h6><i class="fas fa-history me-2"></i>Previous Conversations</h6>
-                        <button class="btn btn-sm btn-outline-secondary" id="closeHistoryBtn">
-                            <i class="fas fa-times"></i>
-                        </button>
-                            </div>
-                    <div class="chat-history-list" id="chatHistoryList">
-                        <!-- History items will be loaded here -->
-                        </div>
-                    </div>
+                </div>
 
-                <!-- Chat Messages Area -->
+                <!-- Chat Messages -->
                 <div class="chat-messages" id="chatMessages">
-                    <div class="welcome-message">
+                    <!-- Welcome Message -->
+                    <div class="welcome-message" id="welcomeMessage">
                         <div class="welcome-icon">
-                            <i class="fas fa-robot"></i>
-                </div>
-                        <div class="welcome-text">
-                            <h4>Welcome to DALI Legal AI!</h4>
-                            <p>I'm your intelligent legal research assistant. I can help you with:</p>
-                            <ul>
-                                <li>Legal research and analysis</li>
-                                <li>Case law references</li>
-                                <li>Data visualization and charts</li>
-                                <li>Jurisdiction-specific information</li>
-                            </ul>
-                            <p>Just ask me anything, and I'll provide comprehensive legal insights!</p>
-                </div>
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <h3 class="welcome-title">Welcome to Legal Research</h3>
+                        <p class="welcome-text">
+                            I'm your AI legal research assistant. I can help you understand Saudi Arabian law, 
+                            analyze legal documents, and provide insights on various legal matters. 
+                            Ask me anything about Saudi law, regulations, or legal procedures.
+                        </p>
+                        <div class="suggestion-chips">
+                            <div class="suggestion-chip" onclick="setNaturalQuery('What are the requirements for starting a business in Saudi Arabia?')">
+                                Business Requirements
+                            </div>
+                            <div class="suggestion-chip" onclick="setNaturalQuery('Explain Saudi labor law regulations')">
+                                Labor Law
+                            </div>
+                            <div class="suggestion-chip" onclick="setNaturalQuery('What are the penalties for traffic violations?')">
+                                Traffic Violations
+                            </div>
+                            <div class="suggestion-chip" onclick="setNaturalQuery('How does the Saudi court system work?')">
+                                Court System
+                            </div>
+                        </div>
                     </div>
-        </div>
+                </div>
 
-                <!-- Chat Input Area -->
-                <div class="chat-input-container" style="display: block !important; visibility: visible !important; background: #f8fafc !important; border: 2px solid #e5e7eb !important; margin: 20px 0 !important;">
-                    <div class="chat-input-wrapper">
-                        <div class="input-group chat-input-group">
+                <!-- Chat Input -->
+                <div class="chat-input-container">
+                    <div class="chat-input-group">
+                        <div class="chat-input-wrapper">
                             <textarea 
-                                class="form-control chat-input" 
                                 id="chatInput" 
-                                placeholder="Ask me about legal matters, request charts, or continue our conversation..."
-                                rows="3"
-                                style="display: block !important; visibility: visible !important; background: white !important; border: 2px solid #e5e7eb !important; min-height: 100px !important;"
+                                class="chat-input" 
+                                placeholder="Ask me anything about Saudi Arabian law..."
+                                rows="1"
                             ></textarea>
-                            <button class="btn btn-outline-primary voice-btn" id="voiceBtn" type="button" title="Voice Input (Arabic/English)">
+                        </div>
+                        <div class="chat-actions">
+                            <button class="btn btn-send" id="sendBtn">
+                                <i class="fas fa-paper-plane me-2"></i>Send
+                            </button>
+                            <button class="voice-btn" id="voiceBtn" title="Voice Input">
                                 <i class="fas fa-microphone"></i>
                             </button>
-                            <button class="btn btn-outline-secondary" id="langToggleBtn" type="button" title="Toggle Language (Arabic/English)">
-                                <i class="fas fa-language"></i>
-                            </button>
-                            <button class="btn btn-primary chat-send-btn" id="sendBtn" type="button">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-            </div>
-                        <div class="chat-options">
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" id="includeWebSearch" checked>
-                                <label class="form-check-label" for="includeWebSearch">
-                                    Include web search
-                                </label>
-        </div>
-                            <div class="form-group">
-                                <select class="form-select form-select-sm" id="jurisdictionSelect">
-                                    <option value="Saudi Arabia">Saudi Arabia</option>
-                                    <option value="general">General</option>
-                                    <option value="United States">United States</option>
-                                    <option value="United Kingdom">United Kingdom</option>
-                                </select>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-warning" onclick="debugElements()">
-                                Debug Elements
-                            </button>
-                            <button type="button" class="btn btn-sm btn-success" onclick="scrollToInput()">
-                                Show Input
+                            <button class="btn" id="langToggleBtn" title="Toggle Language">
+                                <i class="fas fa-language me-1"></i>EN
                             </button>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Chat History Panel -->
+            <div class="chat-history-panel" id="chatHistoryPanel">
+                <div class="chat-history-header">
+                    <h5 class="mb-0">Chat History</h5>
+                    <button class="btn btn-sm" id="closeHistoryBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="chat-history-list" id="chatHistoryList">
+                    <!-- History items will be loaded here -->
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Debug function to check if elements exist
-        function debugElements() {
-            console.log('=== DEBUGGING ELEMENTS ===');
+        // Global variables
+        let recognition = null;
+        let isRecording = false;
+        let currentLanguage = 'en';
+        let conversationHistory = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeChat();
+            initializeSpeechRecognition();
+            loadChatHistory();
+        });
+
+        // Initialize chat functionality
+        function initializeChat() {
             const chatInput = document.getElementById('chatInput');
             const sendBtn = document.getElementById('sendBtn');
             const voiceBtn = document.getElementById('voiceBtn');
-            const chatContainer = document.querySelector('.chat-input-container');
-            
-            console.log('Chat Input:', chatInput);
-            console.log('Send Button:', sendBtn);
-            console.log('Voice Button:', voiceBtn);
-            console.log('Chat Container:', chatContainer);
-            
-            if (chatInput) {
-                console.log('Chat Input Style:', window.getComputedStyle(chatInput).display);
-                console.log('Chat Input Visibility:', window.getComputedStyle(chatInput).visibility);
-            }
-            
-            console.log('=== END DEBUG ===');
-        }
-        
-        // Function to scroll to input area
-        function scrollToInput() {
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput) {
-                chatInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                chatInput.focus();
-                chatInput.style.border = '3px solid #28a745';
-                chatInput.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
-                console.log('✅ Scrolled to input area');
-            } else {
-                console.error('❌ Chat input not found');
-                alert('Chat input not found!');
-            }
-        }
-        
-        // Call debug function after page loads
-        setTimeout(debugElements, 1000);
-        
-        // Simple test to show input is working
-        setTimeout(function() {
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput) {
-                console.log('✅ Chat input found and ready!');
-                chatInput.style.border = '3px solid #28a745';
-                chatInput.style.boxShadow = '0 0 10px rgba(40, 167, 69, 0.5)';
-                
-                // Scroll to bottom to show input
-                chatInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                
-                // Also scroll the chat container to bottom
-                const chatContainer = document.querySelector('.chat-container');
-                if (chatContainer) {
-                    chatContainer.scrollTop = chatContainer.scrollHeight;
-                }
-            } else {
-                console.error('❌ Chat input NOT found!');
-                alert('Chat input not found! Check console for details.');
-            }
-        }, 2000);
-        
-        // Voice Input System with Language Detection
-        console.log('JavaScript file loaded');
-        
-        // Voice input variables
-        let recognition = null;
-        let isRecording = false;
-        let currentLanguage = 'en-US'; // Default to English
-        
-        // Initialize speech recognition
-        function initSpeechRecognition() {
-            if ('webkitSpeechRecognition' in window) {
-                recognition = new webkitSpeechRecognition();
-                console.log('Using webkitSpeechRecognition');
-            } else if ('SpeechRecognition' in window) {
-                recognition = new SpeechRecognition();
-                console.log('Using SpeechRecognition');
-            } else {
-                console.log('Speech recognition not supported');
-                document.getElementById('voiceBtn').style.display = 'none';
-                document.getElementById('langToggleBtn').style.display = 'none';
-                return;
-            }
-            
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.maxAlternatives = 1;
-            
-            // Log available languages
-            console.log('Available languages:', recognition.lang);
-            
-            recognition.onstart = function() {
-                console.log('Speech recognition started');
-                isRecording = true;
-                document.getElementById('voiceBtn').classList.add('recording');
-                document.getElementById('voiceBtn').innerHTML = '<i class="fas fa-stop"></i>';
-            };
-            
-            recognition.onresult = function(event) {
-                let finalTranscript = '';
-                let interimTranscript = '';
-                
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    const transcript = event.results[i][0].transcript;
-                    if (event.results[i].isFinal) {
-                        finalTranscript += transcript;
-                    } else {
-                        interimTranscript += transcript;
-                    }
-                }
-                
-                // Update textarea with interim results
-                const chatInput = document.getElementById('chatInput');
-                if (interimTranscript) {
-                    chatInput.value = interimTranscript;
-                }
-                
-                if (finalTranscript) {
-                    chatInput.value = finalTranscript;
-                    console.log('Final transcript:', finalTranscript);
-                    
-                    // Detect language and set appropriate language for response
-                    detectLanguage(finalTranscript);
-                    
-                    // Auto-send the message
-                    setTimeout(() => {
-                        sendMessage();
-                    }, 500);
-                }
-            };
-            
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
-                stopRecording();
-                showNotification('Voice input error: ' + event.error, 'error');
-            };
-            
-            recognition.onend = function() {
-                console.log('Speech recognition ended');
-                stopRecording();
-            };
-        }
-        
-        // Detect language from text
-        function detectLanguage(text) {
-            // Enhanced language detection for Arabic and English
-            const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-            const englishPattern = /[a-zA-Z]/;
-            
-            const arabicMatches = (text.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/g) || []).length;
-            const englishMatches = (text.match(/[a-zA-Z]/g) || []).length;
-            
-            console.log(`Arabic characters: ${arabicMatches}, English characters: ${englishMatches}`);
-            
-            if (arabicMatches > englishMatches) {
-                currentLanguage = 'ar-SA'; // Arabic (Saudi Arabia)
-                console.log('Detected language: Arabic');
-            } else {
-                currentLanguage = 'en-US'; // English (US)
-                console.log('Detected language: English');
-            }
-            
-            // Update recognition language for next use
-            if (recognition) {
-                recognition.lang = currentLanguage;
-                console.log('Updated recognition language to:', currentLanguage);
-            }
-        }
-        
-        // Set initial language for speech recognition
-        function setInitialLanguage() {
-            if (recognition) {
-                // Try to detect from browser language or default to English
-                const browserLang = navigator.language || navigator.userLanguage;
-                console.log('Browser language:', browserLang);
-                
-                if (browserLang.startsWith('ar')) {
-                    currentLanguage = 'ar-SA';
-                    recognition.lang = 'ar-SA';
-                    console.log('Set initial language to Arabic (ar-SA)');
-                } else {
-                    currentLanguage = 'en-US';
-                    recognition.lang = 'en-US';
-                    console.log('Set initial language to English (en-US)');
-                }
-                
-                // Also check if user has Arabic keyboard or input method
-                if (navigator.languages) {
-                    const hasArabic = navigator.languages.some(lang => lang.startsWith('ar'));
-                    if (hasArabic) {
-                        currentLanguage = 'ar-SA';
-                        recognition.lang = 'ar-SA';
-                        console.log('Detected Arabic in browser languages, set to Arabic');
-                    }
-                }
-            }
-        }
-        
-        // Start voice recording
-        function startRecording() {
-            if (!recognition) {
-                showNotification('Speech recognition not supported in this browser', 'error');
-                return;
-            }
-            
-            try {
-                // Set language before starting
-                if (currentLanguage) {
-                    recognition.lang = currentLanguage;
-                    console.log('Starting recognition with language:', currentLanguage);
-                }
-                recognition.start();
-                showNotification('Listening... Speak now', 'info');
-            } catch (error) {
-                console.error('Error starting recognition:', error);
-                showNotification('Error starting voice input', 'error');
-            }
-        }
-        
-        // Stop voice recording
-        function stopRecording() {
-            if (recognition && isRecording) {
-                recognition.stop();
-            }
-            isRecording = false;
-            document.getElementById('voiceBtn').classList.remove('recording');
-            document.getElementById('voiceBtn').innerHTML = '<i class="fas fa-microphone"></i>';
-        }
-        
-        // Toggle voice recording
-        function toggleVoiceRecording() {
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        }
-        
-        // Toggle language for voice input
-        function toggleLanguage() {
-            if (currentLanguage === 'ar-SA') {
-                currentLanguage = 'en-US';
-                if (recognition) {
-                    recognition.lang = 'en-US';
-                }
-                document.getElementById('langToggleBtn').innerHTML = '<i class="fas fa-language"></i> EN';
-                showNotification('Switched to English voice input', 'info');
-                console.log('Switched to English voice input');
-            } else {
-                currentLanguage = 'ar-SA';
-                if (recognition) {
-                    recognition.lang = 'ar-SA';
-                }
-                document.getElementById('langToggleBtn').innerHTML = '<i class="fas fa-language"></i> ع';
-                showNotification('تم التبديل إلى الإدخال الصوتي العربي', 'info');
-                console.log('Switched to Arabic voice input');
-            }
-        }
-        
-        // Show notification
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show`;
-            notification.style.position = 'fixed';
-            notification.style.top = '20px';
-            notification.style.right = '20px';
-            notification.style.zIndex = '9999';
-            notification.style.minWidth = '300px';
-            
-            notification.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            document.body.appendChild(notification);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 3000);
-        }
-        
-        // Chat History Functions
-        async function loadChatHistory() {
-            try {
-                const response = await fetch('/api/conversation/history');
-                const data = await response.json();
-                
-                if (data.success && data.sessions) {
-                    displayChatHistory(data.sessions);
-                }
-            } catch (error) {
-                console.error('Error loading chat history:', error);
-            }
-        }
-        
-        function displayChatHistory(sessions) {
-            const historyList = document.getElementById('chatHistoryList');
-            historyList.innerHTML = '';
-            
-            if (sessions.length === 0) {
-                historyList.innerHTML = '<p class="text-muted text-center">No previous conversations found.</p>';
-                return;
-            }
-            
-            sessions.forEach(session => {
-                const historyItem = document.createElement('div');
-                historyItem.className = 'history-item';
-                historyItem.onclick = () => loadSession(session.id);
-                
-                const title = session.title || 'Legal Research Session';
-                const preview = session.last_message ? session.last_message.substring(0, 100) + '...' : 'No messages';
-                const date = new Date(session.created_at).toLocaleDateString();
-                
-                historyItem.innerHTML = `
-                    <div class="history-item-title">${title}</div>
-                    <div class="history-item-preview">${preview}</div>
-                    <div class="history-item-date">${date}</div>
-                `;
-                
-                historyList.appendChild(historyItem);
+            const langToggleBtn = document.getElementById('langToggleBtn');
+            const toggleHistoryBtn = document.getElementById('toggleHistoryBtn');
+            const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+
+            // Auto-resize textarea
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 200) + 'px';
             });
-        }
-        
-        async function loadSession(sessionId) {
-            try {
-                const response = await fetch(`/api/conversation/session/${sessionId}`);
-                const data = await response.json();
-                
-                if (data.success && data.messages) {
-                    // Clear current chat
-                    const chatMessages = document.getElementById('chatMessages');
-                    chatMessages.innerHTML = '';
-                    
-                    // Load session messages
-                    data.messages.forEach(message => {
-                        addMessageToChat(message.type, message.content);
-                    });
-                    
-                    // Hide history panel
-                    document.getElementById('chatHistoryPanel').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Error loading session:', error);
-                showNotification('Error loading conversation', 'error');
-            }
-        }
-        
-        function toggleChatHistory() {
-            const panel = document.getElementById('chatHistoryPanel');
-            if (panel.style.display === 'none') {
-                panel.style.display = 'block';
-                loadChatHistory();
-            } else {
-                panel.style.display = 'none';
-            }
-        }
-        
-        // Test function
-        function testButton() {
-            alert('Button clicked! JavaScript is working!');
-            console.log('Button test successful');
-        }
-        
-        // Test Chart.js
-        // Global function to create charts from data
-        window.createChartFromData = function(chartId, chartData) {
-            console.log('createChartFromData called with:', chartId, chartData);
-            const canvas = document.getElementById(chartId);
-            if (canvas && typeof Chart !== 'undefined') {
-                console.log('Creating chart with data:', chartData);
-                try {
-                    new Chart(canvas, chartData);
-                    console.log('Chart created successfully');
-                } catch (error) {
-                    console.error('Chart creation failed:', error);
-                }
-            } else {
-                console.error('Canvas element not found or Chart.js not loaded:', chartId);
-            }
-        };
-        
-        function testChart() {
-            console.log('Chart.js available:', typeof Chart !== 'undefined');
-            if (typeof Chart !== 'undefined') {
-                // Create a simple test chart
-                const testCanvas = document.createElement('canvas');
-                testCanvas.id = 'testChart';
-                testCanvas.width = 400;
-                testCanvas.height = 300;
-                
-                const chatMessages = document.getElementById('chatMessages');
-                const testDiv = document.createElement('div');
-                testDiv.className = 'chart-message';
-                testDiv.innerHTML = '<div class="chart-title">Test Chart</div><div class="chart-wrapper"></div>';
-                testDiv.querySelector('.chart-wrapper').appendChild(testCanvas);
-                chatMessages.appendChild(testDiv);
-                
-                // Create a simple pie chart
-                const ctx = testCanvas.getContext('2d');
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: ['Test 1', 'Test 2', 'Test 3'],
-                        datasets: [{
-                            data: [30, 50, 20],
-                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-                
-                alert('Test chart created! Check the chat area.');
-            } else {
-                alert('Chart.js is NOT loaded!');
-            }
-        }
-        
-        // Debug function to check what's in the generated HTML
-        function debugChartHTML() {
-            const chartMessages = document.querySelectorAll('.chart-message');
-            console.log('Found chart messages:', chartMessages.length);
-            chartMessages.forEach((msg, index) => {
-                console.log(`Chart message ${index}:`, msg.innerHTML);
-                const canvas = msg.querySelector('canvas');
-                console.log(`Canvas ${index}:`, canvas);
-                if (canvas) {
-                    console.log(`Canvas ID ${index}:`, canvas.id);
-                }
-            });
-        }
-        
-        // Global variables
-        let currentSessionId = null;
-        
-        // Wait for page to load
-        window.addEventListener('load', function() {
-            console.log('Page loaded');
-            
-            const sendBtn = document.getElementById('sendBtn');
-            const chatInput = document.getElementById('chatInput');
-            
-            console.log('Send button found:', sendBtn);
-            console.log('Chat input found:', chatInput);
-            
-            if (sendBtn) {
-                sendBtn.addEventListener('click', function(e) {
+
+            // Send message on Enter (but allow Shift+Enter for new line)
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    console.log('Send button clicked!');
                     sendMessage();
-                });
-                console.log('Event listener added to send button');
-            } else {
-                console.error('Send button not found!');
-            }
-            
-            // Add Enter key support
-            if (chatInput) {
-                chatInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-                        sendMessage();
-                    }
-                });
-            }
-        });
-        
-        function sendMessage() {
-            console.log('sendMessage function called');
+                }
+            });
+
+            // Event listeners
+            sendBtn.addEventListener('click', sendMessage);
+            voiceBtn.addEventListener('click', toggleVoiceRecording);
+            langToggleBtn.addEventListener('click', toggleLanguage);
+            toggleHistoryBtn.addEventListener('click', toggleChatHistory);
+            closeHistoryBtn.addEventListener('click', closeChatHistory);
+
+            // Focus input on load
+            chatInput.focus();
+        }
+
+        // Send message function
+        async function sendMessage() {
             const chatInput = document.getElementById('chatInput');
             const message = chatInput.value.trim();
-            
-            console.log('Message:', message);
-            
-            if (!message) {
-                console.log('No message to send');
-                return;
-            }
-            
-            // Expand chat container on first message
-            const chatContainer = document.querySelector('.chat-container');
-            if (!chatContainer.classList.contains('expanded')) {
-                chatContainer.classList.add('expanded');
-            }
-            
-            // Add user message to chat
-            addMessageToChat('user', message);
-            
-            // Clear input
+
+            if (!message) return;
+
+            // Clear input and reset height
             chatInput.value = '';
             chatInput.style.height = 'auto';
-            
-            // Show loading
-            showTypingIndicator();
-            
-            // Send to API
-            sendToAPI(message);
-        }
-        
-        function addMessageToChat(type, content, timestamp = null) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            
-            const avatar = type === 'user' ? 
-                '<i class="fas fa-user"></i>' : 
-                '<i class="fas fa-robot"></i>';
-            
-            const time = timestamp || new Date().toLocaleTimeString();
-            
-            messageDiv.innerHTML = `
-                <div class="message-avatar">${avatar}</div>
-                <div class="message-content">
-                    <div class="message-text">${formatMessageContent(content)}</div>
-                    <div class="message-time">${time}</div>
-                    </div>
-                `;
-            
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        function formatMessageContent(content) {
-            // Convert markdown-style formatting to HTML
-            return content
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                .replace(/^\- (.*$)/gm, '<li>$1</li>')
-                .replace(/^\d+\. (.*$)/gm, '<li>$1</li>')
-                .replace(/\n/g, '<br>')
-                .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
-        }
-        
-        function showTypingIndicator() {
-            const chatMessages = document.getElementById('chatMessages');
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message assistant typing-indicator';
-            typingDiv.id = 'typingIndicator';
-            
-            typingDiv.innerHTML = `
-                <div class="message-avatar"><i class="fas fa-robot"></i></div>
-                <div class="message-content">
-                    <div class="typing-dots">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </div>
-                    </div>
-                `;
-            
-            chatMessages.appendChild(typingDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        function removeTypingIndicator() {
-            const typingIndicator = document.getElementById('typingIndicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
+
+            // Hide welcome message
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
             }
-        }
-        
-        async function sendToAPI(message) {
+
+            // Add user message
+            addMessage(message, 'user');
+
+            // Show loading
+            const loadingId = addLoadingMessage();
+
             try {
-                console.log('sendToAPI called with message:', message);
-                
-                // Check authentication
-                const token = localStorage.getItem('access_token');
-                console.log('Access token:', token ? 'Found' : 'Not found');
-                
-                if (!token) {
-                    console.error('No access token found - user not authenticated');
-                    addMessageToChat('assistant', 'Please log in to use the chat feature.');
-                    return;
-                }
-                
-                const jurisdiction = document.getElementById('jurisdictionSelect').value;
-                const includeWebSearch = document.getElementById('includeWebSearch').checked;
-                
-                console.log('Sending request to API...');
-                
                 const response = await fetch('/api/legal-research', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                        query: message,
-                        jurisdiction: jurisdiction,
-                        include_web_search: includeWebSearch.toString()
+                        message: message,
+                        conversation_history: conversationHistory
                     })
                 });
-                
-                console.log('API response status:', response.status);
+
                 const data = await response.json();
-                console.log('API response data:', data);
-                
-                // Debug: Check if data is null or undefined
-                if (!data) {
-                    console.error('API returned null or undefined data');
-                    removeTypingIndicator();
-                    addMessageToChat('assistant', 'Sorry, I received an invalid response from the server.');
-                    return;
-                }
-                
-                // Remove typing indicator
-                removeTypingIndicator();
-                
-                if (data && data.success) {
-                    // Store session ID for future requests
-                    if (data.session_id) {
-                        currentSessionId = data.session_id;
+
+                // Remove loading message
+                removeMessage(loadingId);
+
+                if (data.success) {
+                    // Add assistant response
+                    addMessage(data.response, 'assistant');
+
+                    // Add to conversation history
+                    conversationHistory.push({ role: 'user', content: message });
+                    conversationHistory.push({ role: 'assistant', content: data.response });
+
+                    // Save to chat history
+                    saveToChatHistory(message, data.response);
+
+                    // Check if chart should be generated
+                    if (data.should_generate_chart) {
+                        await generateChart(data.chart_data, data.chart_type);
                     }
-                    
-                    // Add AI response to chat
-                    addMessageToChat('assistant', data.results);
-                    
-                    // Check if AI is creating a chart
-                    if (data.results && (data.results.includes('Creating your pie chart now') || 
-                        data.results.includes('Creating your chart now') ||
-                        (data.results.includes('pie chart') && data.results.includes('Creating')))) {
-                        // Automatically generate pie chart
-                        setTimeout(() => {
-                            requestChart('pie');
-                        }, 1000);
-                    }
-                    
-                    // Check if AI suggested a chart
-                    if (data.results && data.results.includes('Would you like me to create a chart')) {
-                        // Add chart suggestion buttons
-                        addChartSuggestionButtons();
-                    }
-            } else {
-                    const errorMsg = data && data.error ? data.error : 'Unknown error occurred';
-                    addMessageToChat('assistant', `Sorry, I encountered an error: ${errorMsg}`);
+                } else {
+                    addMessage('Sorry, I encountered an error: ' + data.error, 'assistant');
                 }
             } catch (error) {
-                console.error('Error in sendToAPI:', error);
-                removeTypingIndicator();
-                addMessageToChat('assistant', `Sorry, I encountered an error: ${error.message}`);
+                removeMessage(loadingId);
+                addMessage('Sorry, I encountered an error: ' + error.message, 'assistant');
             }
         }
-        
-        function addChartSuggestionButtons() {
+
+        // Add message to chat
+        function addMessage(content, sender) {
             const chatMessages = document.getElementById('chatMessages');
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.className = 'chart-suggestion-buttons';
-            
-            buttonsDiv.innerHTML = `
-                <div class="chart-suggestion-text">Choose a chart type:</div>
-                <div class="chart-buttons">
-                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('pie')">
-                        <i class="fas fa-chart-pie"></i> Pie Chart
-                    </button>
-                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('bar')">
-                        <i class="fas fa-chart-bar"></i> Bar Chart
-                    </button>
-                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('doughnut')">
-                        <i class="fas fa-circle-notch"></i> Doughnut Chart
-                    </button>
-                    <button class="btn btn-outline-primary chart-btn" onclick="requestChart('line')">
-                        <i class="fas fa-chart-line"></i> Line Chart
-                    </button>
-                    </div>
-                `;
-            
-            chatMessages.appendChild(buttonsDiv);
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    ${formatMessageContent(content)}
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
-        async function requestChart(chartType) {
-            if (!currentSessionId) {
-                addMessageToChat('assistant', 'Sorry, I need to start a new conversation to generate a chart.');
-                return;
+
+        // Add loading message
+        function addLoadingMessage() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            const loadingId = 'loading-' + Date.now();
+            loadingDiv.id = loadingId;
+            loadingDiv.className = 'message assistant';
+
+            loadingDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <span>Thinking...</span>
+                    </div>
+                </div>
+            `;
+
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return loadingId;
+        }
+
+        // Remove message
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
             }
+        }
+
+        // Format message content
+        function formatMessageContent(content) {
+            // Convert line breaks to HTML
+            content = content.replace(/\n/g, '<br>');
             
-            // Add user message
-            addMessageToChat('user', `Yes, I want a ${chartType} chart`);
+            // Format lists
+            content = content.replace(/(\d+\.\s)/g, '<br>$1');
             
-            // Show typing indicator
-            showTypingIndicator();
-            
+            return content;
+        }
+
+        // Generate chart
+        async function generateChart(chartData, chartType) {
             try {
                 const response = await fetch('/api/generate-chart', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     },
                     body: JSON.stringify({
-                        chart_type: chartType,
-                        session_id: currentSessionId
+                        data: chartData,
+                        chart_type: chartType
                     })
                 });
-                
+
                 const data = await response.json();
-                
-                // Remove typing indicator
-                removeTypingIndicator();
-                
-                if (data.success) {
-                    // Add AI response with chart
-                    addMessageToChat('assistant', `Here's your ${chartType} chart!`);
-                    
-                    // Add chart to chat
+
+                if (data.success && data.chart_image) {
                     const chatMessages = document.getElementById('chatMessages');
                     const chartDiv = document.createElement('div');
-                    chartDiv.className = 'chart-message';
-                    chartDiv.innerHTML = data.chart_html;
+                    chartDiv.className = 'chart-container';
+                    chartDiv.innerHTML = `
+                        <h6><i class="fas fa-chart-pie me-2"></i>Data Visualization</h6>
+                        <img src="data:image/png;base64,${data.chart_image}" alt="Chart">
+                    `;
                     chatMessages.appendChild(chartDiv);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
-                    
-                    // Chart is now a simple image - no JavaScript needed!
-                    console.log('Chart HTML inserted:', data.chart_html);
-                    
-                    
-                    // Remove chart suggestion buttons
-                    const suggestionButtons = document.querySelector('.chart-suggestion-buttons');
-                    if (suggestionButtons) {
-                        suggestionButtons.remove();
-                    }
-                } else {
-                    addMessageToChat('assistant', `Sorry, I couldn't generate the chart: ${data.error}`);
                 }
             } catch (error) {
-                removeTypingIndicator();
-                addMessageToChat('assistant', `Sorry, I encountered an error: ${error.message}`);
+                console.error('Chart generation error:', error);
             }
         }
-        
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, initializing voice input system...');
-            
-            // Initialize speech recognition
-            initSpeechRecognition();
-            
-            // Set initial language
-            setTimeout(() => {
-                setInitialLanguage();
-            }, 100);
-            
-            // Voice button event listener
+
+        // Speech Recognition
+        function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+
+                recognition.onstart = function() {
+                    isRecording = true;
+                    updateVoiceButton();
+                };
+
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('chatInput').value = transcript;
+                };
+
+                recognition.onend = function() {
+                    isRecording = false;
+                    updateVoiceButton();
+                };
+
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    isRecording = false;
+                    updateVoiceButton();
+                };
+            }
+        }
+
+        function toggleVoiceRecording() {
+            if (!recognition) {
+                alert('Speech recognition not supported in this browser');
+                return;
+            }
+
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.lang = currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+                recognition.start();
+            }
+        }
+
+        function updateVoiceButton() {
             const voiceBtn = document.getElementById('voiceBtn');
-            if (voiceBtn) {
-                voiceBtn.addEventListener('click', toggleVoiceRecording);
-                console.log('Voice button event listener added');
+            if (isRecording) {
+                voiceBtn.classList.add('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+            } else {
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
             }
+        }
+
+        // Language toggle
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'ar' : 'en';
+            const langBtn = document.getElementById('langToggleBtn');
+            langBtn.innerHTML = `<i class="fas fa-language me-1"></i>${currentLanguage.toUpperCase()}`;
             
-            // Language toggle button event listener
-            const langToggleBtn = document.getElementById('langToggleBtn');
-            if (langToggleBtn) {
-                langToggleBtn.addEventListener('click', toggleLanguage);
-                console.log('Language toggle button event listener added');
+            if (recognition) {
+                recognition.lang = currentLanguage === 'ar' ? 'ar-SA' : 'en-US';
+            }
+        }
+
+        // Chat history functions
+        function toggleChatHistory() {
+            const panel = document.getElementById('chatHistoryPanel');
+            panel.classList.toggle('open');
+        }
+
+        function closeChatHistory() {
+            const panel = document.getElementById('chatHistoryPanel');
+            panel.classList.remove('open');
+        }
+
+        function loadChatHistory() {
+            // Load chat history from localStorage or API
+            const history = JSON.parse(localStorage.getItem('legalResearchHistory') || '[]');
+            const historyList = document.getElementById('chatHistoryList');
+            
+            if (history.length === 0) {
+                historyList.innerHTML = '<p class="text-muted text-center">No chat history yet</p>';
+                return;
+            }
+
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item" onclick="loadHistoryItem('${item.id}')">
+                    <div class="history-item-title">${item.title}</div>
+                    <div class="history-item-preview">${item.preview}</div>
+                    <div class="history-item-date">${item.date}</div>
+                </div>
+            `).join('');
+        }
+
+        function saveToChatHistory(userMessage, assistantResponse) {
+            const history = JSON.parse(localStorage.getItem('legalResearchHistory') || '[]');
+            const newItem = {
+                id: Date.now().toString(),
+                title: userMessage.substring(0, 50) + (userMessage.length > 50 ? '...' : ''),
+                preview: assistantResponse.substring(0, 100) + (assistantResponse.length > 100 ? '...' : ''),
+                date: new Date().toLocaleDateString(),
+                userMessage: userMessage,
+                assistantResponse: assistantResponse
+            };
+            
+            history.unshift(newItem);
+            if (history.length > 20) history.pop(); // Keep only last 20 items
+            
+            localStorage.setItem('legalResearchHistory', JSON.stringify(history));
+            loadChatHistory();
+        }
+
+        function loadHistoryItem(itemId) {
+            const history = JSON.parse(localStorage.getItem('legalResearchHistory') || '[]');
+            const item = history.find(h => h.id === itemId);
+            
+            if (item) {
+                // Clear current chat
+                document.getElementById('chatMessages').innerHTML = '';
+                document.getElementById('welcomeMessage').style.display = 'none';
                 
-                // Set initial button text based on current language
-                if (currentLanguage === 'ar-SA') {
-                    langToggleBtn.innerHTML = '<i class="fas fa-language"></i> ع';
-                } else {
-                    langToggleBtn.innerHTML = '<i class="fas fa-language"></i> EN';
-                }
-            } else {
-                console.error('Language toggle button not found');
+                // Load the conversation
+                addMessage(item.userMessage, 'user');
+                addMessage(item.assistantResponse, 'assistant');
+                
+                // Update conversation history
+                conversationHistory = [
+                    { role: 'user', content: item.userMessage },
+                    { role: 'assistant', content: item.assistantResponse }
+                ];
             }
             
-            // Chat history button event listener
-            const toggleHistoryBtn = document.getElementById('toggleHistoryBtn');
-            if (toggleHistoryBtn) {
-                toggleHistoryBtn.addEventListener('click', toggleChatHistory);
-                console.log('Chat history button event listener added');
-            }
+            closeChatHistory();
+        }
+
+        // Utility functions
+        function setNaturalQuery(query) {
+            document.getElementById('chatInput').value = query;
+            document.getElementById('chatInput').focus();
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Simple notification implementation
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
             
-            // Close history button event listener
-            const closeHistoryBtn = document.getElementById('closeHistoryBtn');
-            if (closeHistoryBtn) {
-                closeHistoryBtn.addEventListener('click', () => {
-                    document.getElementById('chatHistoryPanel').style.display = 'none';
-                });
-                console.log('Close history button event listener added');
-            }
-            
-            // Send button event listener
-            const sendBtn = document.getElementById('sendBtn');
-            if (sendBtn) {
-                sendBtn.addEventListener('click', sendMessage);
-                console.log('Send button event listener added');
-            } else {
-                console.error('Send button not found');
-            }
-            
-            // Enter key support for textarea
-            const chatInput = document.getElementById('chatInput');
-            if (chatInput) {
-                console.log('Chat input found and event listener added');
-                chatInput.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-            } else {
-                console.error('Chat input not found!');
-            }
-        });
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
     </script>
 </body>
 </html>
-

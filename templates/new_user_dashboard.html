@@ -168,6 +168,22 @@
             gap: 1rem;
         }
         
+        .username-link {
+            color: white !important;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 5px;
+        }
+        
+        .username-link:hover {
+            color: #e0e0e0 !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            text-decoration: none;
+        }
+        
         /* Search functionality */
         .search-container {
             position: relative;
@@ -640,7 +656,7 @@
                                 <div class="user-avatar">
                                     {{ user.first_name[0] if user.first_name else 'U' }}
                                 </div>
-                                <span>{{ user.first_name }} {{ user.last_name }}</span>
+                                <a href="/settings" class="username-link">{{ user.first_name }} {{ user.last_name }}</a>
                                 <a href="/logout" class="btn btn-sm btn-outline-light">Logout</a>
                             </div>
                         </div>

@@ -1,0 +1,167 @@
+Login Page (Stunning UI)
+Clean, modern design (use traditional patterns subtly)
+Branding at top: Logo + name
+Two-tone background (dark + light split)
+Login form (email + password) with:
+
+Remember me toggle
+
+Forgot password link
+Call to Action: “Sign in to your Legal Portal”
+Option to continue with SSO (Google, Apple)
+
+Dashboard (Key Features)
+Sidebar Navigation: Dashboard, Contracts, Settings, Support
+Top bar: User profile, Notifications, Search
+Display quick stats (Contracts in progress, Completed, Pending Signature)
+
+Contracts Feature (Smart Flow)
+
+1. New Contract ➜ Modal Popup (Not New Page)
+Pop-up window asks: “Choose Contract Type”
+Display 8 types of contracts:
+
+Corporate
+
+Employment
+
+Real Estate
+
+Commercial
+
+Banking & Finance
+
+Intellectual Property
+
+Family & Personal Status
+
+International
+From Settings, user can add more categories.
+
+2. After Selecting a Type (e.g., Employment Contract):
+Auto-populates 3–5 sub-types dynamically:
+
+e.g., Fixed-term, Foreign, Flexible work, Training-based
+User selects one → Interface launches AI Assistant
+
+3. AI-Assisted Contract Drafting
+User speaks or types:
+“Create an employment contract with 5000 SAR salary, medical and transport insurance”
+AI fills in contract with legal clauses based on:
+
+Contract type
+
+Jurisdiction (Saudi Law)
+
+User input
+User can edit or add clauses manually.
+
+Contract Details Sidebar (Editable Fields)
+
+Contract Title / Name
+
+Effective Date (calendar picker)
+
+Signature fields (multi-party)
+
+Company Logo upload
+
+Background Image (optional)
+
+User Profile Picture for signature
+
+Save / Export (PDF, Word)
+
+Settings
+
+Add/Edit contract types & sub-types
+
+Manage user roles & access
+
+AI Prompt templates
+
+Customize branding (logo, watermark, colors)
+
+Contract Types:
+
+1. Corporate Contracts
+
+Articles of Association (LLC)
+
+Joint Venture Agreements
+
+Shareholders’ Agreements
+
+Mergers and Acquisitions (M&A)
+
+Company Conversion or Liquidation Agreements
+
+2. Employment Contracts
+
+Standard Saudi Employment Contract (Fixed or Indefinite)
+
+Foreign Employment Contract
+
+Flexible Work Contract (hour-based)
+
+Training & Employment Contract
+
+3. Real Estate Contracts
+
+Real Estate Sale Agreement
+
+Residential or Commercial Lease Contract
+
+Real Estate Development Agreement
+
+Property Management Contract
+
+4. Commercial Contracts
+
+Distribution Agreements
+
+Commercial Agency Agreements (must be registered)
+
+Franchise Agreements
+
+Supply and Procurement Contracts
+
+B2B Sales and Purchase Agreements
+
+5. Banking & Finance Contracts
+
+Loan Agreements (personal, corporate)
+
+Mortgage Contracts
+
+Leasing and Islamic Financing (e.g. Murabaha, Ijara)
+
+Guarantee and Security Contracts
+
+6. Intellectual Property Contracts
+
+Trademark Licensing Agreement
+
+Copyright and Publishing Agreement
+
+Software Licensing Agreements
+
+Patent Assignment or Licensing
+
+7. Family and Personal Status Contracts
+
+Official Marriage Contracts (via court or authorized notary)
+
+Divorce Settlement Agreement
+
+Child Custody Agreement
+
+Alimony and Support Agreement
+
+8. International Contracts
+
+Cross-border Sales Contracts (CISG-based)
+
+International Agency or Franchise Contracts
+
+International Arbitration or Dispute Resolution Clauses

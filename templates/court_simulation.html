@@ -231,6 +231,17 @@
                 </div>
             </div>
             
+            <!-- Phase Display -->
+            <div class="phase-display mb-4">
+                <div class="card bg-dark text-white">
+                    <div class="card-body text-center">
+                        <h5><i class="fas fa-gavel me-2"></i>Current Phase</h5>
+                        <h4 id="currentPhase" class="text-warning">Opening Statements</h4>
+                        <p id="phaseDescription" class="mb-0">Both sides present their initial arguments</p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Courtroom Layout -->
             <div class="courtroom-seating">
                 <!-- Judge -->
@@ -352,9 +363,12 @@
                         </ul>
                     </div>
                     <div class="col-md-4">
-                        <div class="d-grid">
+                        <div class="d-grid gap-2">
                             <button class="btn btn-success btn-lg" id="generateReportBtn" disabled>
                                 <i class="fas fa-download me-2"></i>Generate PDF Report
+                            </button>
+                            <button class="btn btn-info" id="advancePhaseBtn" onclick="manualAdvancePhase()">
+                                <i class="fas fa-forward me-2"></i>Advance Phase
                             </button>
                         </div>
                     </div>
@@ -373,6 +387,53 @@
         let conversationHistory = [];
         let startTime = null;
         let timerInterval = null;
+        let currentPhase = 'opening_statements';
+        let simulationState = {
+            phaseStartTime: null,
+            evidencePresented: [],
+            witnessesCalled: [],
+            objectionsRaised: [],
+            verdictReached: false
+        };
+        
+        // Court phases configuration
+        const COURT_PHASES = {
+            'opening_statements': {
+                name: 'Opening Statements',
+                description: 'Both sides present their initial arguments',
+                nextPhase: 'evidence_presentation'
+            },
+            'evidence_presentation': {
+                name: 'Evidence Presentation',
+                description: 'Presenting physical evidence and documents',
+                nextPhase: 'witness_examination'
+            },
+            'witness_examination': {
+                name: 'Witness Examination',
+                description: 'Direct examination and cross-examination of witnesses',
+                nextPhase: 'closing_arguments'
+            },
+            'closing_arguments': {
+                name: 'Closing Arguments',
+                description: 'Final arguments from both sides',
+                nextPhase: 'jury_instructions'
+            },
+            'jury_instructions': {
+                name: 'Jury Instructions',
+                description: 'Judge provides legal instructions to the jury',
+                nextPhase: 'verdict'
+            },
+            'verdict': {
+                name: 'Verdict',
+                description: 'Jury deliberation and verdict announcement',
+                nextPhase: 'sentencing'
+            },
+            'sentencing': {
+                name: 'Sentencing',
+                description: 'Judge announces sentence if guilty',
+                nextPhase: null
+            }
+        };
         
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
@@ -502,8 +563,10 @@
         function startSimulation() {
             simulationActive = true;
             startTime = new Date();
+            simulationState.phaseStartTime = new Date();
             startTimer();
             updateSimulationStatus('Simulation Active');
+            updatePhaseDisplay();
             
             // Add initial messages from judge and prosecutor
             setTimeout(() => {
@@ -513,6 +576,69 @@
             setTimeout(() => {
                 showMessage('prosecutor', 'Prosecutor: Your Honor, the prosecution is ready to present the case against the defendant.');
             }, 2000);
+        }
+        
+        // Update phase display
+        function updatePhaseDisplay() {
+            const phaseInfo = COURT_PHASES[currentPhase];
+            if (phaseInfo) {
+                document.getElementById('currentPhase').textContent = phaseInfo.name;
+                document.getElementById('phaseDescription').textContent = phaseInfo.description;
+            }
+        }
+        
+        // Update current phase
+        function updatePhase(newPhase) {
+            currentPhase = newPhase;
+            simulationState.phaseStartTime = new Date();
+            updatePhaseDisplay();
+            
+            // Add phase transition message
+            const phaseInfo = COURT_PHASES[currentPhase];
+            if (phaseInfo) {
+                showMessage('system', `Court Clerk: We are now entering the ${phaseInfo.name} phase.`);
+            }
+        }
+        
+        // Advance to next phase
+        function advanceToNextPhase() {
+            const phaseInfo = COURT_PHASES[currentPhase];
+            if (phaseInfo && phaseInfo.nextPhase) {
+                updatePhase(phaseInfo.nextPhase);
+                
+                // Add appropriate phase-specific messages
+                setTimeout(() => {
+                    addPhaseSpecificMessages(currentPhase);
+                }, 1000);
+            } else {
+                // Simulation complete
+                showMessage('system', 'Court Clerk: The court simulation has concluded.');
+                updateSimulationStatus('Simulation Complete');
+            }
+        }
+        
+        // Add phase-specific messages
+        function addPhaseSpecificMessages(phase) {
+            switch(phase) {
+                case 'evidence_presentation':
+                    showMessage('judge', 'Judge: We will now proceed with evidence presentation. Both sides may present their evidence.');
+                    break;
+                case 'witness_examination':
+                    showMessage('judge', 'Judge: We will now call witnesses for examination. Prosecution, you may call your first witness.');
+                    break;
+                case 'closing_arguments':
+                    showMessage('judge', 'Judge: We will now hear closing arguments. Prosecution, you may proceed.');
+                    break;
+                case 'jury_instructions':
+                    showMessage('judge', 'Judge: I will now provide instructions to the jury before deliberation.');
+                    break;
+                case 'verdict':
+                    showMessage('judge', 'Judge: The jury will now deliberate. We will reconvene when they have reached a verdict.');
+                    break;
+                case 'sentencing':
+                    showMessage('judge', 'Judge: We will now proceed with sentencing.');
+                    break;
+            }
         }
         
         // Start timer
@@ -610,7 +736,7 @@
             showMessage('defense', message);
             input.value = '';
             
-            // Get AI responses
+            // Get AI responses with phase management
             try {
                 const response = await fetch('/api/court-simulation/respond', {
                     method: 'POST',
@@ -620,7 +746,9 @@
                     body: JSON.stringify({
                         message: message,
                         caseData: caseData,
-                        conversationHistory: conversationHistory
+                        conversationHistory: conversationHistory,
+                        currentPhase: currentPhase,
+                        simulationState: simulationState
                     })
                 });
                 
@@ -640,9 +768,55 @@
                             showMessage('prosecutor', result.prosecutorResponse);
                         }, 2000);
                     }
+                    
+                    // Update phase if changed
+                    if (result.nextPhase && result.nextPhase !== currentPhase) {
+                        updatePhase(result.nextPhase);
+                    }
+                    
+                    // Check if phase is complete
+                    if (result.phaseComplete) {
+                        setTimeout(() => {
+                            advanceToNextPhase();
+                        }, 3000);
+                    }
                 }
             } catch (error) {
                 console.error('Error sending response:', error);
+            }
+        }
+        
+        // Manual phase advancement
+        async function manualAdvancePhase() {
+            try {
+                const response = await fetch('/api/court-simulation/advance-phase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        currentPhase: currentPhase,
+                        caseData: caseData,
+                        simulationState: simulationState
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    updatePhase(result.nextPhase);
+                    showMessage('system', result.transitionMessage);
+                    
+                    // Add phase-specific messages
+                    setTimeout(() => {
+                        addPhaseSpecificMessages(currentPhase);
+                    }, 1000);
+                } else {
+                    alert('Error advancing phase: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error advancing phase:', error);
+                alert('Error advancing phase: ' + error.message);
             }
         }
         

@@ -1398,98 +1398,98 @@ async def analyze_document_with_llm(document_text: str, analysis_type: str, user
             "summary": f"""
         You are a legal document analysis AI. {language_instruction}
         
-        Please provide a comprehensive summary of the following legal document:
+Please provide a comprehensive summary of the following legal document:
 
-        Document Text:
-        {document_text}
+Document Text:
+{document_text}
 
-        Please include:
-        1. Document overview and main purpose
-        2. Key parties involved
-        3. Main legal issues or topics
-        4. Important dates and deadlines
-        5. Key findings or conclusions
-        6. Recommendations or next steps
+Please include:
+1. Document overview and main purpose
+2. Key parties involved
+3. Main legal issues or topics
+4. Important dates and deadlines
+5. Key findings or conclusions
+6. Recommendations or next steps
 
-        Format your response in clear, professional language suitable for legal professionals.
-        """,
+Format your response in clear, professional language suitable for legal professionals.
+""",
             
             "key_points": f"""
         You are a legal document analysis AI. {language_instruction}
         
-        Please extract and analyze the key points from the following legal document:
+Please extract and analyze the key points from the following legal document:
 
-        Document Text:
-        {document_text}
+Document Text:
+{document_text}
 
-        Please provide:
-        1. **Main Legal Issues**: Identify the primary legal matters addressed
-        2. **Key Terms and Definitions**: Important legal terms and their meanings
-        3. **Critical Dates**: Deadlines, effective dates, and important timelines
-        4. **Parties and Responsibilities**: Who is involved and what are their obligations
-        5. **Rights and Obligations**: What each party can and must do
-        6. **Risk Factors**: Potential legal risks or concerns
-        7. **Action Items**: What needs to be done next
+Please provide:
+1. **Main Legal Issues**: Identify the primary legal matters addressed
+2. **Key Terms and Definitions**: Important legal terms and their meanings
+3. **Critical Dates**: Deadlines, effective dates, and important timelines
+4. **Parties and Responsibilities**: Who is involved and what are their obligations
+5. **Rights and Obligations**: What each party can and must do
+6. **Risk Factors**: Potential legal risks or concerns
+7. **Action Items**: What needs to be done next
 
-        Focus on the most important elements that require immediate attention.
-        """,
+Focus on the most important elements that require immediate attention.
+""",
             
             "legal_issues": f"""
         You are a legal document analysis AI. {language_instruction}
         
-        Please identify and analyze the legal issues in the following document:
+Please identify and analyze the legal issues in the following document:
 
-        Document Text:
-        {document_text}
+Document Text:
+{document_text}
 
-        Please provide:
-        1. **Primary Legal Issues**: Main legal matters that need attention
-        2. **Compliance Concerns**: Areas that may violate laws or regulations
-        3. **Contractual Issues**: Problems with terms, conditions, or obligations
-        4. **Procedural Issues**: Problems with process, timing, or requirements
-        5. **Risk Assessment**: Potential legal risks and their severity
-        6. **Remedies Available**: Legal options to address identified issues
-        7. **Preventive Measures**: Steps to avoid future legal problems
-        8. **Professional Recommendations**: Suggested actions for legal counsel
+Please provide:
+1. **Primary Legal Issues**: Main legal matters that need attention
+2. **Compliance Concerns**: Areas that may violate laws or regulations
+3. **Contractual Issues**: Problems with terms, conditions, or obligations
+4. **Procedural Issues**: Problems with process, timing, or requirements
+5. **Risk Assessment**: Potential legal risks and their severity
+6. **Remedies Available**: Legal options to address identified issues
+7. **Preventive Measures**: Steps to avoid future legal problems
+8. **Professional Recommendations**: Suggested actions for legal counsel
 
-        Focus on identifying potential legal problems and their solutions.
-        """,
+Focus on identifying potential legal problems and their solutions.
+""",
             
             "compliance": f"""
         You are a legal document analysis AI. {language_instruction}
         
-        Please perform a compliance check on the following document:
+Please perform a compliance check on the following document:
 
-        Document Text:
-        {document_text}
+Document Text:
+{document_text}
 
-        Please analyze:
-        1. **Regulatory Compliance**: Does this comply with relevant laws and regulations?
-        2. **Industry Standards**: Does it meet industry best practices?
-        3. **Internal Policies**: Does it align with company policies and procedures?
-        4. **Documentation Requirements**: Are all necessary documents and signatures present?
-        5. **Timeline Compliance**: Are all deadlines and timeframes met?
-        6. **Risk Areas**: What compliance risks exist?
-        7. **Recommendations**: What changes are needed for full compliance?
-        8. **Monitoring Requirements**: What ongoing compliance monitoring is needed?
+Please analyze:
+1. **Regulatory Compliance**: Does this comply with relevant laws and regulations?
+2. **Industry Standards**: Does it meet industry best practices?
+3. **Internal Policies**: Does it align with company policies and procedures?
+4. **Documentation Requirements**: Are all necessary documents and signatures present?
+5. **Timeline Compliance**: Are all deadlines and timeframes met?
+6. **Risk Areas**: What compliance risks exist?
+7. **Recommendations**: What changes are needed for full compliance?
+8. **Monitoring Requirements**: What ongoing compliance monitoring is needed?
 
-        Focus on ensuring the document meets all applicable requirements.
-        """,
+Focus on ensuring the document meets all applicable requirements.
+""",
             
             "full_analysis": f"""
         You are a legal document analysis AI. {language_instruction}
         
-        Please provide a comprehensive legal analysis of the following document:
+Please provide a comprehensive legal analysis of the following document:
 
-        Document Text:
-        {document_text}
+Document Text:
+{document_text}
 
-        Please provide a complete analysis including:
+Please provide a complete analysis including:
 
-        ## 1. Document Overview
-        - Document type and purpose
-        - Parties involved
-        - Key dates and timelines
+## 1. Document Overview
+- Document type and purpose
+- Parties involved
+- Key dates and timelines
 
 ## 2. Legal Analysis
 - Applicable laws and regulations
@@ -2304,9 +2304,10 @@ async def legal_research_post(
     try:
         # Get request data
         data = await request.json()
-        query = data.get('query', '')
+        query = data.get('query', '') or data.get('message', '')  # Support both 'query' and 'message'
         jurisdiction = data.get('jurisdiction', 'Saudi Arabia')
         include_web_search = data.get('include_web_search', 'false')
+        conversation_history = data.get('conversation_history', [])
         
         if not query:
             return {
@@ -2333,11 +2334,27 @@ async def legal_research_post(
             context_data={'jurisdiction': jurisdiction, 'include_web_search': include_web_search}
         )
         
-        # Get conversation history for context
-        conversation_history = get_conversation_history(user.id, session_id, limit=5)
+        # Use frontend conversation history if provided, otherwise get from database
+        if conversation_history and isinstance(conversation_history, list):
+            # Convert frontend conversation history to the format expected by the AI function
+            formatted_history = []
+            for msg in conversation_history:
+                if isinstance(msg, dict) and msg.get('role') == 'user':
+                    formatted_history.append({'role': 'user', 'content': msg.get('content', '')})
+                elif isinstance(msg, dict) and msg.get('role') == 'assistant':
+                    formatted_history.append({'role': 'assistant', 'content': msg.get('content', '')})
+        else:
+            # Fallback to database conversation history
+            formatted_history = get_conversation_history(user.id, session_id, limit=5)
         
         # Generate AI-powered legal research response with conversation context
-        research_result = await generate_legal_research_with_memory(query, user, jurisdiction, include_web_search, conversation_history, detected_language)
+        try:
+            research_result = await generate_legal_research_with_memory(query, user, jurisdiction, include_web_search, formatted_history, detected_language)
+        except Exception as e:
+            logger.error(f"Error in generate_legal_research_with_memory: {str(e)}")
+            logger.error(f"Error type: {type(e)}")
+            logger.error(f"Error args: {e.args}")
+            research_result = f"I apologize, but I encountered an error processing your request: {str(e)}"
         
         # Save AI response to memory
         save_conversation_message(
@@ -2354,9 +2371,9 @@ async def legal_research_post(
         return {
             "success": True,
             "query": query,
+            "response": research_result,  # Changed from 'results' to 'response' to match frontend
             "jurisdiction": jurisdiction,
             "include_web_search": include_web_search,
-            "results": research_result,
             "session_id": session_id,
             "timestamp": datetime.now().isoformat()
         }
@@ -2592,7 +2609,12 @@ async def analyze_document_stats(user: User = Depends(require_auth)):
         ORDER BY count DESC
         """
         
-        stats = db_manager.execute_query(stats_query, (user.id,))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(stats_query, (user.id,))
+        stats = cursor.fetchall()
+        cursor.close()
+        conn.close()
         
         # Generate analysis
         analysis_html = f"""
@@ -2669,7 +2691,12 @@ async def analyze_content_patterns(user: User = Depends(require_auth)):
         LIMIT 10
         """
         
-        patterns = db_manager.execute_query(patterns_query, (user.id,))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(patterns_query, (user.id,))
+        patterns = cursor.fetchall()
+        cursor.close()
+        conn.close()
         
         analysis_html = f"""
         <div class="row">
@@ -2735,7 +2762,12 @@ async def analyze_temporal_data(user: User = Depends(require_auth)):
         LIMIT 20
         """
         
-        temporal = db_manager.execute_query(temporal_query, (user.id,))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(temporal_query, (user.id,))
+        temporal = cursor.fetchall()
+        cursor.close()
+        conn.close()
         
         analysis_html = f"""
         <div class="row">
@@ -2799,7 +2831,12 @@ async def generate_key_insights(user: User = Depends(require_auth)):
         GROUP BY document_type
         """
         
-        summary_data = db_manager.execute_query(summary_query, (user.id,))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(summary_query, (user.id,))
+        summary_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
         
         # Generate AI insights
         import openai
@@ -3052,6 +3089,14 @@ async def get_user_llm_settings(user: User) -> dict:
 async def generate_legal_research_with_memory(query: str, user: User, jurisdiction: str = "Saudi Arabia", include_web_search: str = "false", conversation_history: List[Dict] = None, language: str = "en") -> str:
     """Generate comprehensive legal research using AI with conversation memory and knowledge base access"""
     try:
+        # Load configuration
+        config = load_config()
+        
+        # Debug logging
+        logger.info(f"generate_legal_research_with_memory called with query: {query[:50]}...")
+        logger.info(f"conversation_history type: {type(conversation_history)}")
+        logger.info(f"conversation_history value: {conversation_history}")
+        
         # Get user's LLM settings
         user_settings = await get_user_llm_settings(user)
         llm_provider = user_settings.get('llm_provider', 'openai')
@@ -3132,12 +3177,18 @@ async def generate_legal_research_with_memory(query: str, user: User, jurisdicti
         # Build conversation context
         context_summary = ""
         if conversation_history and len(conversation_history) > 1:
-            context_summary = "\n\nPrevious conversation context:\n"
-            for msg in conversation_history[:-1]:  # Exclude the current message
-                if msg['type'] == 'user':
-                    context_summary += f"User: {msg['content']}\n"
-                elif msg['type'] == 'assistant':
-                    context_summary += f"Assistant: {msg['content'][:200]}...\n"  # Truncate for context
+            try:
+                context_summary = "\n\nPrevious conversation context:\n"
+                for msg in conversation_history[:-1]:  # Exclude the current message
+                    if isinstance(msg, dict):
+                        if msg.get('role') == 'user':
+                            context_summary += f"User: {msg.get('content', '')}\n"
+                        elif msg.get('role') == 'assistant':
+                            content = msg.get('content', '')
+                            context_summary += f"Assistant: {content[:200]}...\n"  # Truncate for context
+            except Exception as e:
+                logger.error(f"Error processing conversation history: {e}")
+                context_summary = ""
         
         # Create comprehensive legal research prompt with memory and language awareness
         language_instruction = ""
@@ -3178,6 +3229,9 @@ async def generate_legal_research_with_memory(query: str, user: User, jurisdicti
         6. When you say "Creating your pie chart now...", the system will automatically generate the chart
         7. If you have relevant documents from the knowledge base, reference them specifically in your answer
         8. If the user asks about their uploaded documents, provide specific information from those documents
+        9. **IMPORTANT**: Do NOT mention specific websites, platforms, or commercial services by name. Provide general legal information without advertising or promoting specific companies.
+        10. Focus on providing accurate legal information based on Saudi Arabian law and regulations.
+        11. If discussing legal resources, refer to them generically (e.g., "legal databases" instead of specific website names).
 
         Remember: Use the EXACT phrase "Would you like me to create a chart" to trigger the chart generation system.
         
@@ -3199,12 +3253,17 @@ async def generate_legal_research_with_memory(query: str, user: User, jurisdicti
         return response.choices[0].message.content
         
     except Exception as e:
-        logger.error(f"Error generating legal research: {str(e)}")
+        logger.error(f"Error in generate_legal_research_with_memory: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        logger.error(f"Error args: {e.args}")
         return f"I apologize, but I encountered an error processing your request: {str(e)}"
 
 async def generate_legal_research(query: str, user: User, jurisdiction: str = "Saudi Arabia", include_web_search: str = "false") -> str:
     """Generate comprehensive legal research using AI with knowledge base access"""
     try:
+        # Load configuration
+        config = load_config()
+        
         # Get user's LLM settings
         user_settings = await get_user_llm_settings(user)
         llm_provider = user_settings.get('llm_provider', 'openai')
@@ -3354,6 +3413,8 @@ async def generate_legal_research(query: str, user: User, jurisdiction: str = "S
             except Exception as e:
                 logger.error(f"Ollama generation failed: {e}")
                 return f"I apologize, but I encountered an error with the Ollama model: {str(e)}"
+        else:
+            return f"Unsupported LLM provider: {llm_provider}"
         
     except Exception as e:
         logger.error(f"AI legal research failed: {str(e)}")
@@ -3512,7 +3573,12 @@ For comprehensive legal research on this topic, consider the following:
 **Note**: This is a general research framework. For specific legal advice, consult with qualified legal professionals familiar with your jurisdiction and circumstances.
         """
 
-@app.post("/api/document-analysis")
+        try:
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error in generate_legal_research: {str(e)}")
+            return f"I apologize, but I encountered an error processing your request: {str(e)}"
+
 async def document_analysis(
     request: Request,
     document: UploadFile = File(None),
@@ -3616,13 +3682,16 @@ async def web_scraping(url: str, scrape_links: bool = True, max_links: int = 5, 
         # Run scraping methods based on bypass_auth setting
         if bypass_auth:
             # Try authentication scraping first for protected sites
-            auth_result = scrape_with_authentication(url)
-            firecrawl_result = scrape_with_firecrawl(url)
-            bs_result = scrape_with_beautifulsoup(url, bypass_auth)
-        else:
-            # Standard scraping
-            firecrawl_result = scrape_with_firecrawl(url)
-            bs_result = scrape_with_beautifulsoup(url, bypass_auth)
+            if bypass_auth:
+                # Try authentication scraping first for protected sites
+                auth_result = scrape_with_authentication(url)
+                firecrawl_result = scrape_with_firecrawl(url)
+                bs_result = scrape_with_beautifulsoup(url, bypass_auth)
+            else:
+                # Standard scraping
+                auth_result = {"success": False}
+                firecrawl_result = scrape_with_firecrawl(url)
+                bs_result = scrape_with_beautifulsoup(url, bypass_auth)
             auth_result = {"success": False}
         
         # Determine overall success
@@ -4526,6 +4595,9 @@ async def send_message(conversation_id: int, request: Request, user: User = Depe
 async def generate_enhanced_ai_response(user_message: str, user: User, conversation_id: int) -> str:
     """Generate enhanced AI response with conversation context"""
     try:
+        # Load configuration
+        config = load_config()
+        
         # Get user's LLM settings
         user_settings = await get_user_llm_settings(user)
         llm_provider = user_settings.get('llm_provider', 'openai')
@@ -4632,6 +4704,10 @@ As DALI Legal AI, I can help you with:
 
 How can I assist you further with your legal inquiry?
 """
+        
+    except Exception as e:
+        logger.error(f"Error in generate_enhanced_ai_response: {str(e)}")
+        return f"I apologize, but I encountered an error processing your request: {str(e)}"
 
 async def get_user_statistics(user_id: int) -> dict:
     """Get comprehensive user statistics"""
@@ -5958,6 +6034,7 @@ async def execute_sql_query(
                     "timestamp": datetime.now().isoformat()
                 }
                 
+                
         except Exception as e:
             return {
                 "success": False,
@@ -6094,14 +6171,14 @@ async def get_database_schema(user: User = Depends(require_auth)):
                     schema_context += " [NOT NULL]"
                 schema_context += "\n"
             schema_context += "\n"
-        
-        return {
-            "success": True,
-            "schema_context": schema_context,
+            
+            return {
+                "success": True,
+                "schema_context": schema_context,
             "tables": schema_info,
-            "connection_status": "connected"
-        }
-        
+                "connection_status": "connected"
+            }
+            
     except Exception as e:
         logger.error(f"Schema retrieval error: {str(e)}")
         return {"success": False, "error": f"Schema retrieval failed: {str(e)}"}
@@ -6350,7 +6427,6 @@ async def update_user_settings(request: Request, user: User = Depends(require_au
                     INSERT INTO user_settings (user_id, setting_key, setting_value)
                     VALUES (?, ?, ?)
                 """, (user.id, setting_key, setting_value))
-        
         conn.commit()
         cursor.close()
         conn.close()
@@ -7100,7 +7176,6 @@ async def approve_permission_request(request_id: int, user: User = Depends(requi
                 SET permission_type = 'read', granted_at = CURRENT_TIMESTAMP
                 WHERE document_id = ? AND user_id = ?
             """, (request_data[0], request_data[1]))
-            
             if cursor.rowcount == 0:
                 cursor.execute("""
                     INSERT INTO document_permissions 
@@ -7522,35 +7597,30 @@ async def court_simulation_respond(
     request_data: dict,
     user: User = Depends(require_auth)
 ):
-    """Handle responses in court simulation"""
+    """Handle responses in court simulation with phase management"""
     try:
         message = request_data.get("message", "")
         case_data = request_data.get("caseData", {})
         conversation_history = request_data.get("conversationHistory", [])
+        current_phase = request_data.get("currentPhase", "opening_statements")
+        simulation_state = request_data.get("simulationState", {})
         
         # Get user's LLM settings
         llm_settings = await get_user_llm_settings(user)
         
-        # Generate judge response
-        judge_response = await generate_judge_response(
+        # Determine appropriate responses based on current phase
+        responses = await generate_phase_appropriate_responses(
             message=message,
             case_data=case_data,
             conversation_history=conversation_history,
-            llm_settings=llm_settings
-        )
-        
-        # Generate prosecutor response
-        prosecutor_response = await generate_prosecutor_response(
-            message=message,
-            case_data=case_data,
-            conversation_history=conversation_history,
+            current_phase=current_phase,
+            simulation_state=simulation_state,
             llm_settings=llm_settings
         )
         
         return {
             "success": True,
-            "judgeResponse": judge_response,
-            "prosecutorResponse": prosecutor_response,
+            **responses,
             "timestamp": datetime.now().isoformat()
         }
         
@@ -7559,6 +7629,45 @@ async def court_simulation_respond(
         return {
             "success": False,
             "error": f"Failed to generate responses: {str(e)}"
+        }
+
+@app.post("/api/court-simulation/advance-phase")
+async def advance_court_phase(
+    request_data: dict,
+    user: User = Depends(require_auth)
+):
+    """Manually advance to the next court phase"""
+    try:
+        current_phase = request_data.get("currentPhase", "opening_statements")
+        case_data = request_data.get("caseData", {})
+        simulation_state = request_data.get("simulationState", {})
+        
+        # Get phase info
+        phase_info = COURT_PHASES.get(current_phase, {})
+        next_phase = phase_info.get("next_phase")
+        
+        if not next_phase:
+            return {
+                "success": False,
+                "error": "No next phase available"
+            }
+        
+        # Generate phase transition message
+        next_phase_info = COURT_PHASES.get(next_phase, {})
+        transition_message = f"Court Clerk: We are now entering the {next_phase_info.get('name', 'next')} phase."
+        
+        return {
+            "success": True,
+            "nextPhase": next_phase,
+            "transitionMessage": transition_message,
+            "phaseInfo": next_phase_info
+        }
+        
+    except Exception as e:
+        logger.error(f"Error advancing court phase: {str(e)}")
+        return {
+            "success": False,
+            "error": f"Failed to advance phase: {str(e)}"
         }
 
 @app.post("/api/court-simulation/generate-report")
@@ -7648,6 +7757,346 @@ def extract_relevant_laws(analysis_text: str) -> list:
     
     return list(set(laws))[:5]  # Return unique laws, max 5
 
+# Court Simulation Phase Management
+COURT_PHASES = {
+    "opening_statements": {
+        "name": "Opening Statements",
+        "description": "Both sides present their initial arguments",
+        "next_phase": "evidence_presentation",
+        "participants": ["prosecutor", "defense"]
+    },
+    "evidence_presentation": {
+        "name": "Evidence Presentation", 
+        "description": "Presenting physical evidence and documents",
+        "next_phase": "witness_examination",
+        "participants": ["prosecutor", "defense", "judge"]
+    },
+    "witness_examination": {
+        "name": "Witness Examination",
+        "description": "Direct examination and cross-examination of witnesses",
+        "next_phase": "closing_arguments",
+        "participants": ["prosecutor", "defense", "judge"]
+    },
+    "closing_arguments": {
+        "name": "Closing Arguments",
+        "description": "Final arguments from both sides",
+        "next_phase": "jury_instructions",
+        "participants": ["prosecutor", "defense"]
+    },
+    "jury_instructions": {
+        "name": "Jury Instructions",
+        "description": "Judge provides legal instructions to the jury",
+        "next_phase": "verdict",
+        "participants": ["judge"]
+    },
+    "verdict": {
+        "name": "Verdict",
+        "description": "Jury deliberation and verdict announcement",
+        "next_phase": "sentencing",
+        "participants": ["judge", "jury"]
+    },
+    "sentencing": {
+        "name": "Sentencing",
+        "description": "Judge announces sentence if guilty",
+        "next_phase": None,
+        "participants": ["judge"]
+    }
+}
+
+async def generate_phase_appropriate_responses(
+    message: str,
+    case_data: dict,
+    conversation_history: list,
+    current_phase: str,
+    simulation_state: dict,
+    llm_settings: dict
+) -> dict:
+    """Generate responses appropriate for the current court phase"""
+    
+    phase_info = COURT_PHASES.get(current_phase, COURT_PHASES["opening_statements"])
+    
+    responses = {
+        "judgeResponse": "",
+        "prosecutorResponse": "",
+        "defenseResponse": "",
+        "nextPhase": phase_info["next_phase"],
+        "phaseComplete": False
+    }
+    
+    # Generate responses based on phase
+    if current_phase == "opening_statements":
+        responses["prosecutorResponse"] = await generate_prosecutor_opening(
+            message, case_data, conversation_history, llm_settings
+        )
+        responses["judgeResponse"] = await generate_judge_phase_response(
+            message, case_data, conversation_history, current_phase, llm_settings
+        )
+        
+    elif current_phase == "evidence_presentation":
+        responses["prosecutorResponse"] = await generate_prosecutor_evidence(
+            message, case_data, conversation_history, llm_settings
+        )
+        responses["judgeResponse"] = await generate_judge_evidence_ruling(
+            message, case_data, conversation_history, llm_settings
+        )
+        
+    elif current_phase == "witness_examination":
+        responses["prosecutorResponse"] = await generate_prosecutor_cross_examination(
+            message, case_data, conversation_history, llm_settings
+        )
+        responses["judgeResponse"] = await generate_judge_witness_management(
+            message, case_data, conversation_history, llm_settings
+        )
+        
+    elif current_phase == "closing_arguments":
+        responses["prosecutorResponse"] = await generate_prosecutor_closing(
+            message, case_data, conversation_history, llm_settings
+        )
+        responses["judgeResponse"] = await generate_judge_closing_instructions(
+            message, case_data, conversation_history, llm_settings
+        )
+        
+    elif current_phase == "jury_instructions":
+        responses["judgeResponse"] = await generate_jury_instructions(
+            message, case_data, conversation_history, llm_settings
+        )
+        
+    elif current_phase == "verdict":
+        responses["judgeResponse"] = await generate_verdict_announcement(
+            message, case_data, conversation_history, llm_settings
+        )
+        
+    elif current_phase == "sentencing":
+        responses["judgeResponse"] = await generate_sentencing(
+            message, case_data, conversation_history, llm_settings
+        )
+    
+    return responses
+
+# Phase-specific response generators
+async def generate_prosecutor_opening(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate prosecutor opening statement"""
+    prompt = f"""
+    You are a prosecutor delivering an opening statement. Present the case against the defendant clearly and professionally.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    DEFENSE STATEMENT: "{message}"
+    
+    Deliver a compelling opening statement that:
+    1. Outlines the charges clearly
+    2. Presents the prosecution's theory of the case
+    3. Mentions key evidence you will present
+    4. Establishes the burden of proof
+    
+    Keep it professional and focused (3-4 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_judge_phase_response(message: str, case_data: dict, conversation_history: list, phase: str, llm_settings: dict) -> str:
+    """Generate judge response for specific phase"""
+    phase_info = COURT_PHASES.get(phase, {})
+    prompt = f"""
+    You are a judge presiding over the {phase_info.get('name', 'court proceedings')} phase.
+    
+    DEFENSE STATEMENT: "{message}"
+    PHASE: {phase_info.get('description', '')}
+    
+    As the judge, provide appropriate guidance for this phase:
+    1. Acknowledge the statement appropriately
+    2. Ask relevant questions for this phase
+    3. Guide the proceedings forward
+    4. Maintain courtroom decorum
+    
+    Keep responses authoritative but fair (2-3 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_prosecutor_evidence(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate prosecutor evidence presentation"""
+    prompt = f"""
+    You are a prosecutor presenting evidence. Challenge the defense's evidence claims and present your own evidence.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    DEFENSE STATEMENT: "{message}"
+    
+    As prosecutor, you should:
+    1. Challenge weak evidence presented by defense
+    2. Present your own evidence (surveillance footage, witness testimony, etc.)
+    3. Ask for specific evidence to support defense claims
+    4. Highlight inconsistencies
+    
+    Be assertive but professional (3-4 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_judge_evidence_ruling(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate judge ruling on evidence"""
+    prompt = f"""
+    You are a judge ruling on evidence admissibility and presentation.
+    
+    DEFENSE STATEMENT: "{message}"
+    
+    As judge, you should:
+    1. Rule on evidence admissibility
+    2. Ask for clarification on evidence
+    3. Maintain proper courtroom procedure
+    4. Guide the evidence presentation
+    
+    Be authoritative and procedural (2-3 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_prosecutor_cross_examination(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate prosecutor cross-examination"""
+    prompt = f"""
+    You are a prosecutor conducting cross-examination of witnesses.
+    
+    DEFENSE STATEMENT: "{message}"
+    
+    As prosecutor, you should:
+    1. Challenge witness credibility
+    2. Point out inconsistencies in testimony
+    3. Ask leading questions
+    4. Build your case through questioning
+    
+    Be aggressive but respectful (3-4 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_judge_witness_management(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate judge witness management"""
+    prompt = f"""
+    You are a judge managing witness testimony and objections.
+    
+    DEFENSE STATEMENT: "{message}"
+    
+    As judge, you should:
+    1. Rule on objections
+    2. Manage witness testimony
+    3. Ensure proper questioning procedures
+    4. Maintain courtroom order
+    
+    Be procedural and fair (2-3 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_prosecutor_closing(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate prosecutor closing argument"""
+    prompt = f"""
+    You are a prosecutor delivering closing arguments.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    DEFENSE STATEMENT: "{message}"
+    
+    Deliver a compelling closing argument that:
+    1. Summarizes the evidence against the defendant
+    2. Addresses defense arguments
+    3. Emphasizes burden of proof
+    4. Asks for guilty verdict
+    
+    Be persuasive and professional (4-5 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_judge_closing_instructions(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate judge closing instructions"""
+    prompt = f"""
+    You are a judge providing closing instructions to the jury.
+    
+    DEFENSE STATEMENT: "{message}"
+    
+    As judge, you should:
+    1. Provide legal instructions
+    2. Explain burden of proof
+    3. Guide jury deliberation
+    4. Maintain impartiality
+    
+    Be clear and authoritative (3-4 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_jury_instructions(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate jury instructions"""
+    prompt = f"""
+    You are a judge providing detailed jury instructions.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    
+    Provide comprehensive jury instructions including:
+    1. Legal standards and burden of proof
+    2. Elements of the crime
+    3. How to evaluate evidence
+    4. Deliberation procedures
+    
+    Be thorough and clear (5-6 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_verdict_announcement(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate verdict announcement"""
+    prompt = f"""
+    You are a judge announcing the jury's verdict.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    
+    Announce the verdict professionally:
+    1. Call for the verdict
+    2. Announce the result
+    3. Explain next steps
+    4. Maintain courtroom decorum
+    
+    Be formal and respectful (3-4 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_sentencing(message: str, case_data: dict, conversation_history: list, llm_settings: dict) -> str:
+    """Generate sentencing"""
+    prompt = f"""
+    You are a judge delivering sentencing.
+    
+    CASE: {case_data.get('title', 'Unknown')}
+    
+    Deliver sentencing that:
+    1. Considers the crime and circumstances
+    2. Explains the sentence
+    3. Provides reasoning
+    4. Maintains judicial dignity
+    
+    Be fair and authoritative (4-5 sentences).
+    """
+    return await generate_llm_response(prompt, llm_settings)
+
+async def generate_llm_response(prompt: str, llm_settings: dict) -> str:
+    """Generic LLM response generator"""
+    llm_provider = llm_settings.get('llm_provider', 'openai')
+    llm_model = llm_settings.get('llm_model', 'gpt-4o')
+    
+    if llm_provider == 'openai':
+        try:
+            import openai
+            config = load_config()
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            response = openai.chat.completions.create(
+                model=llm_model,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=300,
+                temperature=0.7
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            logger.error(f"OpenAI error: {e}")
+            return "The court acknowledges your statement. Please continue."
+    else:
+        try:
+            from src.core.llm_engine import LLMEngine
+            llm_engine = LLMEngine(model_name=llm_model)
+            response = llm_engine.generate_response(prompt)
+            return response.strip()
+        except Exception as e:
+            logger.error(f"Ollama error: {e}")
+            return "The court acknowledges your statement. Please continue."
+
 async def generate_judge_response(
     message: str,
     case_data: dict,
@@ -7656,6 +8105,12 @@ async def generate_judge_response(
 ) -> str:
     """Generate AI judge response"""
     
+    # Debug logging
+    logger.info(f"Judge response - Case data: {case_data}")
+    logger.info(f"Judge response - Message: {message[:100]}...")
+    logger.info(f"Judge response - LLM settings: {llm_settings}")
+    
+    
     judge_prompt = f"""
     You are an experienced judge presiding over a court simulation. You are fair, impartial, and focused on legal procedure and evidence.
 
@@ -7663,6 +8118,7 @@ async def generate_judge_response(
     Title: {case_data.get('title', 'Unknown Case')}
     Type: {case_data.get('case_type', 'General')}
     Key Points: {', '.join(case_data.get('key_points', [])[:3])}
+    Case Description: {case_data.get('description', 'No description available')}
 
     DEFENSE ATTORNEY'S STATEMENT:
     "{message}"
@@ -7670,13 +8126,18 @@ async def generate_judge_response(
     CONVERSATION HISTORY:
     {format_conversation_history(conversation_history[-5:])}
 
-    As the judge, respond with:
-    1. Acknowledgment of the statement
-    2. Relevant legal questions or clarifications
-    3. Procedural guidance
-    4. Focus on evidence and legal standards
+    As the judge, you should:
+    1. Acknowledge the defense attorney's statement appropriately
+    2. Ask specific, probing questions about the evidence presented
+    3. Challenge weak arguments or ask for clarification with legal reasoning
+    4. Guide the proceedings with relevant legal questions and procedure
+    5. Focus on the burden of proof and legal standards
+    6. Maintain courtroom decorum and authority
+    7. Avoid repetitive responses and ask new, relevant questions
 
-    Keep responses professional, concise (2-3 sentences), and focused on legal procedure.
+    Respond as a real judge would - be authoritative, ask probing questions, and maintain courtroom decorum.
+    Keep responses concise but meaningful (2-4 sentences).
+    Focus on legal procedure and evidence evaluation.
     """
     
     # Use the appropriate LLM
@@ -7686,7 +8147,11 @@ async def generate_judge_response(
     if llm_provider == 'openai':
         try:
             import openai
-            response = await openai.ChatCompletion.acreate(
+            # Set the API key from config
+            config = load_config()
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            response = openai.chat.completions.create(
                 model=llm_model,
                 messages=[{"role": "user", "content": judge_prompt}],
                 max_tokens=200,
@@ -7715,6 +8180,12 @@ async def generate_prosecutor_response(
 ) -> str:
     """Generate AI prosecutor response"""
     
+    # Debug logging
+    logger.info(f"Prosecutor response - Case data: {case_data}")
+    logger.info(f"Prosecutor response - Message: {message[:100]}...")
+    logger.info(f"Prosecutor response - LLM settings: {llm_settings}")
+    
+    
     prosecutor_prompt = f"""
     You are a skilled prosecutor in a court simulation. You are focused on presenting the case against the defendant and challenging the defense's arguments.
 
@@ -7722,6 +8193,7 @@ async def generate_prosecutor_response(
     Title: {case_data.get('title', 'Unknown Case')}
     Type: {case_data.get('case_type', 'General')}
     Key Points: {', '.join(case_data.get('key_points', [])[:3])}
+    Case Description: {case_data.get('description', 'No description available')}
 
     DEFENSE ATTORNEY'S STATEMENT:
     "{message}"
@@ -7729,13 +8201,18 @@ async def generate_prosecutor_response(
     CONVERSATION HISTORY:
     {format_conversation_history(conversation_history[-5:])}
 
-    As the prosecutor, respond with:
-    1. Challenge to the defense argument
-    2. Questions about evidence or testimony
-    3. Legal precedents that support your case
-    4. Focus on weaknesses in the defense
+    As the prosecutor, you should:
+    1. Challenge the defense attorney's arguments directly and specifically
+    2. Point out inconsistencies or weaknesses in their case with concrete examples
+    3. Ask for specific evidence to support their claims
+    4. Reference the burden of proof and legal standards appropriately
+    5. Build your case by highlighting the evidence against the defendant
+    6. Use proper legal terminology and courtroom language
+    7. Be assertive but respectful, maintaining professional decorum
 
-    Keep responses professional, assertive (2-3 sentences), and focused on building your case.
+    Respond as a real prosecutor would - be assertive, challenge weak arguments, and focus on proving guilt.
+    Keep responses concise but impactful (2-4 sentences).
+    Avoid repetitive statements and focus on new arguments or evidence.
     """
     
     # Use the appropriate LLM
@@ -7745,7 +8222,11 @@ async def generate_prosecutor_response(
     if llm_provider == 'openai':
         try:
             import openai
-            response = await openai.ChatCompletion.acreate(
+            # Set the API key from config
+            config = load_config()
+            openai.api_key = config.get('openai', {}).get('api_key')
+            
+            response = openai.chat.completions.create(
                 model=llm_model,
                 messages=[{"role": "user", "content": prosecutor_prompt}],
                 max_tokens=200,
