@@ -34,7 +34,14 @@ class LLMEngine:
     """
     def __init__(self, model_name: str = None, host: str = None, port: int = None):
         self.config = load_config()
-        self.model_name = model_name or self.config.get('ollama', {}).get('model', 'llama3.2:1b')
+        # Only use Ollama model as default if no model_name is provided AND we're specifically using Ollama
+        # Otherwise, default to OpenAI to avoid slow loading
+        if model_name is None:
+            # Default to OpenAI to avoid slow Ollama initialization
+            self.model_name = self.config.get('openai', {}).get('model', 'gpt-4o')
+        else:
+            self.model_name = model_name
+            
         self.host = host or self.config.get('ollama', {}).get('host', 'localhost')
         self.port = port or self.config.get('ollama', {}).get('port', 11434)
         self.openai_api_key = self.config.get('openai', {}).get('api_key', None)
@@ -57,8 +64,9 @@ class LLMEngine:
         self.legal_system_prompt = self._get_legal_system_prompt()
         
         # Verify model availability (only for Ollama models and if Ollama is available)
+        # Only check availability, don't auto-pull models to avoid slow loading
         if self.ollama_available and (self.model_name.startswith('llama') or self.model_name == 'mistral'):
-            self._ensure_model_available()
+            self._check_model_availability()
     
     def _extract_model_names(self, list_response: Dict) -> List[str]:
         """Extract model names from ollama list() response safely."""
@@ -82,16 +90,15 @@ class LLMEngine:
             logger.error(f"Failed to parse ollama model list: {exc}")
             return []
     
-    def _ensure_model_available(self) -> None:
-        """Ensure the specified model is available locally"""
+    def _check_model_availability(self) -> None:
+        """Check if the specified model is available locally (without auto-pulling)"""
         try:
             models_response = self.client.list()
             available_models = self._extract_model_names(models_response)
             
             if self.model_name not in available_models:
-                logger.info(f"Model {self.model_name} not found. Pulling from Ollama...")
-                self.client.pull(self.model_name)
-                logger.info(f"Successfully pulled {self.model_name}")
+                logger.warning(f"Model {self.model_name} not found locally. User will need to pull it manually or use OpenAI.")
+                # Don't auto-pull to avoid slow loading
                 
         except Exception as e:
             logger.warning(f"Ollama not available: {e}")
@@ -162,9 +169,15 @@ class LLMEngine:
             if self.model_name.startswith('gpt'):
                 return self._generate_openai_response(query, context)
             elif self.model_name.startswith('llama') or self.model_name == 'mistral':
+                # Check if Ollama is available before trying to use it
+                if not self.ollama_available or not self.client:
+                    logger.warning(f"Ollama not available, falling back to OpenAI for model: {self.model_name}")
+                    return self._generate_openai_response(query, context)
                 return self._generate_ollama_response(query, context)
             else:
-                raise ValueError(f"Unsupported model: {self.model_name}. Please select a valid Ollama or OpenAI model.")
+                # Default to OpenAI if model is not recognized
+                logger.warning(f"Unrecognized model: {self.model_name}, falling back to OpenAI")
+                return self._generate_openai_response(query, context)
                 
         except Exception as e:
             logger.error(f"Error generating response: {e}")
